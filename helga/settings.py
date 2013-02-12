@@ -24,6 +24,7 @@ MONGODB = {
 # Modules and their settings
 EXTENSIONS = (
     'helga.extensions.jira',
+    'helga.extensions.facts',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'

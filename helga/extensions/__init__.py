@@ -34,15 +34,17 @@ class ExtensionRegistry(object):
                     continue
 
     def dispatch(self, bot, nick, channel, message, is_public):
-        responses = []
-
         for ext in self.ext:
             try:
-                responses.extend(ext.dispatch(bot, nick, channel, message, is_public))
+                resp = ext.dispatch(bot, nick, channel, message, is_public)
             except:
                 logger.exception('Unexpected failure. Skipping extension')
+                continue
 
-        return responses
+            if resp:
+                return resp
+
+        return None
 
 
 extensions = ExtensionRegistry()

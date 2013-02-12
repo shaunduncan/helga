@@ -8,13 +8,25 @@ class HelgaExtension(object):
     acks = (
         'roger',
         '10-4',
-        'no problem',
+        'no problem %(nick)s',
         'will do',
-        'you got it boss',
-        'anything you say',
+        'you got it %(nick)s',
+        'anything you say %(nick)s',
         'sure thing',
         'ok',
         'right-o',
+    )
+
+    add_acks = acks + (
+        '%(nick)s, added',
+        'consider it done',
+    )
+
+    delete_acks = acks + (
+        '%(nick)s, deleted',
+        'nuking from orbit',
+        'consider it done',
+        "annnnd it's gone",
     )
 
     def dispatch(self, bot, nick, channel, message, is_public):

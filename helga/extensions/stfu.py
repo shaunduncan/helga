@@ -56,15 +56,14 @@ class STFU(HelgaExtension):
             return random.choice(self.snarks)
 
     def dispatch(self, bot, nick, channel, message, is_public):
-        responses = []
         message = message.lower()
 
         if not is_public:
-            responses.append(self.handle_private(bot, message))
+            response = self.handle_private(bot, message)
         else:
-            responses.append(self.handle_public(bot, channel, message))
+            response = self.handle_public(bot, channel, message)
 
-        return responses
+        return response
 
     def is_silenced(self, channel):
         return channel in self._silenced
