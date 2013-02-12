@@ -14,5 +14,5 @@ class HelgaExtension(object):
         'right-o',
     )
 
-    def dispatch(self, nick, channel, message, is_public):
+    def dispatch(self, bot, nick, channel, message, is_public):
         raise NotImplementedError
