@@ -11,6 +11,7 @@ def setup_logger(logger):
     """
     level = getattr(settings, 'LOG_LEVEL', 'INFO')
     logger.setLevel(getattr(logging, level, logging.INFO))
+    logger.propagate = False
 
     # Setup the default handler
     if hasattr(settings, 'LOG_FILE'):

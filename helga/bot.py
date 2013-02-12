@@ -55,26 +55,21 @@ class Helga(object):
             del self.users[old]
 
     def handle_message(self, nick, channel, message, is_public):
-        responses = []
-
         # We should pre-dispatch stfu commands
-        responses.extend(stfu.dispatch(self, nick, channel, message, is_public))
+        response = stfu.dispatch(self, nick, channel, message, is_public)
 
         if not stfu.is_silenced(channel):
-            responses.extend(extensions.dispatch(self, nick, channel, message, is_public))
+            response = extensions.dispatch(self, nick, channel, message, is_public)
 
-        resp_channel = channel if is_public else nick
-        resp_fmt = {
-            'botnick': self.nick,
-            'nick': nick,
-            'channel': channel,
-        }
+        if response:
+            resp_channel = channel if is_public else nick
+            resp_fmt = {
+                'botnick': self.nick,
+                'nick': nick,
+                'channel': channel,
+            }
 
-        for response in responses:
-            if not response:
-                continue
-
-            self.client.msg(resp_channel, response % resp_fmt)
+            self.client.msg(resp_channel, str(response % resp_fmt))
 
 
 helga = Helga()
