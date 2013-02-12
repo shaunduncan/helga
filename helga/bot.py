@@ -2,6 +2,7 @@ import logging
 import random
 
 from helga import settings
+from helga.extensions import extensions
 from helga.extensions.stfu import stfu
 from helga.log import setup_logger
 
@@ -60,9 +61,7 @@ class Helga(object):
         responses.extend(stfu.dispatch(self, nick, channel, message, is_public))
 
         if not stfu.is_silenced(channel):
-            logger.debug('Seeking dispatch')
-            # TODO: dispatch
-            pass
+            responses.extend(extensions.dispatch(self, nick, channel, message, is_public))
 
         resp_channel = channel if is_public else nick
         resp_fmt = {
@@ -72,8 +71,10 @@ class Helga(object):
         }
 
         for response in responses:
-            if response:
-                self.client.msg(resp_channel, response % resp_fmt)
+            if not response:
+                continue
+
+            self.client.msg(resp_channel, response % resp_fmt)
 
 
 helga = Helga()

@@ -25,7 +25,7 @@ def setup_logger(logger):
     if hasattr(settings, 'LOG_FORMAT'):
         formatter = logging.Formatter(settings.LOG_FORMAT)
     else:
-        formatter = logging.Formatter('%(asctime)-15s [%(levelname)s] [%(pathname)s:%(lineno)d]: %(message)s')
+        formatter = logging.Formatter('%(asctime)-15s [%(levelname)s] [%(name)s:%(lineno)d]: %(message)s')
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)
