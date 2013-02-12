@@ -11,10 +11,13 @@ logger = setup_logger(logging.getLogger(__name__))
 class ExtensionRegistry(object):
 
     def __init__(self):
-        self._ext = set()
+        self.ext = set()
+        self.ensure()
 
     def ensure(self):
         for path in getattr(settings, 'EXTENSIONS', []):
+            logger.debug('Loading extension extension %s' % path)
+
             try:
                 mod = __import__(path, {}, {}, [path.split('.')[-1]])
             except ImportError:
@@ -26,15 +29,18 @@ class ExtensionRegistry(object):
                 try:
                     cls = getattr(mod, member)
                     if issubclass(cls, HelgaExtension) and cls != HelgaExtension:
-                        self._ext.add(cls())
+                        self.ext.add(cls())
                 except TypeError:
                     continue
 
     def dispatch(self, bot, nick, channel, message, is_public):
         responses = []
 
-        for ext in self._ext:
-            responses.append(ext.dispatch(bot, nick, channel, message, is_public))
+        for ext in self.ext:
+            try:
+                responses.extend(ext.dispatch(bot, nick, channel, message, is_public))
+            except:
+                logger.exception('Unexpected failure. Skipping extension')
 
         return responses
 

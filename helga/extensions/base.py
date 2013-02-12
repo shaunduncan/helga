@@ -1,3 +1,6 @@
+import random
+
+
 class HelgaExtension(object):
     """
     Defines a dispatchable API for extensions and extra functionality
@@ -16,3 +19,6 @@ class HelgaExtension(object):
 
     def dispatch(self, bot, nick, channel, message, is_public):
         raise NotImplementedError
+
+    def random_ack(self):
+        return random.choice(self.acks)

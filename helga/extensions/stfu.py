@@ -37,7 +37,7 @@ class STFU(HelgaExtension):
         # A list of where helga is silent
         self._silenced = set()
 
-    def _handle_public(self, bot, channel, message):
+    def handle_public(self, bot, channel, message):
         was_silenced = self.is_silenced(channel)
 
         if message == '%s stfu' % bot.nick:
@@ -51,7 +51,7 @@ class STFU(HelgaExtension):
             if was_silenced:
                 return random.choice(self.unsilence_acks)
 
-    def _handle_private(self, bot, message):
+    def handle_private(self, bot, message):
         if re.match(r'^(%s )?(stfu|speak)$' % bot.nick, message):
             return random.choice(self.snarks)
 
@@ -60,9 +60,9 @@ class STFU(HelgaExtension):
         message = message.lower()
 
         if not is_public:
-            responses.append(self._handle_private(bot, message))
+            responses.append(self.handle_private(bot, message))
         else:
-            responses.append(self._handle_public(bot, channel, message))
+            responses.append(self.handle_public(bot, channel, message))
 
         return responses
 

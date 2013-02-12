@@ -1,2 +1,2 @@
 twisted
-mongoengine
+pymongo
