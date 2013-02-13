@@ -1,4 +1,3 @@
-import logging
 import random
 
 from helga import settings
@@ -7,7 +6,7 @@ from helga.extensions.stfu import stfu
 from helga.log import setup_logger
 
 
-logger = setup_logger(logging.getLogger(__name__))
+logger = setup_logger(__name__)
 
 
 class Helga(object):

@@ -1,4 +1,3 @@
-import logging
 import time
 
 from twisted.words.protocols import irc
@@ -8,7 +7,7 @@ from helga.bot import helga
 from helga.log import setup_logger
 
 
-logger = setup_logger(logging.getLogger(__name__))
+logger = setup_logger(__name__)
 
 
 class HelgaClient(irc.IRCClient):
