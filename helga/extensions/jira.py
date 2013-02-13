@@ -1,4 +1,3 @@
-import logging
 import random
 import re
 
@@ -8,7 +7,7 @@ from helga.extensions.base import HelgaExtension
 from helga.log import setup_logger
 
 
-logger = setup_logger(logging.getLogger(__name__))
+logger = setup_logger(__name__)
 
 
 class JiraExtension(HelgaExtension):

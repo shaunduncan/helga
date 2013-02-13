@@ -1,5 +1,3 @@
-import logging
-
 from twisted.internet import protocol, reactor
 
 from helga import settings
@@ -7,7 +5,7 @@ from helga.client import HelgaClient
 from helga.log import setup_logger
 
 
-logger = setup_logger(logging.getLogger(__name__))
+logger = setup_logger(__name__)
 
 
 class HelgaFactory(protocol.ClientFactory):

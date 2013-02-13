@@ -5,11 +5,13 @@ import sys
 from helga import settings
 
 
-def setup_logger(logger):
+def setup_logger(name):
     """
     Make some logger the same for all points in the app
     """
     level = getattr(settings, 'LOG_LEVEL', 'INFO')
+
+    logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, level, logging.INFO))
     logger.propagate = False
 

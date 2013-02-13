@@ -38,18 +38,12 @@ class STFU(HelgaExtension):
         self._silenced = set()
 
     def handle_public(self, bot, channel, message):
-        was_silenced = self.is_silenced(channel)
-
         if message == '%s stfu' % bot.nick:
             self._silenced.add(channel)
-
-            if not was_silenced:
-                return random.choice(self.silence_acks)
+            return random.choice(self.silence_acks)
         elif message == '%s speak' % bot.nick:
             self._silenced.discard(channel)
-
-            if was_silenced:
-                return random.choice(self.unsilence_acks)
+            return random.choice(self.unsilence_acks)
 
     def handle_private(self, bot, message):
         if re.match(r'^(%s )?(stfu|speak)$' % bot.nick, message):
