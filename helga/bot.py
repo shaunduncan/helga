@@ -1,5 +1,3 @@
-import os
-
 from helga import settings
 from helga.extensions import ExtensionRegistry
 from helga.log import setup_logger
@@ -17,11 +15,11 @@ class Helga(object):
 
     def __init__(self):
         self.operators = set(getattr(settings, 'OPERATORS', []))
-        self.extensions = ExtensionRegistry(load=True)
+        self.extensions = ExtensionRegistry(bot=self, load=True)
 
         # STFU might depend on importing this module
         from helga.extensions.stfu import STFUExtension
-        self.stfu = STFUExtension()
+        self.stfu = STFUExtension(bot=self)
 
     @property
     def nick(self):
@@ -72,9 +70,3 @@ class Helga(object):
             }
 
             self.client.msg(resp_channel, str(response % resp_fmt))
-
-
-if getattr(settings, 'DISABLE_AUTOBOT', False):
-    helga = Helga()
-else:
-    helga = None

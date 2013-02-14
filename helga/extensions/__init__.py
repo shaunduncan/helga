@@ -8,8 +8,9 @@ logger = setup_logger(__name__)
 
 class ExtensionRegistry(object):
 
-    def __init__(self, load=False):
+    def __init__(self, bot, load=False):
         self.ext = set()
+        self.bot = bot
 
         if load:
             self.load()
@@ -29,7 +30,7 @@ class ExtensionRegistry(object):
                 try:
                     cls = getattr(mod, member)
                     if issubclass(cls, HelgaExtension) and cls != HelgaExtension:
-                        self.ext.add(cls())
+                        self.ext.add(cls(bot=self.bot))
                 except TypeError:
                     continue
 

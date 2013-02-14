@@ -29,7 +29,10 @@ class HelgaExtension(object):
         "annnnd it's gone",
     )
 
-    def dispatch(self, bot, nick, channel, message, is_public):
+    def __init__(self, bot):
+        self.bot = bot
+
+    def dispatch(self, nick, channel, message, is_public):
         raise NotImplementedError
 
     def random_ack(self):
