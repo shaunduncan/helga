@@ -1,5 +1,5 @@
 from mock import Mock, patch
-from unittest2 import TestCase
+from unittest import TestCase
 
 from helga import settings
 from helga.extensions.jira import JiraExtension
