@@ -14,75 +14,76 @@ logger = setup_logger(__name__)
 
 class FactExtension(HelgaExtension):
 
-    def add_fact(self, nick, message):
-        matches = re.findall(r'^([a-z0-9]+) (is|are) (<reply> )?([\w]+)$', message, re.I)
+    patterns = {
+        'add': r'^([\w]+) (is|are) (<reply> )?([\w]+)$',
+        'remove': r'^(%s )?forget ([\w]+)$',
+        'get': r'^([\w]+)\?$',
+    }
+
+    def add_fact(self, message, nick='nobody'):
+        matches = re.findall(self.patterns['add'], message, re.I)
 
         if not matches:
             return
 
-        term, isare, reply, fact = matches[0]
+        term, isare, is_reply, fact = matches[0]
         term = term.lower()
 
         # The whole shebang
-        if not reply:
+        if not is_reply:
             fact = message
 
         logger.info('Adding new fact %s' % term)
 
         if not db.facts.find({'term': term}).count():
             db.facts.insert({
-                'term': term,
+                'term': term.lower(),
                 'fact': fact,
                 'set_by': nick,
                 'set_date': time.time()
             })
             db.facts.ensure_index('term')
 
-    def remove_fact(self, bot, message, is_public):
+    def remove_fact(self, message, is_public):
         # Of the form: helga forget foo
-        pat = ((r'^%s ' if is_public else r'^(%s )?') % bot.nick) + r'forget ([a-z0-9]+)$'
-        matches = re.findall(pat, message, re.I)
+        matches = re.findall(self.patterns['remove'] % self.bot.nick, message, re.I)
 
-        if not matches:
+        if not matches or (is_public and matches[0][0] != self.bot.nick):
             return
 
-        logger.info(matches)
-        term = matches[0]
-
-        # Fix for matching nick or not
-        if not isinstance(term, basestring):
-            term = term[-1]
+        botnick, term = matches[0]
 
         logger.info('Removing fact %s' % term)
+
         db.facts.remove({'term': term})
+
         return random.choice(self.delete_acks)
 
     def show_fact(self, message):
-        matches = re.findall(r'^([a-z0-9]+)\?$', message, re.I)
+        matches = re.findall(self.patterns['get'], message, re.I)
 
         if not matches:
             return
 
         term = matches[0].lower()
+
         record = db.facts.find_one({'term': term})
         logger.info('Showing fact %s' % term)
 
         if record is not None:
-            formatted_dt = datetime.strftime(datetime.fromtimestamp(record['set_date']),
-                                             '%m/%d/%Y %I:%M%p')
+            if 'set_date' in record:
+                formatted_dt = datetime.strftime(datetime.fromtimestamp(record['set_date']),
+                                                 '%m/%d/%Y %I:%M%p')
+                set_on = ' on %s' % formatted_dt
+            else:
+                set_on = ''
 
-            return '%s (%s on %s)' % (record['fact'], record['set_by'], formatted_dt)
+            return '%s (%s%s)' % (record['fact'], record['set_by'], set_on)
 
-    def dispatch(self, bot, nick, channel, message, is_public):
-        # Check for adding
-        response = self.handle_add(nick, message)
-
-        # Check for removing
-        if not response:
-            response = self.handle_remove(bot, message, is_public)
-
-        # Check for fact showing
-        if not response:
-            response = self.show_fact(message)
-
-        return response
+    def dispatch(self, nick, channel, message, is_public):
+        # Chain add/remove/show and return the first response
+        return (
+            self.add_fact(message, nick) or
+            self.remove_fact(message, is_public) or
+            self.show_fact(message)
+        )

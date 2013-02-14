@@ -1,7 +1,6 @@
 import re
 import random
 
-from helga.bot import helga
 from helga.extensions.base import HelgaExtension
 
 
@@ -34,12 +33,13 @@ class STFUExtension(HelgaExtension):
     STFU = 'stfu'
     SPEAK = 'speak'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # A list of where helga is silent
+        super(STFUExtension, self).__init__(*args, **kwargs)
         self._silenced = set()
 
     def get_command(self, message, nick_required=True):
-        matches = re.findall('^(%s )?([a-z0-9]+)$' % helga.nick, message)
+        matches = re.findall('^(%s )?([\w]+)$' % self.bot.nick, message)
 
         if matches:
             nick, command = matches[0]

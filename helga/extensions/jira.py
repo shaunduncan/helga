@@ -2,7 +2,6 @@ import random
 import re
 
 from helga import settings
-from helga.bot import helga
 from helga.db import db
 from helga.extensions.base import HelgaExtension
 from helga.log import setup_logger
@@ -13,11 +12,16 @@ logger = setup_logger(__name__)
 
 class JiraExtension(HelgaExtension):
 
-    def __init__(self, load=True):
-        if load:
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('load', True):
             self.jira_pats = set(item['re'] for item in db.jira.find())
         else:
             self.jira_pats = set()
+
+        if 'load' in kwargs:
+            del kwargs['load']
+
+        super(JiraExtension, self).__init__(*args, **kwargs)
 
     def get_ticket_re(self, command, message, is_public):
         if is_public:
@@ -25,7 +29,7 @@ class JiraExtension(HelgaExtension):
         else:
             pat = r'^(%s )?jira %s ([a-zA-Z0-9]+)$'
 
-        matches = re.findall(pat % (helga.nick, command), message)
+        matches = re.findall(pat % (self.bot.nick, command), message)
 
         if matches:
             # Public ['cmd']
@@ -34,7 +38,7 @@ class JiraExtension(HelgaExtension):
 
         return None
 
-    def handle_add(self, message, is_public):
+    def add_ticket_re(self, message, is_public):
         new_re = self.get_ticket_re('add_re', message, is_public)
 
         if new_re:
@@ -52,7 +56,7 @@ class JiraExtension(HelgaExtension):
 
             return '%(nick)s, ' + random.choice(self.add_acks)
 
-    def handle_remove(self, message, is_public):
+    def remove_ticket_re(self, message, is_public):
         rem_re = self.get_ticket_re('remove_re', message, is_public)
 
         if rem_re:
@@ -78,15 +82,9 @@ class JiraExtension(HelgaExtension):
             return '%(nick)s might be talking about: ' + ', '.join(jira_urls)
 
     def dispatch(self, nick, channel, message, is_public):
-        # First allow for updating ticket re
-        response = self.handle_add(message, is_public)
-
-        # Handle removing
-        if not response:
-            response = self.handle_remove(message, is_public)
-
-        # Handle contextual "this looks like a ticket"
-        if not response:
-            response = self.contextualize(message)
-
-        return response
+        # Return the first-of response
+        return (
+            self.add_ticket_re(message, is_public) or
+            self.remove_ticket_re(message, is_public) or
+            self.contextualize(message)
+        )

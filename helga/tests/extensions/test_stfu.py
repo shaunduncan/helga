@@ -1,20 +1,14 @@
-from mock import Mock, patch
+from mock import Mock
 from unittest import TestCase
 
-from helga import settings
 from helga.extensions.stfu import STFUExtension
-
-
-_helga = Mock()
-_helga.nick = 'helga'
-
-settings.DISABLE_AUTOBOT = True
+from helga.tests.util import mock_bot
 
 
 class STFUExtensionTestCase(TestCase):
 
     def setUp(self):
-        self.stfu = STFUExtension()
+        self.stfu = STFUExtension(mock_bot())
 
     def test_is_silenced(self):
         self.stfu.silence('foo')
@@ -24,19 +18,15 @@ class STFUExtensionTestCase(TestCase):
         self.stfu.unsilence('foo')
         assert not self.stfu.is_silenced('foo')
 
-    @patch('helga.extensions.stfu.helga', _helga)
     def test_get_command(self):
         assert self.stfu.get_command('helga foo') == 'foo'
 
-    @patch('helga.extensions.stfu.helga', _helga)
     def test_get_command_finds_nothing(self):
         assert self.stfu.get_command('helga, this is crap') is None
 
-    @patch('helga.extensions.stfu.helga', _helga)
     def test_get_command_finds_nothing_when_nick_required(self):
         assert self.stfu.get_command('foo') is None
 
-    @patch('helga.extensions.stfu.helga', _helga)
     def test_get_command_nick_not_required(self):
         assert self.stfu.get_command('foo', nick_required=False) == 'foo'
 
