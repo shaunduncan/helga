@@ -8,11 +8,13 @@ logger = setup_logger(__name__)
 
 class ExtensionRegistry(object):
 
-    def __init__(self):
+    def __init__(self, load=False):
         self.ext = set()
-        self.ensure()
 
-    def ensure(self):
+        if load:
+            self.load()
+
+    def load(self):
         for path in getattr(settings, 'EXTENSIONS', []):
             logger.debug('Loading extension extension %s' % path)
 
@@ -43,6 +45,3 @@ class ExtensionRegistry(object):
                 return resp
 
         return None
-
-
-extensions = ExtensionRegistry()

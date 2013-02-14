@@ -1,7 +1,7 @@
-import random
+import os
 
 from helga import settings
-from helga.extensions import extensions
+from helga.extensions import ExtensionRegistry
 from helga.extensions.stfu import stfu
 from helga.log import setup_logger
 
@@ -13,12 +13,12 @@ class Helga(object):
 
     users = {}
     channels = set()
-    silence = set()  # Like channels, but a list of quietness
     topics = {}
     client = None
 
     def __init__(self):
         self.operators = set(getattr(settings, 'OPERATORS', []))
+        self.extensions = ExtensionRegistry(load=True)
 
     @property
     def nick(self):
@@ -58,7 +58,7 @@ class Helga(object):
         response = stfu.dispatch(self, nick, channel, message, is_public)
 
         if not stfu.is_silenced(channel):
-            response = extensions.dispatch(self, nick, channel, message, is_public)
+            response = self.extensions.dispatch(self, nick, channel, message, is_public)
 
         if response:
             resp_channel = channel if is_public else nick
@@ -71,4 +71,7 @@ class Helga(object):
             self.client.msg(resp_channel, str(response % resp_fmt))
 
 
-helga = Helga()
+if getattr(settings, 'DISABLE_AUTOBOT', False):
+    helga = Helga()
+else:
+    helga = None
