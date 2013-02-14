@@ -2,7 +2,6 @@ import os
 
 from helga import settings
 from helga.extensions import ExtensionRegistry
-from helga.extensions.stfu import stfu
 from helga.log import setup_logger
 
 
@@ -19,6 +18,10 @@ class Helga(object):
     def __init__(self):
         self.operators = set(getattr(settings, 'OPERATORS', []))
         self.extensions = ExtensionRegistry(load=True)
+
+        # STFU might depend on importing this module
+        from helga.extensions.stfu import STFUExtension
+        self.stfu = STFUExtension()
 
     @property
     def nick(self):
@@ -55,9 +58,9 @@ class Helga(object):
 
     def handle_message(self, nick, channel, message, is_public):
         # We should pre-dispatch stfu commands
-        response = stfu.dispatch(self, nick, channel, message, is_public)
+        response = self.stfu.dispatch(self, nick, channel, message, is_public)
 
-        if not stfu.is_silenced(channel):
+        if not self.stfu.is_silenced(channel):
             response = self.extensions.dispatch(self, nick, channel, message, is_public)
 
         if response:

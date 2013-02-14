@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 
 class FactExtension(HelgaExtension):
 
-    def handle_add(self, nick, message):
+    def add_fact(self, nick, message):
         matches = re.findall(r'^([a-z0-9]+) (is|are) (<reply> )?([\w]+)$', message, re.I)
 
         if not matches:
@@ -38,7 +38,7 @@ class FactExtension(HelgaExtension):
             })
             db.facts.ensure_index('term')
 
-    def handle_remove(self, bot, message, is_public):
+    def remove_fact(self, bot, message, is_public):
         # Of the form: helga forget foo
         pat = ((r'^%s ' if is_public else r'^(%s )?') % bot.nick) + r'forget ([a-z0-9]+)$'
         matches = re.findall(pat, message, re.I)

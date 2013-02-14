@@ -1,13 +1,11 @@
 import re
 import random
 
+from helga.bot import helga
 from helga.extensions.base import HelgaExtension
 
 
-__all__ = ['stfu']
-
-
-class STFU(HelgaExtension):
+class STFUExtension(HelgaExtension):
     """
     Toggles helga's level of vocal-ness on any given channel
     """
@@ -33,34 +31,45 @@ class STFU(HelgaExtension):
         'no can do, i love the sound of my own voice',
     )
 
+    STFU = 'stfu'
+    SPEAK = 'speak'
+
     def __init__(self):
         # A list of where helga is silent
         self._silenced = set()
 
-    def handle_public(self, bot, channel, message):
-        if message == '%s stfu' % bot.nick:
-            self._silenced.add(channel)
-            return random.choice(self.silence_acks)
-        elif message == '%s speak' % bot.nick:
-            self._silenced.discard(channel)
-            return random.choice(self.unsilence_acks)
+    def get_command(self, message, nick_required=True):
+        matches = re.findall('^(%s )?([a-z0-9]+)$' % helga.nick, message)
 
-    def handle_private(self, bot, message):
-        if re.match(r'^(%s )?(stfu|speak)$' % bot.nick, message):
+        if matches:
+            nick, command = matches[0]
+
+            if not nick and nick_required:
+                return None
+
+            return command
+
+    def dispatch(self, nick, channel, message, is_public):
+        command = self.get_command(message.lower(), nick_required=not is_public)
+
+        if is_public:
+            was_silenced = self.is_silenced(channel)
+
+            if command == self.STFU:
+                self.silence(channel)
+                return random.choice(self.silence_acks) if not was_silenced else None
+            elif command == self.SPEAK:
+                self.unsilence(channel)
+                return random.choice(self.unsilence_acks) if was_silenced else None
+        elif command in (self.STFU, self.SPEAK):
+            # Be an asshole
             return random.choice(self.snarks)
-
-    def dispatch(self, bot, nick, channel, message, is_public):
-        message = message.lower()
-
-        if not is_public:
-            response = self.handle_private(bot, message)
-        else:
-            response = self.handle_public(bot, channel, message)
-
-        return response
 
     def is_silenced(self, channel):
         return channel in self._silenced
 
+    def silence(self, channel):
+        self._silenced.add(channel)
 
-stfu = STFU()
+    def unsilence(self, channel):
+        self._silenced.discard(channel)
