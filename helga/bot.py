@@ -13,9 +13,9 @@ class Helga(object):
     topics = {}
     client = None
 
-    def __init__(self):
+    def __init__(self, load=True):
         self.operators = set(getattr(settings, 'OPERATORS', []))
-        self.extensions = ExtensionRegistry(bot=self, load=True)
+        self.extensions = ExtensionRegistry(bot=self, load=load)
 
         # STFU might depend on importing this module
         from helga.extensions.stfu import STFUExtension
@@ -23,7 +23,10 @@ class Helga(object):
 
     @property
     def nick(self):
-        return self.client.nickname
+        try:
+            return self.client.nickname
+        except AttributeError:
+            return ''
 
     def set_topic(self, channel, topic):
         self.topics[channel] = topic
@@ -47,10 +50,13 @@ class Helga(object):
         return nick
 
     def update_user_nick(self, old, new):
+        if not old:
+            old = new
+
         if old not in self.users:
             self.users[new] = set([old])
         else:
-            self.users[old].discard(old)
+            self.users[old].add(new)
             self.users[new] = self.users[old]
             del self.users[old]
 
@@ -58,7 +64,7 @@ class Helga(object):
         # We should pre-dispatch stfu commands
         response = self.stfu.dispatch(self, nick, channel, message, is_public)
 
-        if not self.stfu.is_silenced(channel):
+        if not self.stfu.is_silenced(channel) and not response:
             response = self.extensions.dispatch(self, nick, channel, message, is_public)
 
         if response:
