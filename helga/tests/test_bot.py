@@ -110,3 +110,10 @@ class HelgaTestCase(TestCase):
         self.helga.handle_message('foo', 'bar', 'baz', True)
 
         self.helga.client.msg.assertCalledWith('bar', 'OK: foo - helga - bar')
+
+    def test_handle_message_runs_extensions(self):
+        self.setup_handle_message(None, 'EXT', False)
+        self.helga.handle_message('foo', 'bar', 'baz', True)
+
+        assert self.helga.extensions.dispatch.called
+        self.helga.client.msg.assertCalledWith('bar', 'EXT')
