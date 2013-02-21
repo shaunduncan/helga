@@ -21,6 +21,6 @@ setup(name="helga",
       packages=find_packages(),
       entry_points={
           'console_scripts': [
-              'helga = helga.run:runbot'
+              'helga = helga.run:run'
           ]
       })
