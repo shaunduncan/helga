@@ -75,4 +75,8 @@ class Helga(object):
                 'channel': channel,
             }
 
-            self.client.msg(resp_channel, str(response % resp_fmt))
+            if isinstance(response, list):
+                for line in response:
+                    self.client.msg(resp_channel, str(line % resp_fmt))
+            else:
+                self.client.msg(resp_channel, str(response % resp_fmt))
