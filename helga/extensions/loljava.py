@@ -140,5 +140,5 @@ class LOLJavaExtension(HelgaExtension):
                 random.choice(self.oop))
 
     def dispatch(self, nick, channel, message, is_public):
-        if re.match(r'(^|.+)java($|[^s]+)', message, re.I):
+        if re.match(r'(^|.+)(lol)?java($|[^s]+)', message, re.I):
             return self.make_bullshit_java_thing()
