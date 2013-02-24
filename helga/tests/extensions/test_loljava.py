@@ -15,7 +15,7 @@ class LOLJavaExtensionTestCase(TestCase):
     def test_dispatch_returns_message(self):
         assert self.loljava.dispatch('foo', 'bar', 'java', True)
         assert self.loljava.dispatch('foo', 'bar', 'lol java', True)
-        assert self.loljava.dispatch('foo', 'bar', 'lol java, crazy', True)
+        assert self.loljava.dispatch('foo', 'bar', 'loljava, crazy', True)
         assert self.loljava.dispatch('foo', 'bar', '[JAVA]', True)
 
     def test_dispatch_returns_none(self):
