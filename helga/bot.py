@@ -17,10 +17,6 @@ class Helga(object):
         self.operators = set(getattr(settings, 'OPERATORS', []))
         self.extensions = ExtensionRegistry(bot=self, load=load)
 
-        # STFU might depend on importing this module
-        from helga.extensions.stfu import STFUExtension
-        self.stfu = STFUExtension(bot=self)
-
     @property
     def nick(self):
         try:
@@ -61,11 +57,11 @@ class Helga(object):
             del self.users[old]
 
     def handle_message(self, nick, channel, message, is_public):
-        # We should pre-dispatch stfu commands
-        response = self.stfu.dispatch(self, nick, channel, message, is_public)
+        # Some things should go first
+        response = self.extensions.pre_dispatch(nick, channel, message, is_public)
 
-        if not self.stfu.is_silenced(channel) and not response:
-            response = self.extensions.dispatch(self, nick, channel, message, is_public)
+        if not response:
+            response = self.extensions.dispatch(nick, channel, message, is_public)
 
         if response:
             resp_channel = channel if is_public else nick
@@ -75,8 +71,8 @@ class Helga(object):
                 'channel': channel,
             }
 
-            if isinstance(response, list):
-                for line in response:
-                    self.client.msg(resp_channel, str(line % resp_fmt))
-            else:
-                self.client.msg(resp_channel, str(response % resp_fmt))
+            if not isinstance(response, list):
+                response = [response]
+
+            for line in list(response):
+                self.client.msg(resp_channel, str(line % resp_fmt))

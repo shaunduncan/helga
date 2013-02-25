@@ -49,7 +49,7 @@ class STFUExtension(HelgaExtension):
 
             return command
 
-    def dispatch(self, nick, channel, message, is_public):
+    def pre_dispatch(self, nick, channel, message, is_public):
         command = self.get_command(message.lower(), nick_required=not is_public)
 
         if is_public:
