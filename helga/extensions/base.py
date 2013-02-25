@@ -36,7 +36,7 @@ class HelgaExtension(object):
         """
         Any filter-type action that should happen before dispatch is called
         """
-        return None
+        return None, message
 
     def dispatch(self, nick, channel, message, is_public):
         return None

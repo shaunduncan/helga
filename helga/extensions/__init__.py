@@ -51,13 +51,16 @@ class ExtensionRegistry(object):
                 logger.exception('Unexpected failure. Skipping extension')
                 continue
 
-            if resp:
-                return resp
+            if isinstance(resp, tuple):
+                resp, message = resp
 
-        return None
+            if resp:
+                return resp, message
+
+        return None, message
 
     def pre_dispatch(self, nick, channel, message, is_public):
         return self._iter_call('pre_dispatch', nick, channel, message, is_public)
 
     def dispatch(self, nick, channel, message, is_public):
-        return self._iter_call('dispatch', nick, channel, message, is_public)
+        return self._iter_call('dispatch', nick, channel, message, is_public)[0]

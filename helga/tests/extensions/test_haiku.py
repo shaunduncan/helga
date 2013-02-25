@@ -26,9 +26,17 @@ class HaikuExtensionTestCase(TestCase):
             result.count.return_value = 3
 
             if q_dict.get('syllables', 5) == 5:
-                result.return_value = ['fives1', 'fives2', 'fives3']
+                result.return_value = [
+                    {'message': 'fives1'},
+                    {'message': 'fives2'},
+                    {'message': 'fives3'}
+                ]
             else:
-                result.return_value = ['sevens1', 'sevens2', 'sevens3']
+                result.return_value = [
+                    {'message': 'sevens1'},
+                    {'message': 'sevens2'},
+                    {'message': 'sevens3'}
+                ]
 
             return result
 

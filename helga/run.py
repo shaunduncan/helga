@@ -1,6 +1,6 @@
 import sys
 
-from twisted.internet import reactor
+from twisted.internet import reactor, ssl
 
 from helga import settings
 from helga.db import db
@@ -23,9 +23,15 @@ loaddata    Load JSON directly into MongoDB
 
 def start():
     factory = HelgaFactory()
-    reactor.connectTCP(settings.SERVER['HOST'],
-                       settings.SERVER['PORT'],
-                       factory)
+    if settings.SERVER.get('SSL', False):
+        reactor.connectSSL(settings.SERVER['HOST'],
+                           settings.SERVER['PORT'],
+                           factory,
+                           ssl.ClientContextFactory())
+    else:
+        reactor.connectTCP(settings.SERVER['HOST'],
+                           settings.SERVER['PORT'],
+                           factory)
     reactor.run()
 
 

@@ -57,13 +57,16 @@ class STFUExtension(HelgaExtension):
 
             if command == self.STFU:
                 self.silence(channel)
-                return random.choice(self.silence_acks) if not was_silenced else None
+                return random.choice(self.silence_acks) if not was_silenced else None, ''
             elif command == self.SPEAK:
                 self.unsilence(channel)
-                return random.choice(self.unsilence_acks) if was_silenced else None
+                return random.choice(self.unsilence_acks) if was_silenced else None, ''
         elif command in (self.STFU, self.SPEAK):
             # Be an asshole
-            return random.choice(self.snarks)
+            return random.choice(self.snarks), ''
+
+        if self.is_silenced(channel):
+            return None, ''
 
     def is_silenced(self, channel):
         return channel in self._silenced

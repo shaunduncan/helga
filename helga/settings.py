@@ -1,3 +1,5 @@
+import os
+
 SERVER = {
     'HOST': '192.168.55.101',
     'PORT': 6667,
@@ -25,6 +27,21 @@ MONGODB = {
 EXTENSIONS = (
     'helga.extensions.jira',
     'helga.extensions.facts',
+    'helga.extensions.haiku',
+    'helga.extensions.tanka',
+    'helga.extensions.loljava',
+    'helga.extensions.oneliner',
+    'helga.extensions.stfu',
+    'helga.extensions.dubstep',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
+
+ALLOW_NICK_CHANGE = False
+
+
+if 'HELGA_SETTINGS' in os.environ:
+    try:
+        __import__(os.environ['HELGA_SETTINGS'])
+    except ImportError:
+        pass

@@ -76,11 +76,15 @@ class HaikuExtension(HelgaExtension):
         if randfives < 0 or randsevens < 0:
             return None
 
-        return [
-            fives_qs.sort('random')[random.randint(0, randfives)],
-            sevens_qs.sort('random')[random.randint(0, randsevens)],
-            fives_qs.sort('random')[random.randint(0, randfives)]
-        ]
+        int1 = random.randint(0, randfives)
+        int2 = random.randint(0, randsevens)
+        int3 = random.randint(0, randfives)
+
+        return map(str, [
+            fives_qs.sort('random')[int1]['message'],
+            sevens_qs.sort('random')[int2]['message'],
+            fives_qs.sort('random')[int3]['message'],
+        ])
 
     def parse_message(self, message, is_public):
         parts = re.findall(self.command_pat % self.bot.nick, message)
@@ -103,7 +107,7 @@ class HaikuExtension(HelgaExtension):
         else:
             num_syllables = self.syllables[syllables]  # We only match fives/sevens
             call_me_maybe = getattr(self, self.command_map[command])
-            resp = call_me_maybe(num_syllables, message)
+            resp = call_me_maybe(num_syllables, msg_parts)
 
         # Store last poem if it's a poem
         if isinstance(resp, list):
