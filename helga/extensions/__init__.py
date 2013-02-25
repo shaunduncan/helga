@@ -43,10 +43,10 @@ class ExtensionRegistry(object):
 
             self.load_module_members(module)
 
-    def dispatch(self, nick, channel, message, is_public):
+    def _iter_call(self, fn_attr, nick, channel, message, is_public):
         for ext in self.ext:
             try:
-                resp = ext.dispatch(nick, channel, message, is_public)
+                resp = getattr(ext, fn_attr)(nick, channel, message, is_public)
             except:
                 logger.exception('Unexpected failure. Skipping extension')
                 continue
@@ -55,3 +55,9 @@ class ExtensionRegistry(object):
                 return resp
 
         return None
+
+    def pre_dispatch(self, nick, channel, message, is_public):
+        return self._iter_call('pre_dispatch', nick, channel, message, is_public)
+
+    def dispatch(self, nick, channel, message, is_public):
+        return self._iter_call('dispatch', nick, channel, message, is_public)

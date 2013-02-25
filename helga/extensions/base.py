@@ -32,8 +32,14 @@ class HelgaExtension(object):
     def __init__(self, bot):
         self.bot = bot
 
+    def pre_dispatch(self, nick, channel, message, is_public):
+        """
+        Any filter-type action that should happen before dispatch is called
+        """
+        return None
+
     def dispatch(self, nick, channel, message, is_public):
-        raise NotImplementedError
+        return None
 
     def random_ack(self):
         return random.choice(self.acks)

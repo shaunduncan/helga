@@ -34,44 +34,44 @@ class STFUExtensionTestCase(TestCase):
         self.stfu.get_command = Mock()
         self.stfu.get_command.return_value = retval
 
-    def test_dispatch_no_action(self):
+    def test_pre_dispatch_no_action(self):
         self.patch_get_command(None)
-        assert self.stfu.dispatch('foo', 'bar', 'baz', True) is None
+        assert self.stfu.pre_dispatch('foo', 'bar', 'baz', True) is None
 
-    def test_dispatch_responds_with_snark(self):
+    def test_pre_dispatch_responds_with_snark(self):
         self.patch_get_command(self.stfu.STFU)
-        ret = self.stfu.dispatch('foo', 'bar', 'baz', False)
+        ret = self.stfu.pre_dispatch('foo', 'bar', 'baz', False)
         assert ret in self.stfu.snarks
 
-    def test_dispatch_silences_channel(self):
+    def test_pre_dispatch_silences_channel(self):
         self.patch_get_command(self.stfu.STFU)
 
         assert not self.stfu.is_silenced('bar')
-        self.stfu.dispatch('foo', 'bar', 'baz', True)
+        self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
         assert self.stfu.is_silenced('bar')
 
-    def test_dispatch_silences_channel_responds_once(self):
+    def test_pre_dispatch_silences_channel_responds_once(self):
         self.patch_get_command(self.stfu.STFU)
-        ret1 = self.stfu.dispatch('foo', 'bar', 'baz', True)
-        ret2 = self.stfu.dispatch('foo', 'bar', 'baz', True)
+        ret1 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
+        ret2 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
 
         assert ret1 in self.stfu.silence_acks
         assert ret2 is None
 
-    def test_dispatch_unsilences_channel(self):
+    def test_pre_dispatch_unsilences_channel(self):
         self.patch_get_command(self.stfu.SPEAK)
 
         self.stfu.silence('bar')
-        self.stfu.dispatch('foo', 'bar', 'baz', True)
+        self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
         assert not self.stfu.is_silenced('bar')
 
-    def test_dispatch_unsilences_channel_responds_once(self):
+    def test_pre_dispatch_unsilences_channel_responds_once(self):
         self.patch_get_command(self.stfu.SPEAK)
 
         self.stfu.silence('bar')
 
-        ret1 = self.stfu.dispatch('foo', 'bar', 'baz', True)
-        ret2 = self.stfu.dispatch('foo', 'bar', 'baz', True)
+        ret1 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
+        ret2 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
 
         assert ret1 in self.stfu.unsilence_acks
         assert ret2 is None
