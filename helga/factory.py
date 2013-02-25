@@ -18,6 +18,7 @@ class HelgaFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         logger.info('Connection to server lost: %s' % reason)
+        raise reason
 
         # FIXME: Max retries
         if getattr(settings, 'AUTO_RECONNECT', True):

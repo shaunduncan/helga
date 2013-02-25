@@ -16,12 +16,13 @@ class HelgaClient(irc.IRCClient):
     nickname = getattr(settings, 'DEFAULT_NICK', 'helga')
 
     # Server related things
-    username = getattr(settings.SERVER, 'USERNAME', None)
-    password = getattr(settings.SERVER, 'PASSWORD', None)
+    username = settings.SERVER.get('USERNAME', None)
+    password = settings.SERVER.get('PASSWORD', None)
 
     # Other confg
     lineRate = getattr(settings, 'RATE_LIMIT', None)
     sourceURL = 'http://github.com/shaunduncan/helga'
+    encode = 'UTF-8'
 
     def connectionMade(self):
         logger.info('Connection made to %s' % settings.SERVER['HOST'])
@@ -47,6 +48,12 @@ class HelgaClient(irc.IRCClient):
         """
         return full_nick.split('!')[0]
 
+    def setNick(self, nickname):
+        self._attemptedNick = nickname
+
+        msg = 'NICK %s' % nickname
+        self._reallySendLine(msg)
+
     def is_public_channel(self, channel):
         return self.nickname != channel
 
@@ -58,13 +65,9 @@ class HelgaClient(irc.IRCClient):
 
         helga.handle_message(user, channel, message, self.is_public_channel(channel))
 
-    def irc_NICK(self, prefix, params):
-        old = self.parse_nick(prefix)
-        new = params[0]
-
-        logger.debug('User %s is now known as %s' % (old, new))
-
-        helga.update_user_nick(old, new)
+    def user_renamed(self, oldnick, newnick):
+        logger.debug('User %s is now known as %s' % (oldnick, newnick))
+        helga.update_user_nick(oldnick, newnick)
 
     def alterCollidedNick(self, nickname):
         """
@@ -100,4 +103,4 @@ class HelgaClient(irc.IRCClient):
 
     def msg(self, channel, message):
         logger.info('[-->] %s - %s' % (channel, message))
-        irc.IRCClient.msg(self, channel, message)
+        irc.IRCClient.msg(self, channel, str(message))

@@ -31,8 +31,8 @@ class TankaExtension(HaikuExtension):
         randsevens = sevens_qs.count() - 1
 
         poem.extend([
-            sevens_qs.sort('random')[random.randint(0, randsevens)],
-            sevens_qs.sort('random')[random.randint(0, randsevens)],
+            sevens_qs.sort('random')[random.randint(0, randsevens)]['message'],
+            sevens_qs.sort('random')[random.randint(0, randsevens)]['message'],
         ])
 
         return poem
