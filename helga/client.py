@@ -102,5 +102,5 @@ class HelgaClient(irc.IRCClient):
         helga.set_topic(channel, topic)
 
     def msg(self, channel, message):
-        logger.info('[-->] %s - %s' % (channel, message))
+        logger.debug('[-->] %s - %s' % (channel, message))
         irc.IRCClient.msg(self, channel, str(message))
