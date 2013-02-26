@@ -41,7 +41,7 @@ class STFUExtensionTestCase(TestCase):
     def test_pre_dispatch_responds_with_snark(self):
         self.patch_get_command(self.stfu.STFU)
         ret = self.stfu.pre_dispatch('foo', 'bar', 'baz', False)
-        assert ret in self.stfu.snarks
+        assert ret[0] in self.stfu.snarks
 
     def test_pre_dispatch_silences_channel(self):
         self.patch_get_command(self.stfu.STFU)
@@ -55,8 +55,8 @@ class STFUExtensionTestCase(TestCase):
         ret1 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
         ret2 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
 
-        assert ret1 in self.stfu.silence_acks
-        assert ret2 is None
+        assert ret1[0] in self.stfu.silence_acks
+        assert ret2[0] is None
 
     def test_pre_dispatch_unsilences_channel(self):
         self.patch_get_command(self.stfu.SPEAK)
@@ -73,5 +73,5 @@ class STFUExtensionTestCase(TestCase):
         ret1 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
         ret2 = self.stfu.pre_dispatch('foo', 'bar', 'baz', True)
 
-        assert ret1 in self.stfu.unsilence_acks
-        assert ret2 is None
+        assert ret1[0] in self.stfu.unsilence_acks
+        assert ret2[0] is None

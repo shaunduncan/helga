@@ -71,46 +71,46 @@ class HelgaTestCase(TestCase):
 
         assert self.helga.users == new
 
-    def setup_handle_message(self, stfu_ret, ext_ret):
+    def setup_handle_message(self, pre_dispatch_ret, dispatch_ret):
         self.helga.extensions = Mock()
-        self.helga.extensions.dispatch.return_value = ext_ret
+        self.helga.extensions.dispatch.return_value = dispatch_ret
 
-        self.helga.extensions.pre_dispatch.return_value = stfu_ret
+        self.helga.extensions.pre_dispatch.return_value = pre_dispatch_ret
 
         self.helga.client = Mock()
 
     def test_handle_message_does_nothing(self):
-        self.setup_handle_message(None, None)
+        self.setup_handle_message((None, 'baz'), None)
         self.helga.handle_message('foo', 'bar', 'baz', True)
 
         assert not self.helga.client.msg.called
 
     def test_handle_message_pre_dispatch_skips_extensions(self):
-        self.setup_handle_message('OK', None)
+        self.setup_handle_message(('OK', 'baz'), None)
         self.helga.handle_message('foo', 'bar', 'baz', True)
 
         assert not self.helga.extensions.dispatch.called
 
     def test_handle_message_sends_client_message_to_correct_channel(self):
         # Public
-        self.setup_handle_message('OK', None)
+        self.setup_handle_message(('OK', 'baz'), None)
         self.helga.handle_message('foo', 'bar', 'baz', True)
         self.helga.client.msg.assertCalledWith('bar', 'OK')
 
         # Private
-        self.setup_handle_message('OK', None)
+        self.setup_handle_message(('OK', 'baz'), None)
         self.helga.handle_message('foo', 'bar', 'baz', False)
         self.helga.client.msg.assertCalledWith('foo', 'OK')
 
     def test_handle_message_formats_output(self):
-        self.setup_handle_message('OK: %(nick)s - %(botnick)s - %(channel)s', None)
+        self.setup_handle_message(('OK: %(nick)s - %(botnick)s - %(channel)s', 'baz'), None)
         self.helga.client.nickname = 'helga'
         self.helga.handle_message('foo', 'bar', 'baz', True)
 
         self.helga.client.msg.assertCalledWith('bar', 'OK: foo - helga - bar')
 
     def test_handle_message_runs_extensions(self):
-        self.setup_handle_message(None, 'EXT')
+        self.setup_handle_message((None, 'baz'), 'EXT')
         self.helga.handle_message('foo', 'bar', 'baz', True)
 
         assert self.helga.extensions.dispatch.called
