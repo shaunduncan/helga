@@ -146,6 +146,7 @@ class OneLinerExtension(HelgaExtension):
             'http://i.imgur.com/dyeHb.gif',
             'http://i.imgur.com/VkHiG6D.gif',
             'http://i.imgur.com/aiH4Mts.gif',
+            'http://i.imgur.com/nOJme.gif',
         ],
 
         r'nailed it': [
@@ -159,6 +160,10 @@ class OneLinerExtension(HelgaExtension):
 
         r'javascript': [
             'yo dawg, i heard you like functions',
+        ],
+
+        r'^(iknorite|right)\?$': [
+            'http://i.imgur.com/RvquHs0.gif',
         ]
     }
 
