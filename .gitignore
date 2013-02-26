@@ -29,5 +29,3 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
-
-ircs_settings.py
