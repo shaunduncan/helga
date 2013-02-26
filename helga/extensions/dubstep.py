@@ -1,4 +1,3 @@
-import random
 import re
 import time
 
@@ -7,20 +6,28 @@ from helga.extensions.base import HelgaExtension
 
 class DubstepExtension(HelgaExtension):
 
-    _since = None
-    _since_count = 0
+    since = None
+    since_count = 0
+
+    FLOOD_TIME = 10
+    FLOOD_MSG_LIMIT = 3
 
     def dispatch(self, nick, channel, message, is_public):
         if not re.match(r'dubstep', message):
             return
 
-        if self._since and (time.time() - self._since) < 10 and self._since_count >= 3:
-            self._since = None
-            self._since_count = 0
+        if not self.since:
+            self.since = time.time()
+
+        now_diff = time.time() - self.since
+
+        if now_diff < self.FLOOD_TIME and self.since_count >= self.FLOOD_MSG_LIMIT:
+            self.since = None
+            self.since_count = 0
             return 'STOP! MY HEAD IS VIBRATING!'
 
-        if not self._since:
-            self._since = time.time()
+        if not self.since:
+            self.since = time.time()
 
-        self._since_count += 1
-        return 'wub' * random.randint(5, 25)
+        self.since_count += 1
+        return 'wubwubwub' * self.since_count * 2
