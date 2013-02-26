@@ -27,6 +27,7 @@ MONGODB = {
 # Modules and their settings
 EXTENSIONS = (
     'helga.extensions.operator',
+    'helga.extensions.reviewboard',
     'helga.extensions.jira',
     'helga.extensions.facts',
     'helga.extensions.haiku',
@@ -39,6 +40,7 @@ EXTENSIONS = (
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
+REVIEWBOARD_URL = 'http://reviews.ddtc.cmgdigital.com/r/%(review)s'
 
 ALLOW_NICK_CHANGE = False
 
