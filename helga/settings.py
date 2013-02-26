@@ -26,6 +26,7 @@ MONGODB = {
 
 # Modules and their settings
 EXTENSIONS = (
+    'helga.extensions.operator',
     'helga.extensions.jira',
     'helga.extensions.facts',
     'helga.extensions.haiku',

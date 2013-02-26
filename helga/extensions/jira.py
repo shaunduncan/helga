@@ -25,9 +25,9 @@ class JiraExtension(HelgaExtension):
 
     def get_ticket_re(self, command, message, is_public):
         if is_public:
-            pat = r'^%s jira %s ([a-zA-Z0-9]+)$'
+            pat = r'^%s jira %s (.+)$'
         else:
-            pat = r'^(%s )?jira %s ([a-zA-Z0-9]+)$'
+            pat = r'^(%s )?jira %s (.+)$'
 
         matches = re.findall(pat % (self.bot.nick, command), message)
 
@@ -73,7 +73,7 @@ class JiraExtension(HelgaExtension):
         all_pat = r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
         jira_urls = []
 
-        logger.info('Checking jira regex: %s' % all_pat)
+        logger.debug('Checking jira regex: %s' % all_pat)
 
         for match in re.findall(all_pat, message, re.I):
             jira_urls.append(settings.JIRA_URL % {'ticket': match[0]})
