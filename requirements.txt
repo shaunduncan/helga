@@ -1,2 +1,3 @@
 twisted
 pymongo
+tweepy

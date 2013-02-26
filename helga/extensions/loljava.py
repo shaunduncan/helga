@@ -84,6 +84,7 @@ class LOLJavaExtension(HelgaExtension):
         'Story',
         'Article',
         'Model',
+        'Tokenizer',
     )
 
     actions = (
@@ -130,6 +131,7 @@ class LOLJavaExtension(HelgaExtension):
         'Queue',
         'Configuration',
         'Encoder',
+        'Tokenizer',
     )
 
     def make_bullshit_java_thing(self):
