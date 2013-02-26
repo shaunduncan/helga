@@ -34,6 +34,7 @@ EXTENSIONS = (
     'helga.extensions.oneliner',
     'helga.extensions.stfu',
     'helga.extensions.dubstep',
+    'helga.extensions.icanhazascii',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
@@ -48,5 +49,5 @@ if 'HELGA_SETTINGS' in os.environ:
         pass
     else:
         this = sys.modules[__name__]
-        for attr in filter(lambda x: not x.startswith('_'), overrides):
+        for attr in filter(lambda x: not x.startswith('_'), dir(overrides)):
             setattr(this, attr, getattr(overrides, attr))

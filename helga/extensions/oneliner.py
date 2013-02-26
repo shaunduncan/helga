@@ -89,6 +89,7 @@ class OneLinerExtension(HelgaExtension):
             'http://i.imgur.com/ErtgS.gif',
             'http://i.imgur.com/foEHo.gif',
             'http://i.imgur.com/xKYs9.gif',
+            'http://i.imgur.com/ST9lw3U.gif',
         ],
 
         r'tl;?dr': [
@@ -136,6 +137,23 @@ class OneLinerExtension(HelgaExtension):
         r'(mind blown|blew my mind)': [
             'http://i.imgur.com/1HMveGj.gif'
         ],
+
+        r'(sweet jesus|mother of god)': [
+            'http://i.imgur.com/5vXdAOV.gif',
+            'http://i.imgur.com/g155Wra.gif',
+            'http://i.imgur.com/dyeHb.gif',
+            'http://i.imgur.com/VkHiG6D.gif',
+            'http://i.imgur.com/aiH4Mts.gif',
+        ],
+
+        r'nailed it': [
+            'http://i.imgur.com/KsQzQTF.gif',
+            'http://i.imgur.com/5nrEk.gif',
+        ],
+
+        r'unacceptable': [
+            'http://i.imgur.com/BwdP2xl.gif',
+        ]
     }
 
     def decompose_response(self, response):
