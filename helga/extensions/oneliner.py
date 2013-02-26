@@ -90,6 +90,7 @@ class OneLinerExtension(HelgaExtension):
             'http://i.imgur.com/foEHo.gif',
             'http://i.imgur.com/xKYs9.gif',
             'http://i.imgur.com/ST9lw3U.gif',
+            'http://i.imgur.com/c4gTe5p.gif',
         ],
 
         r'tl;?dr': [
@@ -114,6 +115,7 @@ class OneLinerExtension(HelgaExtension):
             'http://i.imgur.com/nj3yp.gif',
             'http://i.imgur.com/AGnOQ.gif',
             'http://i.imgur.com/wkY1FUI.gif',
+            'http://i.imgur.com/AXuUYIj.gif',
         ],
 
         r'(bloody mary|vodka)': [
@@ -153,6 +155,10 @@ class OneLinerExtension(HelgaExtension):
 
         r'unacceptable': [
             'http://i.imgur.com/BwdP2xl.gif',
+        ],
+
+        r'javascript': [
+            'yo dawg, i heard you like functions',
         ]
     }
 
