@@ -10,7 +10,7 @@ class STFUExtension(HelgaExtension):
     """
 
     silence_acks = (
-        'slience is golden',
+        'silence is golden',
         'shutting up',
         'biting my tongue',
         'fine, whatever',
