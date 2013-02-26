@@ -1,4 +1,5 @@
 import os
+import sys
 
 SERVER = {
     'HOST': '192.168.55.101',
@@ -42,6 +43,10 @@ ALLOW_NICK_CHANGE = False
 
 if 'HELGA_SETTINGS' in os.environ:
     try:
-        __import__(os.environ['HELGA_SETTINGS'])
+        overrides = __import__(os.environ['HELGA_SETTINGS'])
     except ImportError:
         pass
+    else:
+        this = sys.modules[__name__]
+        for attr in filter(lambda x: not x.startswith('_'), overrides):
+            setattr(this, attr, getattr(overrides, attr))
