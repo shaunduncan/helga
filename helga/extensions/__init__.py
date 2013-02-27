@@ -10,6 +10,7 @@ class ExtensionRegistry(object):
 
     def __init__(self, bot, load=True):
         self.ext = set()
+        self.imported = set()
         self.bot = bot
 
         if load:
@@ -26,8 +27,9 @@ class ExtensionRegistry(object):
         for member in self._get_possible_extensions(module):
             try:
                 cls = getattr(module, member)
-                if issubclass(cls, HelgaExtension) and cls != HelgaExtension:
+                if issubclass(cls, HelgaExtension) and cls != HelgaExtension and cls not in self.imported:
                     self.ext.add(cls(bot=self.bot))
+                    self.imported.add(cls)
             except TypeError:
                 continue
 
