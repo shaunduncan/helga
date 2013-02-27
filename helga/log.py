@@ -16,7 +16,7 @@ def setup_logger(name):
     logger.propagate = False
 
     # Setup the default handler
-    if hasattr(settings, 'LOG_FILE'):
+    if hasattr(settings, 'LOG_FILE') and settings.LOG_FILE:
         handler = logging.handlers.RotatingFileHandler(filename=settings.LOG_FILE,
                                                        maxBytes=50*1024*1024,
                                                        backupCount=6)
