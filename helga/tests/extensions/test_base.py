@@ -1,9 +1,34 @@
 from unittest import TestCase
 
-from helga.extensions.base import (HelgaExtension,
-                                   CommandExtension,
+from helga.extensions.base import (CommandExtension,
                                    ContextualExtension)
 from helga.tests.util import mock_bot
+
+
+class ContextualExtensionTestCase(TestCase):
+
+    def setUp(self):
+        self.ext = ContextualExtension(mock_bot())
+
+    def test_contextualize_not_found(self):
+        self.ext.context = r'foo'
+        assert self.ext.contextualize('bar') is None
+
+    def test_contextualize_returns_many(self):
+        self.ext.allow_many = True
+        self.ext.context = r'foo[\d]+'
+        self.ext.response_fmt = '%(response)s'
+
+        resp = self.ext.contextualize('two things: foo1 and foo2')
+        assert resp == 'foo1, foo2'
+
+    def test_contextualize_returns_one(self):
+        self.ext.allow_many = False
+        self.ext.context = r'foo[\d]+'
+        self.ext.response_fmt = '%(response)s'
+
+        resp = self.ext.contextualize('two things: foo1 and foo2')
+        assert resp == 'foo1'
 
 
 class CommandExtensionTestCase(TestCase):
