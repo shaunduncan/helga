@@ -6,7 +6,6 @@ SERVER = {
     'PORT': 6667,
 }
 
-LOG_FILE = '/dev/stdout'
 LOG_LEVEL = 'DEBUG'
 
 DEFAULT_NICK = 'helga'
