@@ -10,18 +10,7 @@ class ReviewboardExtensionTestCase(TestCase):
     def setUp(self):
         self.rb = ReviewboardExtension(mock_bot())
 
-    def test_contextualize_no_match(self):
-        assert self.rb.contextualize('foo') is None
-
     @patch('helga.extensions.reviewboard.settings')
-    def test_contextualize_responds_with_url(self, settings):
+    def test_transform_match(self, settings):
         settings.REVIEWBOARD_URL = 'http://example.com/%(review)s'
-        resp = self.rb.contextualize('this is cr123')
-        assert 'http://example.com/123' in resp
-
-    @patch('helga.extensions.reviewboard.settings')
-    def test_contextualize_responds_with_many_urls(self, settings):
-        settings.REVIEWBOARD_URL = 'http://example.com/%(review)s'
-        resp = self.rb.contextualize('this is cr123 and cr42')
-        assert 'http://example.com/123' in resp
-        assert 'http://example.com/42' in resp
+        assert self.rb.transform_match('1234') == 'http://example.com/1234'
