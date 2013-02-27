@@ -5,6 +5,7 @@ from helga import settings
 from helga.db import db
 from helga.extensions.base import HelgaExtension
 from helga.log import setup_logger
+from helga.util.twitter import tweet
 
 
 logger = setup_logger(__name__)
@@ -12,13 +13,12 @@ logger = setup_logger(__name__)
 
 class HaikuExtension(HelgaExtension):
 
-    command_pat = r'^(%s )?haiku( (add|add_use|remove|tweet_last) (fives|sevens) (.+))?$'
+    command_pat = r'^(%s )?haiku( (tweet_last|(add|add_use|remove) (fives|sevens) (.+)))?$'
 
     command_map = {
         'add': 'add_line',
         'add_use': 'add_use_line',
         'remove': 'remove_line',
-        'tweet_last': 'tweet_last'
     }
 
     syllables = {
@@ -28,10 +28,22 @@ class HaikuExtension(HelgaExtension):
 
     last = {}
 
-    def tweet_last(self, *args):
+    def tweet_last(self, channel):
         # *args here because we call it like add_line/add_use_line/remove_line
         # TODO: There should be a twitter extension to do this bit
-        raise NotImplementedError
+        if channel not in self.last:
+            return "%(nick)s, why don't you try making one first?"
+
+        # fives / sevens / fives
+        resp = tweet(' / '.join(self.last[channel]))
+
+        # This will keep it from over tweeting
+        del self.last[channel]
+
+        if not resp:
+            resp = '%(nick)s that probably did not work'
+
+        return resp
 
     def add_line(self, num_syllables, message):
         logger.info('Adding %d syllable line: %s' % (num_syllables, message))
@@ -93,9 +105,12 @@ class HaikuExtension(HelgaExtension):
             raise Exception("Don't do anything")
 
         # command, syllables, line
-        return parts[0][2], parts[0][3], parts[0][4]
+        parts = parts[0]
+        return parts[-3] or parts[-4], parts[-2], parts[-1]
 
     def dispatch(self, nick, channel, message, is_public):
+        last_chan = channel if is_public else nick
+
         try:
             command, syllables, msg_parts = self.parse_message(message, is_public)
         except:
@@ -104,6 +119,8 @@ class HaikuExtension(HelgaExtension):
 
         if not command:
             resp = self.make_poem()
+        elif command == 'tweet_last':
+            resp = self.tweet_last(last_chan)
         else:
             num_syllables = self.syllables[syllables]  # We only match fives/sevens
             call_me_maybe = getattr(self, self.command_map[command])
@@ -111,6 +128,6 @@ class HaikuExtension(HelgaExtension):
 
         # Store last poem if it's a poem
         if isinstance(resp, list):
-            self.last[channel if is_public else nick] = resp
+            self.last[last_chan] = resp
 
         return resp
