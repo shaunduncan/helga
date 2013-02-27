@@ -1,33 +1,31 @@
-import re
+import random
 import time
 
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import ContextualExtension
 
 
-class DubstepExtension(HelgaExtension):
+class DubstepExtension(ContextualExtension):
 
-    since = None
-    since_count = 0
+    context = r'dubstep'
+    allow_many = False
+    response_fmt = '%(response)s'
 
-    FLOOD_TIME = 10
-    FLOOD_MSG_LIMIT = 3
+    wub_count = 0
+    max_wubs = 3
+    last_wub = None
+    wub_timeout = 10
 
-    def dispatch(self, nick, channel, message, is_public):
-        if not re.match(r'dubstep', message):
-            return
+    def transform_match(self, match):
+        if self.last_wub and (time.time() - self.last_wub) > self.wub_timeout:
+            self.wub_count = 0
 
-        if not self.since:
-            self.since = time.time()
+        if self.wub_count >= self.max_wubs:
+            self.wub_count = 0
+            self.last_wub = time.time()
 
-        now_diff = time.time() - self.since
+            return 'STOP! MY HEAD IS VIBRATING'
+        else:
+            self.wub_count += 1
+            self.last_wub = time.time()
 
-        if now_diff < self.FLOOD_TIME and self.since_count >= self.FLOOD_MSG_LIMIT:
-            self.since = None
-            self.since_count = 0
-            return 'STOP! MY HEAD IS VIBRATING!'
-
-        if not self.since:
-            self.since = time.time()
-
-        self.since_count += 1
-        return 'wubwubwub' * self.since_count * 2
+            return 'wubwub' * self.wub_count * random.randint(1, 4)
