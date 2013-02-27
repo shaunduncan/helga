@@ -3,14 +3,16 @@ import re
 
 from helga import settings
 from helga.db import db
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import ContextualExtension
 from helga.log import setup_logger
 
 
 logger = setup_logger(__name__)
 
 
-class JiraExtension(HelgaExtension):
+class JiraExtension(ContextualExtension):
+
+    allow_many = True
 
     def __init__(self, *args, **kwargs):
         if kwargs.get('load', True):
@@ -22,6 +24,13 @@ class JiraExtension(HelgaExtension):
             del kwargs['load']
 
         super(JiraExtension, self).__init__(*args, **kwargs)
+
+    @property
+    def re_pattern(self):
+        return r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
+
+    def transform_match(self, match):
+        return settings.JIRA_URL % {'ticket': match[0]}
 
     def get_ticket_re(self, command, message, is_public):
         if is_public:
@@ -65,21 +74,6 @@ class JiraExtension(HelgaExtension):
             db.jira.remove({'re': rem_re})
 
             return '%(nick)s, ' + random.choice(self.delete_acks)
-
-    def contextualize(self, message):
-        """
-        Turns the whole MYPROJ-123 into JIRA urls
-        """
-        all_pat = r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
-        jira_urls = []
-
-        logger.debug('Checking jira regex: %s' % all_pat)
-
-        for match in re.findall(all_pat, message, re.I):
-            jira_urls.append(settings.JIRA_URL % {'ticket': match[0]})
-
-        if jira_urls:
-            return '%(nick)s might be talking about: ' + ', '.join(jira_urls)
 
     def dispatch(self, nick, channel, message, is_public):
         # Return the first-of response

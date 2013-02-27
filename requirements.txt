@@ -1,3 +1,6 @@
 twisted
 pymongo
 tweepy
+
+# Because it handles optional arguments better
+-e git://github.com/shaunduncan/docopt.git@8423a6175f#egg=docopt
