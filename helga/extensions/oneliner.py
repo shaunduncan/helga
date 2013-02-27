@@ -173,7 +173,7 @@ class OneLinerExtension(HelgaExtension):
         r'i (don\'?t know|dunno),? lol':        [u'¯\(°_o)/¯'],
         r'look.?of.?disapproval(\.jpg|\.gif)?': [u'ಠ_ಠ'],
         r'i disapprove':                        [u'ಠ_ಠ'],
-        r'^not sure if \w+':                    [u'ﺟ_ﺟ', u'≖_≖'],
+        r'^not sure if \w+':                    [u'≖_≖'],
         r'flip (a|the|some) tables?':           [u'(╯°□°）╯︵ ┻━┻', u'(ノಠ益ಠ)ノ彡┻━┻'],
         r'(gonna|going to) (make \w+ )?cry':    [u'(ಥ﹏ಥ)'],
         r'(bro ?fist|fist ?bump)':              [u'( _)=mm=(^_^ )'],
