@@ -50,7 +50,10 @@ class HelgaExtension(object):
 
 class CommandExtension(HelgaExtension):
     """
-    Command type extension
+    Command type extension. Implementers should supply a class attribute:
+
+    usage: docopt supported string. this should _always_ start with [BOTNICK]
+           unless the behavior of `should_handle_message` is altered
     """
 
     # This should ONLY be the argument string
@@ -84,14 +87,17 @@ class CommandExtension(HelgaExtension):
         """
         Handle the message. This should either return None if no response
         is required, a string for a single line response, or a list of
-        strings for a multiline response
+        strings for a multiline response.
+
+        Side effect: if you specify [INPUT ...] in `usage`, it will be returned
+        as a list of strings, not one single string. Sorry...
         """
         return None
 
     def dispatch(self, nick, channel, message, is_public):
         opts = self.parse_command(message)
 
-        if not self.should_handle_message(opts, is_public):
+        if not opts or not self.should_handle_message(opts, is_public):
             return None
 
         return self.handle_message(opts, nick, channel, message, is_public)
