@@ -99,19 +99,32 @@ class CommandExtension(HelgaExtension):
 
 class ContextualExtension(HelgaExtension):
     """
-    Contextualizes messages by responding to any match in message content
+    Contextualizes messages by responding to any match in message content.
+    Implementers should provide the following class attributes:
+
+    context: regular expression string to test against incoming messages
+    allow_many: boolean. True returns all transformed matches. False returns the first
+    response_fmt: response format string. Should at minimum contain format '%(response)s'.
+                  optionally can contain %(nick)s to refer to the user sending the message
+
+    Implementers should also provide a mechanism to transform a match into a readable
+    string by overriding `transform_match`.
     """
-    re_pattern = None  # Search message content
-    allow_many = False  # Should multiple responses be contextualized
+    context = None
+    allow_many = False
     response_fmt = '%(nick)s might be talking about: %(response)s'
 
     def transform_match(self, match):
+        """
+        Converts a single match of re.findall() using the context against the
+        incoming message
+        """
         return match
 
     def contextualize(self, message):
         found = []
 
-        for match in re.findall(self.re_pattern, message, re.I):
+        for match in re.findall(self.context, message, re.I):
             found.append(self.transform_match(match))
 
         if found:
@@ -123,5 +136,5 @@ class ContextualExtension(HelgaExtension):
             }
 
     def dispatch(self, nick, channel, message, is_public):
-        if self.re_pattern:
+        if self.context:
             return self.contextualize(message)

@@ -26,7 +26,7 @@ class JiraExtension(ContextualExtension):
         super(JiraExtension, self).__init__(*args, **kwargs)
 
     @property
-    def re_pattern(self):
+    def context(self):
         return r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
 
     def transform_match(self, match):
