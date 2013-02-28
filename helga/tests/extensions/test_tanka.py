@@ -11,54 +11,29 @@ class TankaExtensionTestCase(TestCase):
         self.tanka = TankaExtension(mock_bot())
 
     @patch('helga.extensions.haiku.db')
-    def test_add_line(self, db):
-        self.tanka.add_line(5, 'foobar')
+    def test_add(self, db):
+        self.tanka.add(5, 'foobar')
 
         assert db.haiku.insert.called
 
-    @patch('helga.extensions.haiku.db')
-    @patch('helga.extensions.tanka.db')
-    def test_make_poem(self, t_db, h_db):
+    def test_make_poem(self):
 
         # We mock out the find, because we will do sorting and slicing
-        def fake_find(q_dict):
-            result = Mock()
-            result.sort = result
-            result.count.return_value = 3
-
-            if q_dict.get('syllables', 5) == 5:
-                result.return_value = [
-                    {'message': 'fives1'},
-                    {'message': 'fives2'},
-                    {'message': 'fives3'}
-                ]
+        def fake_random_line(syllables, about=None):
+            if syllables == 5:
+                return 'fives'
+            elif syllables == 7:
+                return 'sevens'
             else:
-                result.return_value = [
-                    {'message': 'sevens1'},
-                    {'message': 'sevens2'},
-                    {'message': 'sevens3'}
-                ]
+                return ''
 
-            return result
-
-        h_db.haiku.find = fake_find
-        t_db.haiku.find = fake_find
+        self.tanka.get_random_line = fake_random_line
         poem = self.tanka.make_poem()
 
         assert len(poem) == 5
-        assert poem[0].startswith('fives')
-        assert poem[1].startswith('sevens')
-        assert poem[2].startswith('fives')
-        assert poem[3].startswith('sevens')
-        assert poem[4].startswith('sevens')
+        assert poem == ['fives', 'sevens', 'fives', 'sevens', 'sevens']
 
-    @patch('helga.extensions.haiku.db')
-    @patch('helga.extensions.tanka.db')
-    def test_make_poem_returns_none(self, t_db, h_db):
-        h_db.haiku.find.return_value = h_db
-        h_db.count.return_value = 0
-
-        t_db.haiku.find.return_value = t_db
-        t_db.count.return_value = 0
+    def test_make_poem_returns_none(self):
+        self.tanka.get_random_line = Mock(return_value=None)
 
         assert self.tanka.make_poem() is None
