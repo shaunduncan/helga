@@ -1,9 +1,8 @@
 import random
 import re
 
-from helga import settings
 from helga.db import db
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import CommandExtension
 from helga.log import setup_logger
 from helga.util.twitter import tweet
 
@@ -11,31 +10,88 @@ from helga.util.twitter import tweet
 logger = setup_logger(__name__)
 
 
-class HaikuExtension(HelgaExtension):
+class HaikuExtension(CommandExtension):
 
-    command_pat = r'^(%s )?haiku( (tweet_last|(add|add_use|remove) (fives|sevens) (.+)))?$'
+    usage = '[BOTNICK] haiku [tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
 
-    command_map = {
-        'add': 'add_line',
-        'add_use': 'add_use_line',
-        'remove': 'remove_line',
-    }
-
-    syllables = {
+    syllable_map = {
         'fives': 5,
         'sevens': 7,
     }
 
     last = {}
 
-    def tweet_last(self, channel):
-        # *args here because we call it like add_line/add_use_line/remove_line
-        # TODO: There should be a twitter extension to do this bit
+    def firstof(self, dictionary, *keys):
+        """
+        Returns key of first non-falsey value in dictionary by checking keys that match
+        a list of argument strings
+        """
+        for k, v in dictionary.iteritems():
+            if k in keys and v:
+                return k
+
+    def handle_message(self, opts, nick, channel, message, is_public):
+        response = None
+
+        if opts['tweet']:
+            response = self.tweet(channel)
+        elif opts['about']:
+            response = self.make_poem(about=' '.join(opts['<thing>']))
+        else:
+            fn_name = self.firstof(opts, 'add', 'add_use', 'use', 'remove')
+            if fn_name:
+                input = ' '.join(opts['INPUT'] or [])
+                syllables = self.syllable_map.get(self.firstof(opts, 'fives', 'sevens'), None)
+                call_me_maybe = getattr(self, fn_name, None)
+
+                if call_me_maybe:
+                    response = call_me_maybe(syllables, input)
+
+            # just make a poem
+            else:
+                response = self.make_poem()
+
+        # It's a poem, dude
+        if isinstance(response, list):
+            self.last[channel] = response
+
+        return response
+
+    def _make_term_pattern(self, term):
+        return re.compile(term, re.I)
+
+    def get_random_line(self, syllables, about=None):
+        """
+        Returns a single random line with the given number of syllables.
+        Optionally will find lines containing a keyword. If no entries are found
+        with that keyword, we just return a random one
+        """
+        finder = {
+            'syllables': syllables
+        }
+
+        if about:
+            finder.update({
+                'message': {'$regex': self._make_term_pattern(about)}
+            })
+
+        qs = db.haiku.find(finder)
+        num_rows = qs.count()
+
+        if num_rows == 0:
+            return None if not about else self.get_random_line(syllables)
+
+        skip = random.randint(0, num_rows - 1)
+
+        # Bleh, this is how we randomly grab one
+        return str(qs.limit(-1).skip(skip).next()['message'])
+
+    def tweet(self, channel):
         if channel not in self.last:
             return "%(nick)s, why don't you try making one first?"
 
         # fives / sevens / fives
-        resp = tweet('\r'.join(self.last[channel]))
+        resp = tweet(' / '.join(self.last[channel]))
 
         # This will keep it from over tweeting
         del self.last[channel]
@@ -45,89 +101,55 @@ class HaikuExtension(HelgaExtension):
 
         return resp
 
-    def add_line(self, num_syllables, message):
-        logger.info('Adding %d syllable line: %s' % (num_syllables, message))
+    def add(self, syllables, message):
+        logger.info('Adding %d syllable line: %s' % (syllables, message))
 
         db.haiku.insert({
-            'syllables': num_syllables,
+            'syllables': syllables,
             'message': message,
-            'random': random.random()
         })
 
         return random.choice(self.add_acks)
 
-    def add_use_line(self, num_syllables, message):
-        self.add_line(num_syllables, message)
+    def add_use(self, syllables, message):
+        """
+        Stores a poem message and uses it in the response
+        """
+        self.add(syllables, message)
+        return self.use(syllables, message)
+
+    def use(self, syllables, message):
+        """
+        Uses a message in a poem without storing it
+        """
         poem = self.make_poem()
 
-        if num_syllables == 5 and message not in poem:
+        if syllables == 5 and message not in poem:
             which = random.choice([0, 2])
             poem[which] = message
-        elif num_syllables == 7:
+        elif syllables == 7:
             poem[1] = message
 
         return poem
 
-    def remove_line(self, num_syllables, message):
-        logger.info('Removing %s syllable line: %s' % (num_syllables, message))
+    def remove(self, syllables, message):
+        logger.info('Removing %s syllable line: %s' % (syllables, message))
 
         db.haiku.remove({
-            'syllables': num_syllables,
+            'syllables': syllables,
             'message': message
         })
 
-        return '%(nick)s, ' + random.choice(self.delete_acks)
+        return random.choice(self.delete_acks)
 
-    def make_poem(self):
-        fives_qs = db.haiku.find({'syllables': 5})
-        sevens_qs = db.haiku.find({'syllables': 7})
+    def make_poem(self, about=None):
+        poem = [
+            self.get_random_line(5, about),
+            self.get_random_line(7, about),
+            self.get_random_line(5, about)
+        ]
 
-        randfives = fives_qs.count() - 1
-        randsevens = sevens_qs.count() - 1
-
-        if randfives < 0 or randsevens < 0:
+        if not all(poem):
             return None
 
-        int1 = random.randint(0, randfives)
-        int2 = random.randint(0, randsevens)
-        int3 = random.randint(0, randfives)
-
-        return map(str, [
-            fives_qs.sort('random')[int1]['message'],
-            sevens_qs.sort('random')[int2]['message'],
-            fives_qs.sort('random')[int3]['message'],
-        ])
-
-    def parse_message(self, message, is_public):
-        parts = re.findall(self.command_pat % self.bot.nick, message)
-
-        if not parts or (is_public and not parts[0][0]):
-            raise Exception("Don't do anything")
-
-        # command, syllables, line
-        parts = parts[0]
-        return parts[-3] or parts[-4], parts[-2], parts[-1]
-
-    def dispatch(self, nick, channel, message, is_public):
-        last_chan = channel if is_public else nick
-
-        try:
-            command, syllables, msg_parts = self.parse_message(message, is_public)
-        except:
-            # This only happens when we don't match anything
-            return None
-
-        if not command:
-            resp = self.make_poem()
-        elif command == 'tweet_last':
-            resp = self.tweet_last(last_chan)
-        else:
-            num_syllables = self.syllables[syllables]  # We only match fives/sevens
-            call_me_maybe = getattr(self, self.command_map[command])
-            resp = call_me_maybe(num_syllables, msg_parts)
-
-        # Store last poem if it's a poem
-        if isinstance(resp, list):
-            self.last[last_chan] = resp
-
-        return resp
+        return poem
