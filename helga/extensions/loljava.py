@@ -1,10 +1,14 @@
 import random
 import re
 
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import ContextualExtension
 
 
-class LOLJavaExtension(HelgaExtension):
+class LOLJavaExtension(ContextualExtension):
+
+    context = r'(lol)?java(?!script)'
+    allow_many = False
+    response_fmt = '%(response)s'
 
     descriptors = (
         'Abstract',
@@ -135,12 +139,12 @@ class LOLJavaExtension(HelgaExtension):
     )
 
     def make_bullshit_java_thing(self):
+        # This method isn't really needed, but I like the name
         return (random.choice(self.descriptors) +
                 random.choice(self.frameworks) +
                 random.choice(self.things + self.oop) +
                 random.choice(self.actions) +
                 random.choice(self.oop))
 
-    def dispatch(self, nick, channel, message, is_public):
-        if re.match(r'(^|.+)(lol)?java($|[^s]+)', message, re.I):
-            return self.make_bullshit_java_thing()
+    def transform_match(self, *args):
+        return self.make_bullshit_java_thing()
