@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 import random
 import re
 
@@ -133,7 +134,8 @@ class OneLinerExtension(HelgaExtension):
             'http://i.imgur.com/hYdy4.gif',
             'http://i.imgur.com/pqmfX.gif',
             'http://i.imgur.com/9WbAL.gif',
-            'http://i.imgur.com/KdldmZk.gif'
+            'http://i.imgur.com/KdldmZk.gif',
+            u'(⌐■_■)',
         ],
 
         r'(mind blown|blew my mind)': [
@@ -164,7 +166,20 @@ class OneLinerExtension(HelgaExtension):
 
         r'^(iknorite|right)\?$': [
             'http://i.imgur.com/RvquHs0.gif',
-        ]
+        ],
+
+        # Various modern unicode emoticons
+        r'(why|y) (u|you) no':                  [u'ლ(ಠ益ಠლ)'],
+        r'i (don\'?t know|dunno),? lol':        [u'¯\(°_o)/¯'],
+        r'look.?of.?disapproval(\.jpg|\.gif)?': [u'ಠ_ಠ'],
+        r'i disapprove':                        [u'ಠ_ಠ'],
+        r'^not sure if \w+':                    [u'≖_≖'],
+        r'flip (a|the|some) tables?':           [u'(╯°□°）╯︵ ┻━┻', u'(ノಠ益ಠ)ノ彡┻━┻'],
+        r'(gonna|going to) (make \w+ )?cry':    [u'(ಥ﹏ಥ)'],
+        r'(bro ?fist|fist ?bump)':              [u'( _)=mm=(^_^ )'],
+        r'hi(gh)?[ -]?five':                    ['\o', u'( ‘-’)人(ﾟ_ﾟ )'],
+        r'(^|[^\])o/$':                         ['\o'],
+        r'^\o$':                                ['o/'],
     }
 
     def decompose_response(self, response):
