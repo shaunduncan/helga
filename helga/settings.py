@@ -36,6 +36,7 @@ EXTENSIONS = (
     'helga.extensions.stfu',
     'helga.extensions.dubstep',
     'helga.extensions.icanhazascii',
+    'helga.extensions.overheard',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
