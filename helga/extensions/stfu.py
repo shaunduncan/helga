@@ -1,13 +1,15 @@
 import re
 import random
 
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import CommandExtension
 
 
-class STFUExtension(HelgaExtension):
+class STFUExtension(CommandExtension):
     """
     Toggles helga's level of vocal-ness on any given channel
     """
+
+    usage = '[BOTNICK] (stfu|speak)'
 
     silence_acks = (
         'silence is golden',
@@ -30,38 +32,33 @@ class STFUExtension(HelgaExtension):
         'no can do, i love the sound of my own voice',
     )
 
-    STFU = 'stfu'
-    SPEAK = 'speak'
-
     def __init__(self, *args, **kwargs):
-        # A list of where helga is silent
+        self.silenced = set()
         super(STFUExtension, self).__init__(*args, **kwargs)
-        self._silenced = set()
 
-    def get_command(self, message, nick_required=True):
-        matches = re.findall('^(%s )?([\w]+)$' % self.bot.nick, message)
-
-        if matches:
-            nick, command = matches[0]
-
-            if not nick and nick_required:
-                return None
-
-            return command
+    def dispatch(self, nick, channel, message, is_public):
+        pass
 
     def pre_dispatch(self, nick, channel, message, is_public):
-        command = self.get_command(message.lower(), nick_required=not is_public)
+        resp = super(STFUExtension, self).dispatch(nick, channel, message, is_public)
+
+        if not isinstance(resp, tuple):
+            return resp, message if not self.is_silenced(channel) else ''
+
+        return resp
+
+    def handle_message(self, opts, nick, channel, message, is_public):
+        was_silenced = self.is_silenced(channel)
 
         if is_public:
-            was_silenced = self.is_silenced(channel)
-
-            if command == self.STFU:
+            if opts['stfu']:
                 self.silence(channel)
                 return random.choice(self.silence_acks) if not was_silenced else None, ''
-            elif command == self.SPEAK:
+
+            elif opts['speak']:
                 self.unsilence(channel)
                 return random.choice(self.unsilence_acks) if was_silenced else None, ''
-        elif command in (self.STFU, self.SPEAK):
+        else:
             # Be an asshole
             return random.choice(self.snarks), ''
 
@@ -69,10 +66,10 @@ class STFUExtension(HelgaExtension):
             return None, ''
 
     def is_silenced(self, channel):
-        return channel in self._silenced
+        return channel in self.silenced
 
     def silence(self, channel):
-        self._silenced.add(channel)
+        self.silenced.add(channel)
 
     def unsilence(self, channel):
-        self._silenced.discard(channel)
+        self.silenced.discard(channel)
