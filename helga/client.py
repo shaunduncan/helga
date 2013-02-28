@@ -38,6 +38,9 @@ class HelgaClient(irc.IRCClient):
         for channel in settings.CHANNELS:
             self.join(channel)
 
+        # Hook FTW
+        helga.on('signon')
+
     def joined(self, channel):
         logger.info('Joined %s' % channel)
         helga.join_channel(channel)
