@@ -7,11 +7,10 @@ from helga.extensions.base import HelgaExtension
 class ICanHazAsciiExtension(HelgaExtension):
 
     FLOOD_RATE = 30
+    last_used = {}
 
     omg_ascii = {
-        r'(poniez|pony|brony)': {
-            'last_used': {},  # dict of channel/last use time (FLOOD CONTROL)
-            'ascii': """
+        r'((p|br)oniez|pony|brony)': """
             .,,.
          ,;;*;;;;,
         .-'``;-');;.
@@ -29,12 +28,9 @@ class ICanHazAsciiExtension(HelgaExtension):
       ,;*;;;;\\/   |.        /   /` | ';;;*;
        ;;;;;;/    |/       /   /__/   ';;;
        '*;;*/     |       /    |      ;*;
-            `\"\"\"\"`        `\"\"\"\"`     ;'"""
-        },
+            `\"\"\"\"`        `\"\"\"\"`     ;'""",
 
-        r'(puppiez|doggiez)': {
-            'last_used': {},
-            'ascii': """
+        r'(pupp|dogg)iez': """
                               _
                            ,:'/   _..._
                           // ( `\"\"-.._.'
@@ -55,12 +51,9 @@ class ICanHazAsciiExtension(HelgaExtension):
       '-..-\\       _.;.._  |   |.;-.
             \\    <`.._  )) |  .;-. ))
             (__.  `  ))-'  \\_    ))'
-                `'--\"`       `\"\"\"`"""
-        },
+                `'--\"`       `\"\"\"`""",
 
-        r'dolphinz': {
-            'last_used': {},
-            'ascii': """
+        r'dolphinz': """
                                        __     HAI!
                                    _.-~  )
                         _..--~~~~,'   ,-/     _
@@ -74,12 +67,9 @@ class ICanHazAsciiExtension(HelgaExtension):
             . . . . .          `-.:
            . . . ./  - .          )
           .  . . |  _____..---.._/
-    ~---~~~~----~~~~             ~~~~~~~~~~~~~~~"""
-        },
+    ~---~~~~----~~~~             ~~~~~~~~~~~~~~~""",
 
-        r'(kittiez|kitt[ie]nz)': {
-            'last_used': {},
-            'ascii': """
+        r'kitt(iez|[ie]nz)': """
        _             _
       | '-.       .-' |
        \\'-.'-\"\"\"-'.-'/    _
@@ -97,21 +87,20 @@ class ICanHazAsciiExtension(HelgaExtension):
       \\ |:.|     |.:| /
       /'|  |\\   /|  |`\\
      (,,/:.|.-'-.|.:\\,,)
-       (,,,/     \\,,,)"""
-        }
+       (,,,/     \\,,,)""",
     }
 
-    def is_flooded(self, channel, last_used):
-        return channel in last_used and (time.time() - last_used[channel]) < self.FLOOD_RATE
+    def is_flooded(self, channel):
+        return channel in self.last_used and (time.time() - self.last_used[channel]) < self.FLOOD_RATE
 
     def dispatch(self, nick, channel, message, is_public):
-        for pat, data in self.omg_ascii.iteritems():
+        for pat, ascii in self.omg_ascii.iteritems():
             if not re.match(pat, message, re.I):
                 continue
 
             # Flood control
-            if self.is_flooded(channel, data['last_used']):
+            if self.is_flooded(channel):
                 return
 
-            data['last_used'][channel] = time.time()
-            return data['ascii']
+            self.last_used[channel] = time.time()
+            return ascii
