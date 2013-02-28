@@ -35,6 +35,14 @@ class HelgaExtension(object):
     def __init__(self, bot):
         self.bot = bot
 
+    def on(self, event, *args, **kwargs):
+        """
+        Event delegation receiver
+
+        perhaps should be named HelgaEventDelegationReceiverFactory?!?
+        """
+        pass
+
     def pre_dispatch(self, nick, channel, message, is_public):
         """
         Any filter-type action that should happen before dispatch is called

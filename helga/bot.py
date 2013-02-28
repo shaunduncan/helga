@@ -67,6 +67,9 @@ class Helga(object):
 
         return message % resp_fmt
 
+    def on(self, event, *args, **kwargs):
+        self.extensions.on(event, *args, **kwargs)
+
     def handle_message(self, nick, channel, message, is_public):
         # Some things should go first
         current_nick = self.nick

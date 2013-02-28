@@ -82,6 +82,11 @@ class ExtensionRegistry(object):
 
         return self._iter_call_cls(*args, cls=CommandExtension, invert=True)
 
+    def on(self, event, *args, **kwargs):
+        # Eww, just eww
+        for ext in self.ext:
+            ext.on(event, *args, **kwargs)
+
     def pre_dispatch(self, nick, channel, message, is_public):
         return self._iter_call('pre_dispatch', nick, channel, message, is_public)
 
