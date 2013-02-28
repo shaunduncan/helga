@@ -103,4 +103,4 @@ class HelgaClient(irc.IRCClient):
 
     def msg(self, channel, message):
         logger.debug('[-->] %s - %s' % (channel, message))
-        irc.IRCClient.msg(self, channel, str(message))
+        irc.IRCClient.msg(self, channel, message.encode('UTF-8'))
