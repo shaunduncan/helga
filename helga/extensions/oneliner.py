@@ -112,7 +112,18 @@ class OneLinerExtension(HelgaExtension):
                           imgur('pqmfX'),
                           imgur('9WbAL'),
                           imgur('KdldmZk'),
-                          u'(⌐■_■)'),
+                          u'(⌐■_■)',
+
+                          # Multiline
+                          (u'( •_•)',
+                           u'( •_•)>⌐■-■',
+                           u'(⌐■_■)',
+                           'deal with it'),
+
+                          (u'. B     :-|',
+                           u'.   B   :-|',
+                           u'.     B :-|',
+                           u'.       B-| deal with it')),
 
         r'(mind blown|blew my mind)': (imgur('U6kCXUp'),
                                        imgur('1HMveGj')),
@@ -176,11 +187,16 @@ class OneLinerExtension(HelgaExtension):
         Decomposes a response into a 'send as' nick and the
         reponse itself
         """
-        parts = response.split(':::')
-        if len(parts) == 2:
-            return parts[0], parts[1]
+        try:
+            parts = response.split(':::')
+        except AttributeError:
+            # For multiline responses. NOTE: this will probably break if they should nick change
+            return self.decompose_response('\n'.join(response))
         else:
-            return None, parts[0]
+            if len(parts) == 2:
+                return parts[0], parts[1]
+            else:
+                return None, parts[0]
 
     def dispatch(self, nick, channel, message, is_public):
         for pat, data in self.responses.iteritems():
