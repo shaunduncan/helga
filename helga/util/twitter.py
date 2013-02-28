@@ -29,7 +29,7 @@ def message_max(message, max):
 
 
 def message_140(message):
-    return message_max(140)
+    return message_max(message, 140)
 
 
 def get_api(config):
