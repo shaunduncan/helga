@@ -12,6 +12,7 @@ class Helga(object):
     channels = set()
     topics = {}
     client = None
+    last_response = {}
 
     def __init__(self, load=True):
         self.operators = set(getattr(settings, 'OPERATORS', []))
@@ -80,7 +81,9 @@ class Helga(object):
             if isinstance(response, list):
                 response = '\n'.join(response)
 
-            self.client.msg(resp_channel, self.format_response(nick, channel, response))
+            response = self.format_response(nick, channel, response)
+            self.client.msg(resp_channel, response)
+            self.last_response[resp_channel] = response
 
         if getattr(settings, 'ALLOW_NICK_CHANGE', False):
             self.client.setNick(current_nick)

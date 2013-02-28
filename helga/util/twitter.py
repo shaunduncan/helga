@@ -20,14 +20,16 @@ def is_properly_configured(config):
     return all(config.values())
 
 
-def message_140(message):
-    max = 140
-
+def message_max(message, max):
     if len(message) > max:
         logger.warning('Message exceeds %d characters. Truncating' % max)
         message = message[:max]
 
     return message
+
+
+def message_140(message):
+    return message_max(140)
 
 
 def get_api(config):

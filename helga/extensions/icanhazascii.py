@@ -94,6 +94,7 @@ class ICanHazAsciiExtension(HelgaExtension):
         return channel in self.last_used and (time.time() - self.last_used[channel]) < self.FLOOD_RATE
 
     def dispatch(self, nick, channel, message, is_public):
+        # TODO: channel = channel if is_public else nick
         for pat, ascii in self.omg_ascii.iteritems():
             if not re.match(pat, message, re.I):
                 continue
