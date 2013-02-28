@@ -54,7 +54,7 @@ class OneLinerExtension(HelgaExtension):
 
         r'random': "trollfredo:::there is no such thing as random",
 
-        r'\mmm/': 'rock on, %(nick)s',
+        r'\\m/': 'rock on, %(nick)s',
 
         r'((beetle|betel)(geuse|juice)\s?){3}': "beetlejuice:::i'm the ghost with the most",
 
