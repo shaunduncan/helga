@@ -73,10 +73,12 @@ class ExtensionRegistry(object):
     def _iter_call(self, fn_attr, nick, channel, message, is_public):
         # This is kind of crappy, but commands should go first
         args = [fn_attr, nick, channel, message, is_public]
-        cmd_resp = self._iter_call_cls(*args, cls=CommandExtension)
+        resp, message = self._iter_call_cls(*args, cls=CommandExtension)
 
-        if cmd_resp[0]:
-            return cmd_resp
+        if resp:
+            return resp, message
+        else:
+            args[3] = message
 
         return self._iter_call_cls(*args, cls=CommandExtension, invert=True)
 
