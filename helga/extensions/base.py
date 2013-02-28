@@ -133,6 +133,9 @@ class ContextualExtension(HelgaExtension):
         for match in re.findall(self.context, message, re.I):
             found.append(self.transform_match(match))
 
+        # filter Nones
+        found = filter(lambda x: x is not None, found)
+
         if found:
             found = found if self.allow_many else [found[0]]
 

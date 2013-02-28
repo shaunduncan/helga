@@ -5,70 +5,78 @@ import time
 from datetime import datetime
 
 from helga.db import db
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import (ContextualExtension,
+                                   CommandExtension)
 from helga.log import setup_logger
 
 
 logger = setup_logger(__name__)
 
 
-class FactExtension(HelgaExtension):
+class FactExtension(CommandExtension, ContextualExtension):
 
-    patterns = {
-        'add': r'^([\w]+) (is|are) (<reply> )?([\w]+)$',
-        'remove': r'^(%s )?forget ([\w]+)$',
-        'get': r'^([\w]+)\?$',
-    }
+    # contextual
+    context = r'^([\w]+)\?$'
+    allow_many = False
+    response_fmt = '%(response)s'
 
-    def add_fact(self, message, nick='nobody'):
-        matches = re.findall(self.patterns['add'], message, re.I)
+    # commands
+    usage = '([BOTNICK] forget <thing> | <thing> (is|are) [REPLY] (INPUT ...))'
 
-        if not matches:
-            return
+    def should_handle_message(self, opts, is_public):
+        # If we match 'forget', see what super() says about it
+        if opts and opts['forget']:
+            return super(FactExtension, self).should_handle_message(opts, is_public)
 
-        term, isare, is_reply, fact = matches[0]
-        term = term.lower()
+        # Otherwise, if we have something, we should handle it
+        elif opts:
+            return True
 
-        # The whole shebang
-        if not is_reply:
-            fact = message
+        # Nope
+        else:
+            return False
 
-        logger.info('Adding new fact %s' % term)
+    def dispatch(self, nick, channel, message, is_public):
+        # Try to contextualize
+        response = self.contextualize(message)
 
-        if not db.facts.find({'term': term}).count():
-            db.facts.insert({
-                'term': term.lower(),
-                'fact': fact,
-                'set_by': nick,
-                'set_date': time.time()
-            })
-            db.facts.ensure_index('term')
+        if response:
+            return response
 
-    def remove_fact(self, message, is_public):
-        # Of the form: helga forget foo
-        matches = re.findall(self.patterns['remove'] % self.bot.nick, message, re.I)
+        # Try to handle commands
+        opts = self.parse_command(message)
 
-        if not matches or (is_public and matches[0][0] != self.bot.nick):
-            return
+        if not self.should_handle_message(opts, is_public):
+            return None
 
-        botnick, term = matches[0]
+        return self.handle_message(opts, nick, channel, message, is_public)
 
-        logger.info('Removing fact %s' % term)
+    def handle_message(self, opts, nick, channel, message, is_public):
+        if opts['forget']:
+            return self.remove_fact(opts['<thing>'].lower())
+        elif opts['is'] or opts['are']:
+            is_reply = opts['REPLY'] and opts['REPLY'] == '<reply>'
 
-        db.facts.remove({'term': term})
+            # We have to add matched reply thing to input because of how it matches
+            if opts['REPLY'] and not is_reply:
+                opts['INPUT'].insert(0, opts['REPLY'])
 
-        return random.choice(self.delete_acks)
+            term = opts['<thing>'].lower()
 
-    def show_fact(self, message):
-        matches = re.findall(self.patterns['get'], message, re.I)
+            if is_reply:
+                fact = ' '.join(opts['INPUT'])
+            else:
+                # Everything
+                fact = message
 
-        if not matches:
-            return
+            return self.add_fact(term, fact, nick)
 
-        term = matches[0].lower()
+    def transform_match(self, match):
+        return self.show_fact(match.lower())
 
-        record = db.facts.find_one({'term': term})
+    def show_fact(self, term):
         logger.info('Showing fact %s' % term)
+        record = db.facts.find_one({'term': term})
 
         if record is not None:
             if 'set_date' in record:
@@ -80,10 +88,20 @@ class FactExtension(HelgaExtension):
 
             return '%s (%s%s)' % (record['fact'], record['set_by'], set_on)
 
-    def dispatch(self, nick, channel, message, is_public):
-        # Chain add/remove/show and return the first response
-        return (
-            self.add_fact(message, nick) or
-            self.remove_fact(message, is_public) or
-            self.show_fact(message)
-        )
+    def add_fact(self, term, fact, nick='nobody'):
+        logger.info('Adding new fact %s' % term)
+
+        if not db.facts.find({'term': term}).count():
+            db.facts.insert({
+                'term': term.lower(),
+                'fact': fact,
+                'set_by': nick,
+                'set_date': time.time()
+            })
+            db.facts.ensure_index('term')
+
+    def remove_fact(self, term):
+        logger.info('Removing fact %s' % term)
+        db.facts.remove({'term': term})
+
+        return random.choice(self.delete_acks)
