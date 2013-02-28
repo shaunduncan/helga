@@ -1,5 +1,6 @@
 from helga import settings
-from helga.extensions.base import HelgaExtension
+from helga.extensions.base import (HelgaExtension,
+                                   CommandExtension)
 from helga.log import setup_logger
 
 
@@ -45,8 +46,16 @@ class ExtensionRegistry(object):
 
             self.load_module_members(module)
 
-    def _iter_call(self, fn_attr, nick, channel, message, is_public):
+    def _iter_call_cls(self, fn_attr, nick, channel, message, is_public, cls=None, invert=False):
         for ext in self.ext:
+            if invert:
+                should_skip = cls and isinstance(ext, cls)
+            else:
+                should_skip = cls and not isinstance(ext, cls)
+
+            if should_skip:
+                continue
+
             try:
                 resp = getattr(ext, fn_attr)(nick, channel, message, is_public)
             except:
@@ -60,6 +69,16 @@ class ExtensionRegistry(object):
                 return resp, message
 
         return None, message
+
+    def _iter_call(self, fn_attr, nick, channel, message, is_public):
+        # This is kind of crappy, but commands should go first
+        args = [fn_attr, nick, channel, message, is_public]
+        cmd_resp = self._iter_call_cls(*args, cls=CommandExtension)
+
+        if cmd_resp[0]:
+            return cmd_resp
+
+        return self._iter_call_cls(*args, cls=CommandExtension, invert=True)
 
     def pre_dispatch(self, nick, channel, message, is_public):
         return self._iter_call('pre_dispatch', nick, channel, message, is_public)
