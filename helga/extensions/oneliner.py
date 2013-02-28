@@ -178,8 +178,8 @@ class OneLinerExtension(HelgaExtension):
         r'hi(gh)?[ -]?five':                        ('\o',
                                                      u'( ‘-’)人(ﾟ_ﾟ )'),
 
-        r'(^|[^\\])o/$':                             '\o',
-        r'^\o$':                                    'o/'
+        r'(^|[^\\])o/$':                            '\o',
+        r'^\\o$':                                   'o/'
     }
 
     def decompose_response(self, response):
