@@ -80,7 +80,7 @@ class Helga(object):
             if isinstance(response, list):
                 response = '\n'.join(response)
 
-            self.client.msg(resp_channel, self.format_response(nick, channel,response))
+            self.client.msg(resp_channel, self.format_response(nick, channel, response))
 
         if getattr(settings, 'ALLOW_NICK_CHANGE', False):
             self.client.setNick(current_nick)
