@@ -63,7 +63,6 @@ class OneLinerExtension(HelgaExtension):
 
         # lol, gifs
         r'(bravo|well done)': (imgur('wSvsV'),
-                               imgur('4f65DaO'),
                                imgur('HUKCsCv'),
                                imgur('FwqHZ6Z')),
 
