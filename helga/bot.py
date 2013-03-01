@@ -58,6 +58,7 @@ class Helga(object):
             del self.users[old]
 
     def format_response(self, nick, channel, message):
+        logger.info('RESP: %s' % (message,))
         resp_fmt = {
             'botnick': self.nick,
             'nick': nick,
