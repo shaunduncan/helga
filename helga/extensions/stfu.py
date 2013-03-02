@@ -1,4 +1,3 @@
-import re
 import random
 
 from helga.extensions.base import CommandExtension
@@ -8,6 +7,7 @@ class STFUExtension(CommandExtension):
     """
     Toggles helga's level of vocal-ness on any given channel
     """
+    NAME = 'stfu'
 
     usage = '[BOTNICK] (stfu|speak)'
 
@@ -36,40 +36,35 @@ class STFUExtension(CommandExtension):
         self.silenced = set()
         super(STFUExtension, self).__init__(*args, **kwargs)
 
-    def dispatch(self, nick, channel, message, is_public):
-        pass
+    def preprocess(self, message):
+        # A hack, we hook into how commands work
+        super(STFUExtension, self).process(message)
 
-    def pre_dispatch(self, nick, channel, message, is_public):
-        resp = super(STFUExtension, self).dispatch(nick, channel, message, is_public)
+        if self.is_silenced(message.on_channel):
+            message.message = ''
 
-        if not isinstance(resp, tuple):
-            return resp, message if not self.is_silenced(channel) else ''
-
-        return resp
-
-    def handle_message(self, opts, nick, channel, message, is_public):
-        was_silenced = self.is_silenced(channel)
-
-        if is_public:
+    def handle_message(self, opts, message):
+        if message.is_public:
             if opts['stfu']:
-                self.silence(channel)
-                return random.choice(self.silence_acks) if not was_silenced else None, ''
+                message.response = self.silence(message.on_channel)
 
             elif opts['speak']:
-                self.unsilence(channel)
-                return random.choice(self.unsilence_acks) if was_silenced else None, ''
+                message.response = self.unsilence(message.on_channel)
         else:
             # Be an asshole
-            return random.choice(self.snarks), ''
-
-        if self.is_silenced(channel):
-            return None, ''
+            message.response = random.choice(self.snarks)
 
     def is_silenced(self, channel):
         return channel in self.silenced
 
     def silence(self, channel):
+        was_silenced = channel in self.silenced
         self.silenced.add(channel)
+        if not was_silenced:
+            return random.choice(self.silence_acks)
 
     def unsilence(self, channel):
+        was_silenced = channel in self.silenced
         self.silenced.discard(channel)
+        if was_silenced:
+            return random.choice(self.unsilence_acks)
