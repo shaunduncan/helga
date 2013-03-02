@@ -5,6 +5,10 @@ from helga.extensions.base import ContextualExtension
 
 
 class DubstepExtension(ContextualExtension):
+    """
+    Dubstep can be described as a rapid succession of wub wubs, wow wows, and yep yep yep yeps
+    """
+    NAME = 'dubstep'
 
     context = r'dubstep'
     allow_many = False
