@@ -10,7 +10,9 @@ logger = setup_logger(__name__)
 
 class OperatorExtension(CommandExtension):
 
-    usage = '[BOTNICK] oper (join|leave|autojoin|no_autojoin) <channel>'
+    NAME = 'oper'
+
+    usage = '[BOTNICK] oper (autojoin (add|remove) <channel>)'
     nopes = [
         "You're not the boss of me",
         "Whatever I do what want",
@@ -22,23 +24,20 @@ class OperatorExtension(CommandExtension):
     def is_operator(self, nick):
         return nick in self.bot.operators
 
-    def handle_message(self, opts, nick, channel, message, is_public):
-        if not self.is_operator(nick):
+    def handle_message(self, opts, message):
+        if not self.is_operator(message.from_nick):
             return random.choice(self.nopes)
 
-        channel = opts['<channel>']
+        if opts['autojoin']:
+            channel = opts['<channel>']
 
-        if not channel.startswith('#'):
-            channel = '#' + channel
+            if not channel.startswith('#'):
+                channel = '#' + channel
 
-        if opts['join']:
-            return self.join(channel)
-        elif opts['leave']:
-            return self.leave(channel)
-        elif opts['autojoin']:
-            return self.autojoin(channel)
-        elif opts['no_autojoin']:
-            return self.no_autojoin(channel)
+            if opts['add']:
+                message.response = self.add_autojoin(channel)
+            elif opts['remove']:
+                message.response = self.remove_autojoin(channel)
 
     def on(self, event, *args, **kwargs):
         if event == 'signon':
@@ -49,7 +48,7 @@ class OperatorExtension(CommandExtension):
             # Damn mongo unicode messin with my twisted
             self.bot.client.join(str(channel['channel']))
 
-    def autojoin(self, channel):
+    def add_autojoin(self, channel):
         """
         Stores a channel as an autojoin for later
         """
@@ -62,20 +61,10 @@ class OperatorExtension(CommandExtension):
         else:
             return "I'm already doing that"
 
-    def no_autojoin(self, channel):
+    def remove_autojoin(self, channel):
         """
         Removes a channel as an autojoin
         """
         logger.info('Removing Autojoin %s' % channel)
         db.autojoin.remove({'channel': channel})
-        return self.random_ack()
-
-    def join(self, channel):
-        logger.info('Joining %s' % channel)
-        self.bot.client.join(channel)
-        return self.random_ack()
-
-    def leave(self, channel):
-        logger.info('Leaving %s' % channel)
-        self.bot.client.leave(channel)
         return self.random_ack()
