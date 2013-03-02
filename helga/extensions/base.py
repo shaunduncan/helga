@@ -7,7 +7,11 @@ from docopt import docopt, DocoptExit
 class HelgaExtension(object):
     """
     Defines a dispatchable API for extensions and extra functionality
+
+    Note: all extensions should provide class level attribute NAME that
+    is a short keyword to identify it. If you don't, you'll break everything
     """
+
     acks = (
         'roger',
         '10-4',
