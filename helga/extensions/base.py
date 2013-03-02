@@ -87,11 +87,12 @@ class CommandExtension(HelgaExtension):
             return None
 
     def should_handle_message(self, opts, message):
-        botnick = opts.get('BOTNICK', '')
-
         if not opts:
             return False
-        elif botnick and botnick == self.bot.nick:
+
+        botnick = opts.get('BOTNICK', '')
+
+        if botnick and botnick == self.bot.nick:
             return True
         elif not message.is_public and not botnick:
             return True
