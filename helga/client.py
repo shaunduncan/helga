@@ -11,6 +11,40 @@ logger = setup_logger(__name__)
 helga = Helga()
 
 
+class Message(object):
+    """
+    Just creates a dict of things that is passed around to helga's internals
+    """
+
+    def __init__(self, from_nick, channel, message, is_public):
+        self.from_nick = from_nick
+        self.on_channel = channel
+        self.resp_channel = channel if is_public else from_nick
+        self.is_public = is_public
+        self.message = message
+        self.response = []  # support multi-line responses
+
+    def format_response(self, **kwargs):
+        response = self.response
+        resp_fmt = {
+            'nick': self.from_user,
+            'channel': self.on_channel,
+            'norm_channel': self.on_channel.replace('#', ''),
+        }
+
+        # plus any kwargs
+        resp_fmt.extend(kwargs)
+
+        if isinstance(response, list):
+            response = '\n'.join(response)
+
+        return response % resp_fmt
+
+    @property
+    def has_response(self):
+        return True if self.response else False
+
+
 class HelgaClient(irc.IRCClient):
 
     nickname = getattr(settings, 'DEFAULT_NICK', 'helga')
@@ -66,7 +100,8 @@ class HelgaClient(irc.IRCClient):
 
         logger.debug('[<--] %s/%s - %s' % (channel, user, message))
 
-        helga.handle_message(user, channel, message, self.is_public_channel(channel))
+        msg = Message(self.nickname, user, channel, message, self.is_public_channel(channel))
+        helga.process(msg)
 
     def user_renamed(self, oldnick, newnick):
         logger.debug('User %s is now known as %s' % (oldnick, newnick))

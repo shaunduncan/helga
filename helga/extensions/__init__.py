@@ -13,16 +13,12 @@ class ExtensionRegistry(object):
 
     def __init__(self, bot, load=True):
         self.bot = bot
-        self.extensions = set()
+        self.extensions = {'commands': set(), 'contexts': set()}
         self.extension_names = set()
         self.disabled_extensions = {}  # Per-channel blacklist
 
         if load:
             self.load()
-
-        # Core things
-        self.control = ControlExtension(self, bot)
-        self.help = HelpExtension(self, bot)
 
     def _make_import_args(self, path):
         return path, {}, {}, [path.split('.')[-1]]
@@ -38,7 +34,7 @@ class ExtensionRegistry(object):
                 continue
 
             try:
-                if issubclass(cls, HelgaExtension) and cls.__name__ not in self.extension_names:
+                if issubclass(cls, HelgaExtension) and cls.NAME not in self.extension_names:
                     self.extensions.add(cls(bot=self.bot))
                     self.extension_names.add(cls.__name__)
             except TypeError:
@@ -56,98 +52,74 @@ class ExtensionRegistry(object):
 
             self.load_module_members(module)
 
-    def _iter_call(self, fn_attr, nick, channel, message, is_public, ignore=None, invert=False):
+    def _is_comamand(self, ext):
         """
-        Iterates a call over all loaded extensions
+        Checks if an extension is a command or not
         """
-        for ext in self.extensions:
-            try:
-                if (invert and isinstance(ext, ignore)) or (not invert and not isinstance(ext, ignore)):
+        try:
+            return isinstance(ext, CommandExtension)
+        except TypeError:
+            return False
+
+    def _call_extension_method(self, fn, message):
+        """
+        Calls a function name for all extensions
+        """
+        # TODO: process core first
+
+        # Nested for your pleasure
+        def call_fn(self, fn, message, commands=True):
+            for ext in self.extensions:
+                if (commands and not self._is_command(ext)) or (not commands and self._is_command(ext)):
                     continue
-            except TypeError:
-                pass
 
-            if self.is_disabled_extension(ext, channel):
-                logger.info('Skipping disabled extension %s on %s' % (ext.__class__.__name__, channel))
+                if self.is_disabled_extension(ext, message.channel):
+                    logger.info('Skipping disabled extension %s on %s' % (ext.NAME, message.channel))
+                    continue
 
-            try:
-                resp = getattr(ext, fn_attr)(nick, channel, message, is_public)
-            except:
-                logger.exception('Unexpected failure. Skipping extension')
-                continue
+                getattr(ext, fn)(message)
 
-            if isinstance(resp, tuple):
-                resp, message = resp
+                if message.has_response:
+                    return
 
-            if resp:
-                return resp, message
-
-        return None, message
-
-    def dispatch_extensions(self, dispatch_type, nick, channel, message, is_public):
         # This is kind of crappy, but commands should go first
-        args = [dispatch_type, nick, channel, message, is_public]
-        resp, message = self._iter_call(*args, ignore=CommandExtension)
+        call_fn(fn, message, commands=True)
 
-        if resp:
-            return resp, message
-        else:
-            # We have to update the message. It might have changed
-            args[3] = message
+        # The other ones
+        if not message.has_response:
+            call_fn(fn, message, commands=False)
 
-        return self._iter_call(*args, ignore=CommandExtension, invert=True)
-
-    def dispatch_core(self, dispatch_type, nick, channel, message, is_public):
+    def preprocess(self, message):
         """
-        Calls a given method name of the core extensions
+        Used to do any message preprocessing. i.e. transforming things
         """
-        # Handle the CTL interface
-        resp = getattr(self.control, dispatch_type)(nick, channel, message, is_public)
+        self._call_extension_method('preprocess', message)
 
-        # Fix this garbage
-        if dispatch_type == 'pre_dispatch':
-            resp, message = resp
-
-        if resp:
-            return resp, message
-
-        # Handle the HELP interface
-        return getattr(self.help, dispatch_type)(nick, channel, message, is_public)
+    def process(self, message):
+        self._call_extension_method('process', message)
 
     def on(self, event, *args, **kwargs):
         """
         Generalize event delegator. Sends event to all loaded extensions
         """
-        self.control.on(event, *args, **kwargs)
-        self.help.on(event, *args, **kwargs)
-
+        # TODO: Hook events into core extensions
         for ext in self.extensions:
             ext.on(event, *args, **kwargs)
 
-    def dispatch_type(self, dispatch_type, nick, channel, message, is_public):
-        """
-        Sends a "dispatch" like action to each extension
-        """
-        return self.dispatch_extensions(dispatch_type, nick, channel, message, is_public)
-
-    def pre_dispatch(self, nick, channel, message, is_public):
-        return self.dispatch_type('pre_dispatch', nick, channel, message, is_public)
-
-    def dispatch(self, nick, channel, message, is_public):
-        return self.dispatch_type('dispatch', nick, channel, message, is_public)
-
-    def is_disabled_extension(self, name_or_cls, channel):
+    def is_disabled(self, name, channel):
         """
         Returns True or False if extension is disabled on the given channel
         """
-        if isinstance(name_or_cls, type):
-            name = name_or_cls.__class__.__name__
-        else:
-            name = name_or_cls
+        # If it's an extension class
+        if isinstance(name, type):
+            name = name.NAME
 
         return name in self.disabled_extensions.get(channel, set())
 
-    def disable_extension(self, name, channel):
+    def is_enabled(self, name, channel):
+        return not self.is_disabled(name, channel)
+
+    def disable(self, name, channel):
         """
         Disables the use of a named extension on a given channel
         """
@@ -160,7 +132,7 @@ class ExtensionRegistry(object):
         logger.info('Disabling %s on %s' % (name, channel))
         self.disabled_extensions[channel].add(name)
 
-    def enabled_extensions(self, channel):
+    def get_enabled(self, channel):
         """
         Returns a set of extensions enabled on this channel
         """
