@@ -35,9 +35,11 @@ class ExtensionRegistry(object):
 
             try:
                 if issubclass(cls, HelgaExtension) and cls.NAME not in self.extension_names:
-                    self.extensions.add(cls(bot=self.bot))
+                    category = 'commands' if self._is_command(cls) else 'contexts'
+                    self.extensions[category].add(cls(bot=self.bot))
                     self.extension_names.add(cls.NAME)
-            except TypeError:
+            except (TypeError, AttributeError):
+                # Either it's not a class, or it doesn't have ``NAME``
                 continue
 
     def load(self):
@@ -52,7 +54,7 @@ class ExtensionRegistry(object):
 
             self.load_module_members(module)
 
-    def _is_comamand(self, ext):
+    def _is_command(self, ext):
         """
         Checks if an extension is a command or not
         """
@@ -68,12 +70,9 @@ class ExtensionRegistry(object):
         # TODO: process core first
 
         # Nested for your pleasure
-        def call_fn(self, fn, message, commands=True):
-            for ext in self.extensions:
-                if (commands and not self._is_command(ext)) or (not commands and self._is_command(ext)):
-                    continue
-
-                if self.is_disabled_extension(ext, message.channel):
+        def call_fn(fn, message, category):
+            for ext in self.extensions[category]:
+                if self.is_disabled(ext, message.channel):
                     logger.info('Skipping disabled extension %s on %s' % (ext.NAME, message.channel))
                     continue
 
@@ -83,11 +82,11 @@ class ExtensionRegistry(object):
                     return
 
         # This is kind of crappy, but commands should go first
-        call_fn(fn, message, commands=True)
+        call_fn(fn, message, 'commands')
 
         # The other ones
         if not message.has_response:
-            call_fn(fn, message, commands=False)
+            call_fn(fn, message, 'contexts')
 
     def preprocess(self, message):
         """
@@ -103,15 +102,16 @@ class ExtensionRegistry(object):
         Generalize event delegator. Sends event to all loaded extensions
         """
         # TODO: Hook events into core extensions
-        for ext in self.extensions:
-            ext.on(event, *args, **kwargs)
+        for category, extensions in self.extensions.iteritems():
+            for ext in extensions:
+                ext.on(event, *args, **kwargs)
 
     def is_disabled(self, name, channel):
         """
         Returns True or False if extension is disabled on the given channel
         """
-        # If it's an extension class
-        if isinstance(name, type):
+        # If it's an extension class/object
+        if hasattr(name, 'NAME'):
             name = name.NAME
 
         return name in self.disabled_extensions.get(channel, set())
@@ -131,6 +131,8 @@ class ExtensionRegistry(object):
 
         logger.info('Disabling %s on %s' % (name, channel))
         self.disabled_extensions[channel].add(name)
+
+        return True
 
     def get_enabled(self, channel):
         """

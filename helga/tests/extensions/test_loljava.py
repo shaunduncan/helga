@@ -1,3 +1,5 @@
+import re
+
 from unittest import TestCase
 
 from helga.extensions.loljava import LOLJavaExtension
@@ -12,12 +14,9 @@ class LOLJavaExtensionTestCase(TestCase):
     def test_make_bullshit_java_thing(self):
         assert self.loljava.make_bullshit_java_thing()
 
-    def test_dispatch_returns_message(self):
-        assert self.loljava.dispatch('foo', 'bar', 'java', True)
-        assert self.loljava.dispatch('foo', 'bar', 'lol java', True)
-        assert self.loljava.dispatch('foo', 'bar', 'loljava, crazy', True)
-        assert self.loljava.dispatch('foo', 'bar', '[JAVA]', True)
+    def test_regex_matches_java(self):
+        assert re.match(self.loljava.context, 'java')
+        assert re.match(self.loljava.context, 'loljava')
 
-    def test_dispatch_returns_none(self):
-        assert self.loljava.dispatch('foo', 'bar', 'php', True) is None
-        assert self.loljava.dispatch('foo', 'bar', 'javascript', True) is None
+    def test_regex_ignores_javascript(self):
+        assert not re.match(self.loljava.context, 'javascript')

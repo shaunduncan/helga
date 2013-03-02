@@ -36,7 +36,7 @@ class HaikuExtension(CommandExtension):
         response = None
 
         if opts['tweet']:
-            response = self.tweet(message.on_channel)
+            response = self.tweet(message.channel)
         elif opts['about']:
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
@@ -55,7 +55,7 @@ class HaikuExtension(CommandExtension):
 
         # It's a poem, dude
         if isinstance(response, list):
-            self.last[message.on_channel] = response
+            self.last[message.channel] = response
 
         message.response = response
 

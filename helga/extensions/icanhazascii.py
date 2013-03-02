@@ -100,7 +100,7 @@ class ICanHazAsciiExtension(HelgaExtension):
                 continue
 
             # Flood control
-            if not self.is_flooded(message.on_channel):
-                self.last_used[message.on_channel] = time.time()
+            if not self.is_flooded(message.channel):
+                self.last_used[message.channel] = time.time()
                 message.response = ascii
                 return

@@ -18,35 +18,44 @@ class STFUExtensionTestCase(TestCase):
         self.stfu.unsilence('foo')
         assert not self.stfu.is_silenced('foo')
 
-    def test_pre_dispatch_no_action(self):
-        assert self.stfu.pre_dispatch('foo', 'bar', 'baz', True) == (None, 'baz')
+    def test_preprocess_no_action(self):
+        msg = Mock(message='foo', channel='bar', response=None)
+        self.stfu.preprocess(msg)
+        assert msg.response is None
 
-    def test_pre_dispatch_responds_with_snark(self):
-        ret = self.stfu.pre_dispatch('foo', 'bar', 'stfu', False)
-        assert ret[0] in self.stfu.snarks
+    def test_preprocess_responds_with_snark(self):
+        msg = Mock(message='stfu', channel='bar', is_public=False, response=None)
+        self.stfu.preprocess(msg)
+        assert msg.response in self.stfu.snarks
 
-    def test_pre_dispatch_silences_channel(self):
+    def test_preprocess_silences_channel(self):
         assert not self.stfu.is_silenced('bar')
-        self.stfu.pre_dispatch('foo', 'bar', 'helga stfu', True)
+        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
+        self.stfu.preprocess(msg)
         assert self.stfu.is_silenced('bar')
 
-    def test_pre_dispatch_silences_channel_responds_once(self):
-        ret1 = self.stfu.pre_dispatch('foo', 'bar', 'helga stfu', True)
-        ret2 = self.stfu.pre_dispatch('foo', 'bar', 'helga stfu', True)
+    def test_preprocess_silences_channel_responds_once(self):
+        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
+        self.stfu.preprocess(msg)
+        assert msg.response
 
-        assert ret1[0] in self.stfu.silence_acks
-        assert ret2[0] is None
+        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
+        self.stfu.preprocess(msg)
+        assert not msg.response
 
-    def test_pre_dispatch_unsilences_channel(self):
+    def test_preprocess_unsilences_channel(self):
+        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
         self.stfu.silence('bar')
-        self.stfu.pre_dispatch('foo', 'bar', 'helga speak', True)
+        self.stfu.preprocess(msg)
         assert not self.stfu.is_silenced('bar')
 
-    def test_pre_dispatch_unsilences_channel_responds_once(self):
+    def test_preprocess_unsilences_channel_responds_once(self):
         self.stfu.silence('bar')
 
-        ret1 = self.stfu.pre_dispatch('foo', 'bar', 'helga speak', True)
-        ret2 = self.stfu.pre_dispatch('foo', 'bar', 'helga speak', True)
+        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
+        self.stfu.preprocess(msg)
+        assert msg.response
 
-        assert ret1[0] in self.stfu.unsilence_acks
-        assert ret2[0] is None
+        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
+        self.stfu.preprocess(msg)
+        assert not msg.response

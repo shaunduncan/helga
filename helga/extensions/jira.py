@@ -19,6 +19,10 @@ class JiraExtension(CommandExtension, ContextualExtension):
 
     allow_many = True
 
+    def __init__(self, *args, **kwargs):
+        self.jira_pats = set()
+        super(JiraExtension, self).__init__(*args, **kwargs)
+
     @property
     def context(self):
         return r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
