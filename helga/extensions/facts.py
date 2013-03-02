@@ -15,6 +15,8 @@ logger = setup_logger(__name__)
 
 class FactExtension(CommandExtension, ContextualExtension):
 
+    NAME = 'facts'
+
     # contextual
     context = r'^([\w]+)\?$'
     allow_many = False
@@ -23,10 +25,10 @@ class FactExtension(CommandExtension, ContextualExtension):
     # commands
     usage = '([BOTNICK] forget <thing> | <thing> (is|are) [REPLY] (INPUT ...))'
 
-    def should_handle_message(self, opts, is_public):
+    def should_handle_message(self, opts, message):
         # If we match 'forget', see what super() says about it
         if opts and opts['forget']:
-            return super(FactExtension, self).should_handle_message(opts, is_public)
+            return super(FactExtension, self).should_handle_message(opts, message)
 
         # Otherwise, if we have something, we should handle it
         elif opts:
@@ -36,40 +38,34 @@ class FactExtension(CommandExtension, ContextualExtension):
         else:
             return False
 
-    def dispatch(self, nick, channel, message, is_public):
+    def process(self, message):
         # Try to contextualize
-        response = self.contextualize(message)
+        self.contextualize(message)
 
-        if response:
-            return response
+        if message.has_response:
+            return
 
         # Try to handle commands
         opts = self.parse_command(message)
 
-        if not self.should_handle_message(opts, is_public):
-            return None
+        if self.should_handle_message(opts, message):
+            self.handle_message(opts, message)
 
-        return self.handle_message(opts, nick, channel, message, is_public)
-
-    def handle_message(self, opts, nick, channel, message, is_public):
+    def handle_message(self, opts, message):
         if opts['forget']:
-            return self.remove_fact(opts['<thing>'].lower())
+            message.response = self.remove_fact(opts['<thing>'].lower())
         elif opts['is'] or opts['are']:
-            is_reply = opts['REPLY'] and opts['REPLY'] == '<reply>'
+            is_reply = opts['REPLY'] == '<reply>'
 
             # We have to add matched reply thing to input because of how it matches
-            if opts['REPLY'] and not is_reply:
+            if not is_reply:
                 opts['INPUT'].insert(0, opts['REPLY'])
 
             term = opts['<thing>'].lower()
 
-            if is_reply:
-                fact = ' '.join(opts['INPUT'])
-            else:
-                # Everything
-                fact = message
+            fact = ' '.join(opts['INPUT']) if is_reply else message.message
 
-            return self.add_fact(term, fact, nick)
+            message.response = self.add_fact(term, fact, message.from_nick)
 
     def transform_match(self, match):
         return self.show_fact(match.lower())
