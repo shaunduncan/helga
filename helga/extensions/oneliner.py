@@ -211,7 +211,7 @@ class OneLinerExtension(HelgaExtension):
 
         response = matches[0]
 
-        if isinstance(data, list):
+        if hasattr(response, '__iter__'):
             response = random.choice(response)
 
         newnick, response = self.decompose_response(response)
