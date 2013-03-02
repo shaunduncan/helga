@@ -2,10 +2,14 @@ from helga.extensions.base import CommandExtension
 from helga.util.twitter import tweet, message_max
 
 
+# FIXME: Rework this as a general purpose twitter extension
+
+
 class OverheadExtension(CommandExtension):
     """
     Command for tweeting out things OH in irc
     """
+    NAME = 'twitter'
     usage = '[BOTNICK] tweet_oh <nick>'
     messages = {}
 
