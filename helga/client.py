@@ -27,18 +27,22 @@ class Message(object):
     def format_response(self, **kwargs):
         response = self.response
         resp_fmt = {
-            'nick': self.from_user,
+            'nick': self.from_nick,
             'channel': self.on_channel,
             'norm_channel': self.on_channel.replace('#', ''),
         }
 
         # plus any kwargs
-        resp_fmt.extend(kwargs)
+        resp_fmt.update(kwargs)
 
         if isinstance(response, list):
             response = '\n'.join(response)
 
         return response % resp_fmt
+
+    @property
+    def channel(self):
+        return self.on_channel
 
     @property
     def has_response(self):
@@ -100,7 +104,7 @@ class HelgaClient(irc.IRCClient):
 
         logger.debug('[<--] %s/%s - %s' % (channel, user, message))
 
-        msg = Message(self.nickname, user, channel, message, self.is_public_channel(channel))
+        msg = Message(user, channel, message, self.is_public_channel(channel))
         helga.process(msg)
 
     def user_renamed(self, oldnick, newnick):

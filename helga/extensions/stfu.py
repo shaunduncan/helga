@@ -40,16 +40,16 @@ class STFUExtension(CommandExtension):
         # A hack, we hook into how commands work
         super(STFUExtension, self).process(message)
 
-        if self.is_silenced(message.on_channel):
+        if self.is_silenced(message.channel):
             message.message = ''
 
     def handle_message(self, opts, message):
         if message.is_public:
             if opts['stfu']:
-                message.response = self.silence(message.on_channel)
+                message.response = self.silence(message.channel)
 
             elif opts['speak']:
-                message.response = self.unsilence(message.on_channel)
+                message.response = self.unsilence(message.channel)
         else:
             # Be an asshole
             message.response = random.choice(self.snarks)

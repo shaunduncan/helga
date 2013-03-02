@@ -71,47 +71,53 @@ class HelgaTestCase(TestCase):
 
         assert self.helga.users == new
 
-    def setup_handle_message(self, pre_dispatch_ret, dispatch_ret):
+    def setup_process(self, preprocess_ret, process_ret):
         self.helga.extensions = Mock()
-        self.helga.extensions.dispatch.return_value = dispatch_ret
-
-        self.helga.extensions.pre_dispatch.return_value = pre_dispatch_ret
-
         self.helga.client = Mock()
 
-    def test_handle_message_does_nothing(self):
-        self.setup_handle_message((None, 'baz'), None)
-        self.helga.handle_message('foo', 'bar', 'baz', True)
+        def set_process_ret(message):
+            message.response = process_ret
+
+        def set_preprocess_ret(message):
+            message.response = preprocess_ret
+
+        self.helga.extensions.process.return_value = set_process_ret
+        self.helga.extensions.preprocess.return_value = set_preprocess_ret
+
+    def test_process_does_nothing(self):
+        msg = Mock()
+        msg.has_response = False
+
+        self.setup_process(None, None)
+        self.helga.process(msg)
 
         assert not self.helga.client.msg.called
 
-    def test_handle_message_pre_dispatch_skips_extensions(self):
-        self.setup_handle_message(('OK', 'baz'), None)
-        self.helga.handle_message('foo', 'bar', 'baz', True)
+    def test_process_preprocess_skips_extensions(self):
+        msg = Mock()
+        msg.has_response = True
 
-        assert not self.helga.extensions.dispatch.called
+        self.setup_process('OK', None)
+        self.helga.process(msg)
 
-    def test_handle_message_sends_client_message_to_correct_channel(self):
-        # Public
-        self.setup_handle_message(('OK', 'baz'), None)
-        self.helga.handle_message('foo', 'bar', 'baz', True)
-        self.helga.client.msg.assertCalledWith('bar', 'OK')
+        assert not self.helga.extensions.process.called
 
-        # Private
-        self.setup_handle_message(('OK', 'baz'), None)
-        self.helga.handle_message('foo', 'bar', 'baz', False)
-        self.helga.client.msg.assertCalledWith('foo', 'OK')
+    def test_process_runs_extensions(self):
+        msg = Mock()
+        msg.response = None
 
-    def test_handle_message_formats_output(self):
-        self.setup_handle_message(('OK: %(nick)s - %(botnick)s - %(channel)s', 'baz'), None)
-        self.helga.client.nickname = 'helga'
-        self.helga.handle_message('foo', 'bar', 'baz', True)
+        self.setup_process(None, None)
 
-        self.helga.client.msg.assertCalledWith('bar', 'OK: foo - helga - bar')
+        def process(m):
+            m.has_response = True
+            m.response = 'foo'
 
-    def test_handle_message_runs_extensions(self):
-        self.setup_handle_message((None, 'baz'), 'EXT')
-        self.helga.handle_message('foo', 'bar', 'baz', True)
+        self.helga.extensions.process = process
 
-        assert self.helga.extensions.dispatch.called
-        self.helga.client.msg.assertCalledWith('bar', 'EXT')
+        msg.format_response.return_value = 'foo'
+        msg.resp_channel = '#bots'
+        msg.has_repsonse = False
+
+        self.helga.process(msg)
+
+        self.helga.client.msg.assertCalledWith('#bots', 'foo')

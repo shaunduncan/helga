@@ -200,8 +200,11 @@ class OneLinerExtension(HelgaExtension):
                 return None, parts[0]
 
     def process(self, message):
+        logger.debug('Begin oneliner processing')
         match_pat = lambda pat: re.findall(pat, message.message, re.I)
         matches = [data for pat, data in self.responses.iteritems() if match_pat(pat)]
+
+        logger.debug('Found matches: %s' % matches)
 
         if not matches:
             return
