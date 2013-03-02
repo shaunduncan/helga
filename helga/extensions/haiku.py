@@ -12,6 +12,8 @@ logger = setup_logger(__name__)
 
 class HaikuExtension(CommandExtension):
 
+    NAME = 'haiku'
+
     usage = '[BOTNICK] haiku [tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
 
     syllable_map = {
@@ -30,11 +32,11 @@ class HaikuExtension(CommandExtension):
             if k in keys and v:
                 return k
 
-    def handle_message(self, opts, nick, channel, message, is_public):
+    def handle_message(self, opts, message):
         response = None
 
         if opts['tweet']:
-            response = self.tweet(channel)
+            response = self.tweet(message.on_channel)
         elif opts['about']:
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
@@ -53,9 +55,9 @@ class HaikuExtension(CommandExtension):
 
         # It's a poem, dude
         if isinstance(response, list):
-            self.last[channel] = response
+            self.last[message.on_channel] = response
 
-        return response
+        message.response = response
 
     def _make_term_pattern(self, term):
         return re.compile(term, re.I)
@@ -79,7 +81,10 @@ class HaikuExtension(CommandExtension):
         num_rows = qs.count()
 
         if num_rows == 0:
-            return None if not about else self.get_random_line(syllables)
+            if not about:
+                return None
+            else:
+                return self.get_random_line(syllables)
 
         skip = random.randint(0, num_rows - 1)
 
@@ -101,43 +106,43 @@ class HaikuExtension(CommandExtension):
 
         return resp
 
-    def add(self, syllables, message):
-        logger.info('Adding %d syllable line: %s' % (syllables, message))
+    def add(self, syllables, input):
+        logger.info('Adding %d syllable line: %s' % (syllables, input))
 
         db.haiku.insert({
             'syllables': syllables,
-            'message': message,
+            'message': input,
         })
 
         return random.choice(self.add_acks)
 
-    def add_use(self, syllables, message):
+    def add_use(self, syllables, input):
         """
-        Stores a poem message and uses it in the response
+        Stores a poem input and uses it in the response
         """
-        self.add(syllables, message)
-        return self.use(syllables, message)
+        self.add(syllables, input)
+        return self.use(syllables, input)
 
-    def use(self, syllables, message):
+    def use(self, syllables, input):
         """
-        Uses a message in a poem without storing it
+        Uses input in a poem without storing it
         """
         poem = self.make_poem()
 
-        if syllables == 5 and message not in poem:
+        if syllables == 5 and input not in poem:
             which = random.choice([0, 2])
-            poem[which] = message
+            poem[which] = input
         elif syllables == 7:
-            poem[1] = message
+            poem[1] = input
 
         return poem
 
-    def remove(self, syllables, message):
-        logger.info('Removing %s syllable line: %s' % (syllables, message))
+    def remove(self, syllables, input):
+        logger.info('Removing %s syllable line: %s' % (syllables, input))
 
         db.haiku.remove({
             'syllables': syllables,
-            'message': message
+            'message': input
         })
 
         return random.choice(self.delete_acks)
