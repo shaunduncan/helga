@@ -6,6 +6,8 @@ from helga.extensions.base import ContextualExtension
 
 class LOLJavaExtension(ContextualExtension):
 
+    NAME = 'loljava'
+
     context = r'(lol)?java(?!script)'
     allow_many = False
     response_fmt = '%(response)s'
