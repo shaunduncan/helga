@@ -22,6 +22,8 @@ class OneLinerExtension(HelgaExtension):
     DEAL WITH IT
     """
 
+    NAME = 'oneliner'
+
     responses = {
         # Direct text responses
         r'^:.+': ("this ain't your vi",
@@ -197,15 +199,21 @@ class OneLinerExtension(HelgaExtension):
             else:
                 return None, parts[0]
 
-    def dispatch(self, nick, channel, message, is_public):
-        for pat, data in self.responses.iteritems():
-            if not re.findall(pat, message, re.I):
-                continue
+    def process(self, message):
+        match_pat = lambda pat: re.findall(pat, message.message, re.I)
+        matches = [data for pat, data in self.responses.iteritems() if match_pat(pat)]
 
-            resp = data if isinstance(data, basestring) else random.choice(data)
-            newnick, resp = self.decompose_response(resp)
+        if not matches:
+            return
 
-            if getattr(settings, 'ALLOW_NICK_CHANGE', False) and newnick is not None:
-                self.bot.client.setNick(newnick)
+        response = matches[0]
 
-            return resp
+        if isinstance(data, list):
+            response = random.choice(response)
+
+        newnick, response = self.decompose_response(response)
+
+        if getattr(settings, 'ALLOW_NICK_CHANGE', False) and newnick is not None:
+            self.bot.client.setNick(newnick)
+
+        message.response = response
