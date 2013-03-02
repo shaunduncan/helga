@@ -58,7 +58,6 @@ class Helga(object):
             del self.users[old]
 
     def format_response(self, nick, channel, message):
-        logger.info('RESP: %s' % (message,))
         resp_fmt = {
             'botnick': self.nick,
             'nick': nick,
@@ -71,23 +70,19 @@ class Helga(object):
     def on(self, event, *args, **kwargs):
         self.extensions.on(event, *args, **kwargs)
 
-    def handle_message(self, nick, channel, message, is_public):
-        # Some things should go first
+    def process(self, message):
         current_nick = self.nick
-        response, message = self.extensions.pre_dispatch(nick, channel, message, is_public)
 
-        if not response:
-            response = self.extensions.dispatch(nick, channel, message, is_public)
+        # Some things should go first
+        self.extensions.preprocess(message)
 
-        if response:
-            resp_channel = channel if is_public else nick
+        if not message.has_response:
+            self.extensions.process(message)
 
-            if isinstance(response, list):
-                response = '\n'.join(response)
-
-            response = self.format_response(nick, channel, response)
-            self.client.msg(resp_channel, response)
-            self.last_response[resp_channel] = response
+        if message.has_response:
+            response = message.format_response(botnick=self.nick)
+            self.client.msg(message.resp_channel, response)
+            self.last_response[message.resp_channel] = response
 
         if getattr(settings, 'ALLOW_NICK_CHANGE', False):
             self.client.setNick(current_nick)
