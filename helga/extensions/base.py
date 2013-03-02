@@ -35,6 +35,9 @@ class HelgaExtension(object):
     def __init__(self, bot):
         self.bot = bot
 
+    def random_ack(self):
+        return random.choice(self.acks)
+
     def on(self, event, *args, **kwargs):
         """
         Event delegation receiver
@@ -43,17 +46,17 @@ class HelgaExtension(object):
         """
         pass
 
-    def pre_dispatch(self, nick, channel, message, is_public):
+    def preprocess(self, message):
         """
         Any filter-type action that should happen before dispatch is called
         """
-        return None, message
+        pass
 
-    def dispatch(self, nick, channel, message, is_public):
-        return None
-
-    def random_ack(self):
-        return random.choice(self.acks)
+    def process(self, message):
+        """
+        Process a message object and attach any response to it
+        """
+        pass
 
 
 class CommandExtension(HelgaExtension):
@@ -68,7 +71,7 @@ class CommandExtension(HelgaExtension):
     usage = '[BOTNICK] [COMMAND] [INPUT ...]'
 
     def parse_command(self, message):
-        argv = message.strip().split()
+        argv = message.message.strip().split()
 
         # make sure usage is right - this is a docopt complainy thing. maybe i'll fix it.
         if not self.usage.lower().startswith('usage: irc '):
@@ -79,36 +82,34 @@ class CommandExtension(HelgaExtension):
         except DocoptExit:
             return None
 
-    def should_handle_message(self, opts, is_public):
+    def should_handle_message(self, opts, message):
         botnick = opts.get('BOTNICK', '')
 
         if not opts:
             return False
         elif botnick and botnick == self.bot.nick:
             return True
-        elif not is_public and not botnick:
+        elif not message.is_public and not botnick:
             return True
 
         return False
 
-    def handle_message(self, opts, nick, channel, message, is_public):
+    def handle_message(self, opts, message):
         """
-        Handle the message. This should either return None if no response
+        Handle the message. This should set message.response to None if no response
         is required, a string for a single line response, or a list of
         strings for a multiline response.
 
         Side effect: if you specify [INPUT ...] in `usage`, it will be returned
         as a list of strings, not one single string. Sorry...
         """
-        return None
+        pass
 
-    def dispatch(self, nick, channel, message, is_public):
+    def process(self, message):
         opts = self.parse_command(message)
 
-        if not opts or not self.should_handle_message(opts, is_public):
-            return None
-
-        return self.handle_message(opts, nick, channel, message, is_public)
+        if opts and self.should_handle_message(opts, message):
+            self.handle_message(opts, message)
 
 
 class ContextualExtension(HelgaExtension):
@@ -138,7 +139,7 @@ class ContextualExtension(HelgaExtension):
     def contextualize(self, message):
         found = []
 
-        for match in re.findall(self.context, message, re.I):
+        for match in re.findall(self.context, message.message, re.I):
             found.append(self.transform_match(match))
 
         # filter Nones
@@ -147,11 +148,11 @@ class ContextualExtension(HelgaExtension):
         if found:
             found = found if self.allow_many else [found[0]]
 
-            return self.response_fmt % {
+            message.response = self.response_fmt % {
                 'nick': '%(nick)s',  # Yes, this is annoying, but whatever
                 'response': ', '.join(found)
             }
 
-    def dispatch(self, nick, channel, message, is_public):
+    def process(self, message):
         if self.context:
-            return self.contextualize(message)
+            self.contextualize(message)
