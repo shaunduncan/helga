@@ -5,6 +5,8 @@ from helga.extensions.haiku import HaikuExtension
 
 class TankaExtension(HaikuExtension):
 
+    NAME = 'tanka'
+
     usage = '[BOTNICK] tanka [tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
 
     def use(self, syllables, message):
