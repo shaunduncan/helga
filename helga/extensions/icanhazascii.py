@@ -6,6 +6,7 @@ from helga.extensions.base import HelgaExtension
 
 class ICanHazAsciiExtension(HelgaExtension):
 
+    NAME = 'ascii_artz'
     FLOOD_RATE = 30
     last_used = {}
 
@@ -93,15 +94,13 @@ class ICanHazAsciiExtension(HelgaExtension):
     def is_flooded(self, channel):
         return channel in self.last_used and (time.time() - self.last_used[channel]) < self.FLOOD_RATE
 
-    def dispatch(self, nick, channel, message, is_public):
-        # TODO: channel = channel if is_public else nick
+    def process(self, message):
         for pat, ascii in self.omg_ascii.iteritems():
-            if not re.match(pat, message, re.I):
+            if not re.match(pat, message.message, re.I):
                 continue
 
             # Flood control
-            if self.is_flooded(channel):
+            if not self.is_flooded(message.on_channel):
+                self.last_used[message.on_channel] = time.time()
+                message.response = ascii
                 return
-
-            self.last_used[channel] = time.time()
-            return ascii
