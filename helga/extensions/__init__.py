@@ -36,7 +36,7 @@ class ExtensionRegistry(object):
             try:
                 if issubclass(cls, HelgaExtension) and cls.NAME not in self.extension_names:
                     self.extensions.add(cls(bot=self.bot))
-                    self.extension_names.add(cls.__name__)
+                    self.extension_names.add(cls.NAME)
             except TypeError:
                 continue
 
