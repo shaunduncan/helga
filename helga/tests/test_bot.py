@@ -24,11 +24,6 @@ class HelgaTestCase(TestCase):
 
         assert '#all' not in self.helga.channels
 
-    def test_set_topic(self):
-        self.helga.set_topic('#all', 'everything is broken')
-
-        assert self.helga.topics['#all'] == 'everything is broken'
-
     def test_nick(self):
         self.helga.client = Mock()
         self.helga.client.nickname = 'foo'

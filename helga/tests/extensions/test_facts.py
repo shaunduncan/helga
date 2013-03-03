@@ -1,9 +1,6 @@
-import time
-
-from mock import Mock, patch
+from mock import patch
 from unittest import TestCase
 
-from helga import settings
 from helga.extensions.facts import FactExtension
 from helga.tests.util import mock_bot
 
