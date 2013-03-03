@@ -89,12 +89,6 @@ class HelgaClient(irc.IRCClient):
         """
         return full_nick.split('!')[0]
 
-    def setNick(self, nickname):
-        self._attemptedNick = nickname
-
-        msg = 'NICK %s' % nickname
-        self._reallySendLine(msg)
-
     def is_public_channel(self, channel):
         return self.nickname != channel
 
@@ -116,7 +110,12 @@ class HelgaClient(irc.IRCClient):
         Returns timestamp appended nick
         """
         logger.info('Nick %s already taken' % nickname)
-        stripped = '_'.join(self.nickname.split('_')[:-1])
+
+        parts = nickname.split('_')
+        if len(parts) > 1:
+            parts = parts[:-1]
+
+        stripped = '_'.join(parts)
         self.nickname = '%s_%d' % (stripped, time.time())
 
         return self.nickname
@@ -129,19 +128,6 @@ class HelgaClient(irc.IRCClient):
         user = self.parse_nick(user)
         logger.info('%s joined %s' % (user, channel))
         helga.update_user_nick(user, user)
-
-    def userLeft(self, user, channel):
-        user = self.parse_nick(user)
-        logger.info('%s left %s' % (user, channel))
-
-    def userQuit(self, user, quitMessage):
-        user = self.parse_nick(user)
-        logger.info('%s disconnected' % user)
-
-    def topicUpdated(self, user, channel, topic):
-        user = self.parse_nick(user)
-        logger.info('%s set topic on %s to: %s' % (user, channel, topic))
-        helga.set_topic(channel, topic)
 
     def msg(self, channel, message):
         logger.debug('[-->] %s - %s' % (channel, message))

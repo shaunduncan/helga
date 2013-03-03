@@ -26,7 +26,8 @@ class OperatorExtension(CommandExtension):
 
     def handle_message(self, opts, message):
         if not self.is_operator(message.from_nick):
-            return random.choice(self.nopes)
+            message.response = random.choice(self.nopes)
+            return
 
         if opts['autojoin']:
             channel = opts['<channel>']

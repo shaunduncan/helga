@@ -1,3 +1,4 @@
+from mock import Mock
 from unittest import TestCase
 
 from helga.extensions.oneliner import OneLinerExtension
@@ -20,3 +21,21 @@ class OneLinerExtensionTestCase(TestCase):
 
         assert newnick == 'foobar'
         assert resp == 'this is a response'
+
+    def test_find_all_matches(self):
+        self.oneliner.responses = {'foo': 'bar'}
+        assert self.oneliner.find_all_matches(Mock(message='foo'))
+
+    def test_process_sets_response(self):
+        msg = Mock(message='foo', response=None)
+        self.oneliner.find_all_matches = Mock(return_value = ['bar'])
+        self.oneliner.process(msg)
+
+        assert msg.response == 'bar'
+
+    def test_process_supports_multiple_options(self):
+        msg = Mock(message='foo', response=None)
+        self.oneliner.find_all_matches = Mock(return_value = [('foo', 'bar')])
+        self.oneliner.process(msg)
+
+        assert msg.response in ('foo', 'bar')

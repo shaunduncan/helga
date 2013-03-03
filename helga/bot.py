@@ -10,7 +10,6 @@ class Helga(object):
 
     users = {}
     channels = set()
-    topics = {}
     client = None
     last_response = {}
 
@@ -24,9 +23,6 @@ class Helga(object):
             return self.client.nickname
         except AttributeError:
             return ''
-
-    def set_topic(self, channel, topic):
-        self.topics[channel] = topic
 
     def join_channel(self, channel):
         self.channels.add(channel)
@@ -56,16 +52,6 @@ class Helga(object):
             self.users[old].add(new)
             self.users[new] = self.users[old]
             del self.users[old]
-
-    def format_response(self, nick, channel, message):
-        resp_fmt = {
-            'botnick': self.nick,
-            'nick': nick,
-            'channel': channel,
-            'norm_channel': channel.replace('#', ''),
-        }
-
-        return message % resp_fmt
 
     def on(self, event, *args, **kwargs):
         self.extensions.on(event, *args, **kwargs)
