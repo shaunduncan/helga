@@ -147,6 +147,8 @@ class IgnoreExtension(CommandExtension):
         elif opts['add']:
             if message.from_nick == opts['<nick>']:
                 response = 'Why on earth would you want to do that?'
+            elif opts['<nick>'] in self.bot.operators:
+                response = 'I will never not listen to %s' % opts['<nick>']
             else:
                 response = self.add_ignore(opts['<nick>'], message.on_channel)
         elif opts['remove']:
