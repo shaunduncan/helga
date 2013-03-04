@@ -20,7 +20,7 @@ class OperatorExtensionTestCase(TestCase):
     def test_handle_message_does_nothing(self):
         msg = Mock(response=None)
         self.oper.is_operator = Mock(return_value=True)
-        self.oper.handle_message({'autojoin': False}, msg)
+        self.oper.handle_message({'autojoin': False, 'join': False, 'leave': False}, msg)
 
         assert msg.response is None
 
