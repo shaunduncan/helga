@@ -1,4 +1,4 @@
-from mock import Mock
+from mock import Mock, patch
 from unittest import TestCase
 
 from helga.extensions.core import ControlExtension, HelpExtension
@@ -25,22 +25,26 @@ class ControlExtensionTestCase(TestCase):
 
         assert self.ctl.list_extensions('bar') == 'Extensions on this channel: foo'
 
-    def test_disable_extension_disables(self):
+    @patch('helga.extensions.core.db')
+    def test_disable_extension_disables(self, db):
         self.ctl.registry.disable.return_value = True
 
         assert self.ctl.disable_extension('foo', 'bar') in self.ctl.acks
 
-    def test_disable_extension_invalid_ext_name(self):
+    @patch('helga.extensions.core.db')
+    def test_disable_extension_invalid_ext_name(self, db):
         self.ctl.registry.disable.return_value = False
 
         assert self.ctl.disable_extension('foo', 'bar') not in self.ctl.acks
 
-    def test_enable_extension_disables(self):
+    @patch('helga.extensions.core.db')
+    def test_enable_extension_disables(self, db):
         self.ctl.registry.disable.return_value = True
 
         assert self.ctl.disable_extension('foo', 'bar') in self.ctl.acks
 
-    def test_enable_extension_invalid_ext_name(self):
+    @patch('helga.extensions.core.db')
+    def test_enable_extension_invalid_ext_name(self, db):
         self.ctl.registry.enable.return_value = False
 
         assert self.ctl.enable_extension('foo', 'bar') not in self.ctl.acks

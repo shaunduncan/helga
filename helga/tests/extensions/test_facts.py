@@ -41,7 +41,9 @@ class FactExtensionTestCase(TestCase):
     def test_remove_fact(self, db):
         assert self.facts.remove_fact('foo')
 
-    def test_show_fact_no_match(self):
+    @patch('helga.extensions.facts.db')
+    def test_show_fact_no_match(self, db):
+        db.facts.find_one.return_value = None
         assert self.facts.show_fact('well ok then?') is None
 
     @patch('helga.extensions.facts.db')
