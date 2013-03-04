@@ -16,6 +16,7 @@ class ExtensionRegistry(object):
         self.extensions = {'commands': set(), 'contexts': set()}
         self.extension_names = set()
         self.disabled_extensions = {}  # Per-channel blacklist
+        self.core = set()
 
         if load:
             self.load()
@@ -54,12 +55,16 @@ class ExtensionRegistry(object):
 
             self.load_module_members(module)
 
+        # Core loading
+        self.core.add(ControlExtension(self, self.bot))
+        self.core.add(HelpExtension(self, self.bot))
+
     def _is_command(self, ext):
         """
         Checks if an extension is a command or not
         """
         try:
-            return isinstance(ext, CommandExtension)
+            return issubclass(ext, CommandExtension)
         except TypeError:
             return False
 
@@ -81,6 +86,12 @@ class ExtensionRegistry(object):
                 if message.has_response:
                     return
 
+        # Do cores first
+        for ext in self.core:
+            getattr(ext, fn)(message)
+            if message.has_response:
+                return
+
         # This is kind of crappy, but commands should go first
         call_fn(fn, message, 'commands')
 
@@ -101,10 +112,8 @@ class ExtensionRegistry(object):
         """
         Generalize event delegator. Sends event to all loaded extensions
         """
-        # TODO: Hook events into core extensions
-        for category, extensions in self.extensions.iteritems():
-            for ext in extensions:
-                ext.on(event, *args, **kwargs)
+        for ext in self.get_all_extensions(core=True):
+            ext.on(event, *args, **kwargs)
 
     def is_disabled(self, name, channel):
         """
@@ -134,14 +143,34 @@ class ExtensionRegistry(object):
 
         return True
 
+    def enable(self, name, channel):
+        """
+        Enables the use of a named extension on a given channel
+        """
+        if channel not in self.disabled_extensions:
+            self.disabled_extensions[channel] = set()
+
+        if name not in self.extension_names:
+            return False
+
+        logger.info('Enabling %s on %s' % (name, channel))
+        self.disabled_extensions[channel].discard(name)
+
+        return True
+
     def get_enabled(self, channel):
         """
         Returns a set of extensions enabled on this channel
         """
         return self.extension_names - self.disabled_extensions.get(channel, set())
 
-    def get_all_extensions(self):
-        return self.extensions['commands'] + self.extensions['contexts']
+    def get_all_extensions(self, core=False):
+        extensions = self.extensions['commands'].union(self.extensions['contexts'])
+
+        if core:
+            extensions = extensions.union(self.core)
+
+        return extensions
 
     def get_commands(self):
         return self.extensions['commands']
