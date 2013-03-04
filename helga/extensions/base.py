@@ -76,13 +76,14 @@ class CommandExtension(HelgaExtension):
 
     def parse_command(self, message):
         argv = message.message.strip().split()
+        usage = self.usage
 
         # make sure usage is right - this is a docopt complainy thing. maybe i'll fix it.
-        if not self.usage.lower().startswith('usage: irc '):
-            self.usage = 'Usage: irc %s' % self.usage
+        if not usage.lower().startswith('usage: irc '):
+            usage = 'Usage: irc %s' % usage
 
         try:
-            return docopt(self.usage, argv=argv, help=False)
+            return docopt(usage, argv=argv, help=False)
         except DocoptExit:
             return None
 

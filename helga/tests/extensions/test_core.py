@@ -21,19 +21,29 @@ class ControlExtensionTestCase(TestCase):
         assert self.ctl.disable_extension.called
 
     def test_list_extensions(self):
-        self.ctl.registry.enabled_extensions.return_value = set(['foo'])
+        self.ctl.registry.get_enabled.return_value = set(['foo'])
 
         assert self.ctl.list_extensions('bar') == 'Extensions on this channel: foo'
 
     def test_disable_extension_disables(self):
-        self.ctl.registry.disable_extension.return_value = True
+        self.ctl.registry.disable.return_value = True
 
         assert self.ctl.disable_extension('foo', 'bar') in self.ctl.acks
 
     def test_disable_extension_invalid_ext_name(self):
-        self.ctl.registry.disable_extension.return_value = False
+        self.ctl.registry.disable.return_value = False
 
         assert self.ctl.disable_extension('foo', 'bar') not in self.ctl.acks
+
+    def test_enable_extension_disables(self):
+        self.ctl.registry.disable.return_value = True
+
+        assert self.ctl.disable_extension('foo', 'bar') in self.ctl.acks
+
+    def test_enable_extension_invalid_ext_name(self):
+        self.ctl.registry.enable.return_value = False
+
+        assert self.ctl.enable_extension('foo', 'bar') not in self.ctl.acks
 
 
 class HelpExtensionTestCase(TestCase):
@@ -45,18 +55,18 @@ class HelpExtensionTestCase(TestCase):
         fake_ext = Mock(NAME='blah', usage='foo bar baz')
         self.help.registry.get_commands.return_value = [fake_ext]
 
-        assert 'blah usage: foo bar baz' in self.help.help_all()
+        assert 'blah: foo bar baz' in self.help.help_all()
 
     def test_help_all_multiple_extensions(self):
         fake_ext = Mock(NAME='blah', usage='foo bar baz')
         fake_ext2 = Mock(NAME='myext', usage='helga do something')
         self.help.registry.get_commands.return_value = [fake_ext, fake_ext2]
 
-        assert 'blah usage: foo bar baz' in self.help.help_all()
-        assert 'myext usage: helga do something' in self.help.help_all()
+        assert 'blah: foo bar baz' in self.help.help_all()
+        assert 'myext: helga do something' in self.help.help_all()
 
     def test_help_unknown_ext(self):
-        self.help.registry.is_extension_name.return_value = False
+        self.help.registry.get_all_extensions.return_value = [Mock()]
 
         assert "don't know that one" in self.help.help('foo')
 

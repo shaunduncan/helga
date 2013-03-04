@@ -22,7 +22,7 @@ class FactExtension(CommandExtension, ContextualExtension):
     response_fmt = '%(response)s'
 
     # commands
-    usage = '([BOTNICK] forget <thing> | <thing> (is|are) [REPLY] (INPUT ...))'
+    usage = '[BOTNICK] forget <thing> | <thing> (is|are) [REPLY] (INPUT ...)'
 
     def should_handle_message(self, opts, message):
         # If we match 'forget', see what super() says about it
