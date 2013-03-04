@@ -12,7 +12,7 @@ class OperatorExtension(CommandExtension):
 
     NAME = 'oper'
 
-    usage = '[BOTNICK] oper (autojoin (add|remove) <channel>)'
+    usage = '[BOTNICK] oper ((join|leave|autojoin (add|remove)) <channel>)'
     nopes = [
         "You're not the boss of me",
         "Whatever I do what want",
@@ -39,6 +39,10 @@ class OperatorExtension(CommandExtension):
                 message.response = self.add_autojoin(channel)
             elif opts['remove']:
                 message.response = self.remove_autojoin(channel)
+        elif opts['join']:
+            self.join(opts['<channel>'])
+        elif opts['leave']:
+            self.leave(opts['<channel>'])
 
     def on(self, event, *args, **kwargs):
         if event == 'signon':
@@ -48,6 +52,12 @@ class OperatorExtension(CommandExtension):
         for channel in db.autojoin.find():
             # Damn mongo unicode messin with my twisted
             self.bot.client.join(str(channel['channel']))
+
+    def join(self, channel):
+        self.bot.client.join(str(channel))
+
+    def leave(self, channel):
+        self.bot.client.leave(str(channel))
 
     def add_autojoin(self, channel):
         """
