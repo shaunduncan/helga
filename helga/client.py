@@ -82,6 +82,7 @@ class HelgaClient(irc.IRCClient):
     def joined(self, channel):
         logger.info('Joined %s' % channel)
         helga.join_channel(channel)
+        helga.on('join', channel)
 
     def parse_nick(self, full_nick):
         """
@@ -132,3 +133,16 @@ class HelgaClient(irc.IRCClient):
     def msg(self, channel, message):
         logger.debug('[-->] %s - %s' % (channel, message))
         irc.IRCClient.msg(self, channel, message.encode('UTF-8'))
+
+    def on_invite(self, inviter, invitee, channel):
+        nick = self.parse_nick(inviter)
+        if invitee == self.nickname:
+            logger.info('%s invited %s to %s' % (nick, invitee, channel))
+            self.join(channel)
+
+    def irc_unknown(self, prefix, command, params):
+        """
+        Handle any unknown things...like INVITE
+        """
+        if command.lower() == 'invite':
+            self.on_invite(prefix, params[0], params[1])
