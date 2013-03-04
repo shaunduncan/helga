@@ -2,7 +2,8 @@ from helga import settings
 from helga.extensions.base import (HelgaExtension,
                                    CommandExtension)
 from helga.extensions.core import (ControlExtension,
-                                   HelpExtension)
+                                   HelpExtension,
+                                   IgnoreExtension)
 from helga.log import setup_logger
 
 
@@ -56,8 +57,11 @@ class ExtensionRegistry(object):
             self.load_module_members(module)
 
         # Core loading
-        self.core.add(ControlExtension(self, self.bot))
-        self.core.add(HelpExtension(self, self.bot))
+        self.core = set([
+            ControlExtension(self, self.bot),
+            HelpExtension(self, self.bot),
+            IgnoreExtension(self.bot),
+        ])
 
     def _is_command(self, ext):
         """
@@ -78,7 +82,7 @@ class ExtensionRegistry(object):
         def call_fn(fn, message, category):
             for ext in self.extensions[category]:
                 if self.is_disabled(ext, message.channel):
-                    logger.info('Skipping disabled extension %s on %s' % (ext.NAME, message.channel))
+                    logger.debug('Skipping disabled extension %s on %s' % (ext.NAME, message.channel))
                     continue
 
                 getattr(ext, fn)(message)
