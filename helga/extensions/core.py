@@ -53,7 +53,7 @@ class ControlExtension(CommandExtension):
                 if channel not in rec['channels']:
                     logger.info('Adding autodisable %s on %s' % (ext_name, channel))
                     rec['channels'].append(channel)
-                    rec.save()
+                    db.disabled_extensions.save(rec)
 
             return self.random_ack()
         else:
@@ -68,7 +68,7 @@ class ControlExtension(CommandExtension):
                 if channel in rec['channels']:
                     logger.info('Removing autodisable %s on %s' % (ext_name, channel))
                     rec['channels'].remove(channel)
-                    rec.save()
+                    db.disabled_extensions.save(rec)
 
             return self.random_ack()
         else:
@@ -91,7 +91,15 @@ class HelpExtension(CommandExtension):
 
     def help_all(self):
         fmt = '%s: %s'
-        return [fmt % (e.NAME, self.no_botnick(e.usage)) for e in self.registry.get_commands()]
+        resp = []
+
+        for ext in self.registry.get_all_extensions(core=True):
+            if not hasattr(ext, 'NAME') or not hasattr(ext, 'usage'):
+                continue
+            resp.append(fmt % (ext.NAME, self.no_botnick(ext.usage)))
+
+        if resp:
+            return resp
 
     def help(self, name):
         for ext in self.registry.get_all_extensions(core=True):
@@ -106,3 +114,85 @@ class HelpExtension(CommandExtension):
         if opts['help'] or opts['halp']:
             ext_name = opts.get('<name>', '')
             message.response = self.help(ext_name) if ext_name else self.help_all()
+
+
+class IgnoreExtension(CommandExtension):
+    """
+    Tell helga to ignore certain people/bots
+    """
+
+    NAME = 'ignore'
+    usage = '[BOTNICK] ignore (list|(add|remove) <nick>)'
+
+    def preprocess(self, message):
+        # Here so the user can't you know...unignore themselves
+        if self.is_ignoring(message.from_nick, message.on_channel):
+            logger.info('Ignoring message from %s on %s' % (message.from_nick, message.on_channel))
+            message.message = ''
+
+        # A hack, we hook into how commands work
+        super(IgnoreExtension, self).process(message)
+
+    def is_ignoring(self, nick, channel):
+        return db.ignores.find_one({
+            'channel': channel,
+            'nicks': {'$in': [nick]}
+        }) is not None
+
+    def handle_message(self, opts, message):
+        response = None
+
+        if opts['list']:
+            response = self.list_ignore(message.on_channel)
+        elif opts['add']:
+            if message.from_nick == opts['<nick>']:
+                response = 'Why on earth would you want to do that?'
+            else:
+                response = self.add_ignore(opts['<nick>'], message.on_channel)
+        elif opts['remove']:
+            response = self.remove_ignore(opts['<nick>'], message.on_channel)
+
+        if response:
+            message.response = response
+
+    def list_ignore(self, channel):
+        result = db.ignores.find_one({'channel': channel})
+
+        if result and result['nicks']:
+            return 'Ignoring these nicks on this channel: ' + ', '.join(result['nicks'])
+        else:
+            return "I'm not ignoring anyone on this channel"
+
+    def _init_db_rec(self, channel, nick=None):
+        nicks = [nick] if nick else []
+        if db.ignores.find({'channel': channel}).count() == 0:
+            logger.info('Initialize ignores %s on %s' % (nick, channel))
+            db.ignores.insert({'channel': channel, 'nicks': nicks})
+
+    def add_ignore(self, nick, channel, nodb=False):
+        if nodb:
+            return
+
+        self._init_db_rec(channel, nick)
+
+        rec = db.ignores.find_one({'channel': channel})
+        if nick not in rec['nicks']:
+            logger.info('Adding ignore %s on %s' % (nick, channel))
+            rec['nicks'].append(nick)
+            db.ignores.save(rec)
+
+        return self.random_ack()
+
+    def remove_ignore(self, nick, channel, nodb=False):
+        if nodb:
+            return
+
+        self._init_db_rec(channel, nick)
+
+        rec = db.ignores.find_one({'channel': channel})
+        if nick in rec['nicks']:
+            logger.info('Removing ignore %s on %s' % (nick, channel))
+            rec['nicks'].remove(nick)
+            db.ignores.save(rec)
+
+        return self.random_ack()

@@ -57,14 +57,14 @@ class HelpExtensionTestCase(TestCase):
 
     def test_help_all_single_extension(self):
         fake_ext = Mock(NAME='blah', usage='foo bar baz')
-        self.help.registry.get_commands.return_value = [fake_ext]
+        self.help.registry.get_all_extensions.return_value = [fake_ext]
 
         assert 'blah: foo bar baz' in self.help.help_all()
 
     def test_help_all_multiple_extensions(self):
         fake_ext = Mock(NAME='blah', usage='foo bar baz')
         fake_ext2 = Mock(NAME='myext', usage='helga do something')
-        self.help.registry.get_commands.return_value = [fake_ext, fake_ext2]
+        self.help.registry.get_all_extensions.return_value = [fake_ext, fake_ext2]
 
         assert 'blah: foo bar baz' in self.help.help_all()
         assert 'myext: helga do something' in self.help.help_all()
