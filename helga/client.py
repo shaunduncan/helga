@@ -127,7 +127,7 @@ class HelgaClient(irc.IRCClient):
 
     def userJoined(self, user, channel):
         user = self.parse_nick(user)
-        logger.info('%s joined %s' % (user, channel))
+        logger.debug('%s joined %s' % (user, channel))
         helga.update_user_nick(user, user)
 
     def msg(self, channel, message):
