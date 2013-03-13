@@ -26,7 +26,7 @@ class OneLinerExtension(HelgaExtension):
 
     responses = {
         # Direct text responses
-        r'^:.+': ("this ain't your vi",
+        r'^:w?q': ("this ain't your vi",
                   "this ain't your vi, but at least you're not using emacs"),
 
         r'^((sudo|ls|cd|rm)( .+)?|pwd)': "%(nick)s, this ain't your shell",
