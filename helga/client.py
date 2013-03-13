@@ -42,7 +42,8 @@ class Message(object):
 
     @property
     def channel(self):
-        return self.on_channel
+        # Will always be the right channel
+        return self.resp_channel
 
     @property
     def has_response(self):

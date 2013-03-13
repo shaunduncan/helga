@@ -96,7 +96,7 @@ class HaikuExtension(CommandExtension):
             return "%(nick)s, why don't you try making one first?"
 
         # fives / sevens / fives
-        resp = tweet(' / '.join(self.last[channel]))
+        resp = tweet('\n'.join(self.last[channel]))
 
         # This will keep it from over tweeting
         del self.last[channel]

@@ -126,8 +126,8 @@ class IgnoreExtension(CommandExtension):
 
     def preprocess(self, message):
         # Here so the user can't you know...unignore themselves
-        if self.is_ignoring(message.from_nick, message.on_channel):
-            logger.info('Ignoring message from %s on %s' % (message.from_nick, message.on_channel))
+        if self.is_ignoring(message.from_nick, message.channel):
+            logger.info('Ignoring message from %s on %s' % (message.from_nick, message.channel))
             message.message = ''
 
         # A hack, we hook into how commands work
@@ -143,16 +143,16 @@ class IgnoreExtension(CommandExtension):
         response = None
 
         if opts['list']:
-            response = self.list_ignore(message.on_channel)
+            response = self.list_ignore(message.channel)
         elif opts['add']:
             if message.from_nick == opts['<nick>']:
                 response = 'Why on earth would you want to do that?'
             elif opts['<nick>'] in self.bot.operators:
                 response = 'I will never not listen to %s' % opts['<nick>']
             else:
-                response = self.add_ignore(opts['<nick>'], message.on_channel)
+                response = self.add_ignore(opts['<nick>'], message.channel)
         elif opts['remove']:
-            response = self.remove_ignore(opts['<nick>'], message.on_channel)
+            response = self.remove_ignore(opts['<nick>'], message.channel)
 
         if response:
             message.response = response
