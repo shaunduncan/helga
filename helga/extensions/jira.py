@@ -1,5 +1,4 @@
 import random
-import re
 
 from helga import settings
 from helga.db import db
@@ -25,14 +24,20 @@ class JiraExtension(CommandExtension, ContextualExtension):
 
     @property
     def context(self):
-        return r'((%s)-[0-9]+)' % '|'.join(self.jira_pats)
+        # This should not look for URLs. Optionally match url type
+        return r'(https?://.*?)?((%s)-[0-9]+)($|\s+)' % '|'.join(self.jira_pats)
 
     def on(self, event, *args, **kwargs):
         if event == 'signon':
             self.jira_pats = set(item['re'] for item in db.jira.find())
 
     def transform_match(self, match):
-        return settings.JIRA_URL % {'ticket': match[0]}
+        # match[0] is the optionally matched URL prefix (i.e. http://...)
+        # If found, ignore this
+        if not match[0]:
+            return settings.JIRA_URL % {'ticket': match[1]}
+        else:
+            return None
 
     def handle_message(self, opts, message):
         if opts['add_re']:

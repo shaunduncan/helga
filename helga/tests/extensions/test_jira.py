@@ -86,3 +86,10 @@ class JiraExtensionTestCase(TestCase):
 
         assert 'http://example.com/foobar-123' in msg.response
         assert 'http://example.com/bazqux-10' in msg.response
+
+    def test_contextualize_ignores_urls(self):
+        msg = Mock(message='look at http://foo.com/foobar-123', response=None)
+        self.jira.jira_pats = ('foobar',)
+        self.jira.contextualize(msg)
+
+        assert msg.response is None
