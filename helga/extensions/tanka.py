@@ -32,4 +32,7 @@ class TankaExtension(HaikuExtension):
             self.get_random_line(7, about)
         ])
 
-        return poem
+        if about is not None:
+            return self.fix_repitition(poem, about=about, start=4, syllables=7)
+        else:
+            return poem

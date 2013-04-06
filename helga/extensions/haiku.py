@@ -147,6 +147,21 @@ class HaikuExtension(CommandExtension):
 
         return random.choice(self.delete_acks)
 
+    def fix_repitition(self, poem, about=None, start=0, check=-1, syllables=5):
+        """
+        If line ``check`` repeats line ``check``, try to get a random line
+        a second time, falling back to ignoring abouts
+        """
+        if poem[start] == poem[check]:
+            repl = self.get_random_line(syllables, about)
+
+            if repl == poem[start]:
+                poem[check] = self.get_random_line(syllables)
+            else:
+                poem[check] = repl
+
+        return poem
+
     def make_poem(self, about=None):
         poem = [
             self.get_random_line(5, about),
@@ -157,4 +172,7 @@ class HaikuExtension(CommandExtension):
         if not all(poem):
             return None
 
-        return poem
+        if about is not None:
+            return self.fix_repitition(poem, about=about)
+        else:
+            return poem

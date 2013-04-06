@@ -75,3 +75,26 @@ class HaikuExtensionTestCase(TestCase):
         poem = self.haiku.use(7, 'foo')
 
         assert poem[1] == 'foo'
+
+    def test_fix_repitition_replaces(self):
+        poem = ['foo', 'bar', 'foo']
+        self.haiku.get_random_line = Mock(return_value='baz')
+        poem = self.haiku.fix_repitition(poem)
+
+        assert poem == ['foo', 'bar', 'baz']
+
+    def test_fix_repititions_gives_up_after_retry(self):
+        poem = ['foo', 'bar', 'foo']
+        self.haiku.get_random_line = Mock(return_value='foo')
+        poem = self.haiku.fix_repitition(poem)
+
+        assert poem == ['foo', 'bar', 'foo']
+        assert self.haiku.get_random_line.call_count == 2
+
+    def test_fix_repitition_does_not_replace(self):
+        poem = ['foo', 'bar', 'baz']
+        self.haiku.get_random_line = Mock()
+        poem = self.haiku.fix_repitition(poem)
+
+        assert poem == ['foo', 'bar', 'baz']
+        assert not self.haiku.get_random_line.called
