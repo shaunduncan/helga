@@ -36,6 +36,20 @@ class MTSExtensionTestCase(TestCase):
 
         assert 'meant to say: baz' in next.response
 
+    def test_contextualize_replaces_text_without_trailing_slash(self):
+        self.mts.record_last(self.message)
+        next = Mock(message='s/foo/baz', channel='bar', from_nick='me')
+        self.mts.contextualize(next)
+
+        assert 'meant to say: baz' in next.response
+
+    def test_contextualize_replaces_text_in_msg(self):
+        self.mts.record_last(self.message)
+        next = Mock(message='i mean s/foo/baz is what i meant', channel='bar', from_nick='me')
+        self.mts.contextualize(next)
+
+        assert 'meant to say: baz' in next.response
+
     def test_contextualize_ignores_if_no_last(self):
         next = Mock(message='s/foo/baz/', channel='bar', from_nick='me', response=None)
         self.mts.contextualize(next)

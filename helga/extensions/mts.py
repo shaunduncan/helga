@@ -11,7 +11,7 @@ class MTSExtension(ContextualExtension):
     """
     NAME = 'meanttosay'
 
-    context = r'^s/(.+)/(.*)/$'
+    context = r'(^|.*\s)s/(\w+)/(\w*?)/?($|\s.*)'
     allow_many = False
     response_fmt = '%(nick)s meant to say: %(response)s'
 
@@ -48,7 +48,7 @@ class MTSExtension(ContextualExtension):
         if match is None or (match and not last):
             return
 
-        find, replace = match.groups()
+        find, replace = match.groups()[1:3]
         meant_to_say = re.sub(find, replace, last)
 
         # Copypasta from parent class
