@@ -118,6 +118,7 @@ class OneLinerExtension(HelgaExtension):
                           imgur('pqmfX'),
                           imgur('9WbAL'),
                           imgur('KdldmZk'),
+                          imgur('49UtI5N'),  # The Fresh Prince of DEAL WITH IT
                           u'(⌐■_■)',
 
                           # Multiline
