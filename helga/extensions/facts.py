@@ -3,6 +3,8 @@ import time
 
 from datetime import datetime
 
+import pytz
+
 from helga.db import db
 from helga.extensions.base import (ContextualExtension,
                                    CommandExtension)
@@ -75,8 +77,10 @@ class FactExtension(CommandExtension, ContextualExtension):
 
         if record is not None:
             if 'set_date' in record:
-                formatted_dt = datetime.strftime(datetime.fromtimestamp(record['set_date']),
-                                                 '%m/%d/%Y %I:%M%p')
+                # Eastern time
+                timestamp = datetime.fromtimestamp(record['set_date'])
+                timestamp = timestamp.replace(tzinfo=pytz.timezone('US/Eastern'))
+                formatted_dt = datetime.strftime(timestamp, '%m/%d/%Y %I:%M%p')
                 set_on = ' on %s' % formatted_dt
             else:
                 set_on = ''
