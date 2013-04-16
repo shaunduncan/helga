@@ -78,8 +78,7 @@ class FactExtension(CommandExtension, ContextualExtension):
         if record is not None:
             if 'set_date' in record:
                 # Eastern time
-                timestamp = datetime.fromtimestamp(record['set_date'])
-                timestamp = timestamp.replace(tzinfo=pytz.timezone('US/Eastern'))
+                timestamp = datetime.fromtimestamp(record['set_date'], tz=pytz.timezone('US/Eastern'))
                 formatted_dt = datetime.strftime(timestamp, '%m/%d/%Y %I:%M%p')
                 set_on = ' on %s' % formatted_dt
             else:
