@@ -89,11 +89,11 @@ class ICanHazAsciiExtension(HelgaExtension):
       /'|  |\\   /|  |`\\
      (,,/:.|.-'-.|.:\\,,)
        (,,,/     \\,,,)""",
-       
+
        r'bat.?signal': """
        _==/          i     i          \==_
-     /XX/            |\___/|            \XX\
-   /XXXX\            |XXXXX|            /XXXX\
+     /XX/            |\___/|            \XX\\
+   /XXXX\            |XXXXX|            /XXXX\\
   |XXXXXX\_         _XXXXXXX_         _/XXXXXX|
  XXXXXXXXXXXxxxxxxxXXXXXXXXXXXxxxxxxxXXXXXXXXXXX
 |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
