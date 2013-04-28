@@ -1,5 +1,7 @@
 import random
 
+import smokesignal
+
 from helga.db import db
 from helga.extensions.base import CommandExtension
 from helga.log import setup_logger
@@ -20,6 +22,15 @@ class OperatorExtension(CommandExtension):
         "%(nick)s, this incident has been reported",
         "NO. You are now on notice %(nick)s"
     ]
+
+    def __init__(self, *args, **kwargs):
+        # Hack for le instance callbacks
+        @smokesignal.on('signon')
+        def callback():
+            if db is not None:
+                self.join_autojoin_channels()
+
+        super(OperatorExtension, self).__init__(*args, **kwargs)
 
     def is_operator(self, nick):
         return nick in self.bot.operators
@@ -43,10 +54,6 @@ class OperatorExtension(CommandExtension):
             self.join(opts['<channel>'])
         elif opts['leave']:
             self.leave(opts['<channel>'])
-
-    def on(self, event, *args, **kwargs):
-        if event == 'signon':
-            self.join_autojoined_channels()
 
     def join_autojoined_channels(self):
         for channel in db.autojoin.find():

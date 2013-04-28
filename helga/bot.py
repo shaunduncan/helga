@@ -53,9 +53,6 @@ class Helga(object):
             self.users[new] = self.users[old]
             del self.users[old]
 
-    def on(self, event, *args, **kwargs):
-        self.extensions.on(event, *args, **kwargs)
-
     def process(self, message):
         current_nick = self.nick
 

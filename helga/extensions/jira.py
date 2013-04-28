@@ -1,5 +1,7 @@
 import random
 
+import smokesignal
+
 from helga import settings
 from helga.db import db
 from helga.extensions.base import (CommandExtension,
@@ -20,6 +22,13 @@ class JiraExtension(CommandExtension, ContextualExtension):
 
     def __init__(self, *args, **kwargs):
         self.jira_pats = set()
+
+        # Hack for le instance callbacks
+        @smokesignal.on('signon')
+        def callback():
+            if db is not None:
+                self._init_patterns()
+
         super(JiraExtension, self).__init__(*args, **kwargs)
 
     @property
@@ -27,9 +36,8 @@ class JiraExtension(CommandExtension, ContextualExtension):
         # This should not look for URLs. Optionally match url type
         return r'(https?://.*?)?((%s)-[0-9]+)($|\s+)' % '|'.join(self.jira_pats)
 
-    def on(self, event, *args, **kwargs):
-        if event == 'signon':
-            self.jira_pats = set(item['re'] for item in db.jira.find())
+    def _init_patterns(self):
+        self.jira_pats = set(item['re'] for item in db.jira.find())
 
     def transform_match(self, match):
         # match[0] is the optionally matched URL prefix (i.e. http://...)

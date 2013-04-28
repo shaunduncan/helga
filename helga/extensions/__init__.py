@@ -112,13 +112,6 @@ class ExtensionRegistry(object):
     def process(self, message):
         self._call_extension_method('process', message)
 
-    def on(self, event, *args, **kwargs):
-        """
-        Generalize event delegator. Sends event to all loaded extensions
-        """
-        for ext in self.get_all_extensions(core=True):
-            ext.on(event, *args, **kwargs)
-
     def is_disabled(self, name, channel):
         """
         Returns True or False if extension is disabled on the given channel
