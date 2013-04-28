@@ -26,10 +26,12 @@ class OneLinerExtension(HelgaExtension):
 
     responses = {
         # Direct text responses
-        r'womp womp': (
-            "http://www.sadtrombone.com/?play=true",
-            "http://www.youtube.com/watch?v=_-GaXa8tSBE",
-        ),
+        r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),
+
+        r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),),
+
+        r'womp womp': ("http://www.sadtrombone.com/?play=true",
+                       "http://www.youtube.com/watch?v=_-GaXa8tSBE"),
 
         r'^:w?q': ("this ain't your vi",
                    "this ain't your vi, but at least you're not using emacs"),
