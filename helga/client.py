@@ -1,5 +1,6 @@
 import time
 
+import smokesignal
 from twisted.words.protocols import irc
 
 from helga import settings
@@ -78,12 +79,12 @@ class HelgaClient(irc.IRCClient):
             self.join(channel)
 
         # Hook FTW
-        helga.on('signon')
+        smokesignal.emit('signon')
 
     def joined(self, channel):
         logger.info('Joined %s' % channel)
         helga.join_channel(channel)
-        helga.on('join', channel)
+        smokesignal.emit('join', channel)
 
     def parse_nick(self, full_nick):
         """

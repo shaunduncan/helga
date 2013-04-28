@@ -42,14 +42,6 @@ class HelgaExtension(object):
     def random_ack(self):
         return random.choice(self.acks)
 
-    def on(self, event, *args, **kwargs):
-        """
-        Event delegation receiver
-
-        perhaps should be named HelgaEventDelegationReceiverFactory?!?
-        """
-        pass
-
     def preprocess(self, message):
         """
         Any filter-type action that should happen before dispatch is called

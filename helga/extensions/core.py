@@ -1,3 +1,5 @@
+import smokesignal
+
 from helga.db import db
 from helga.extensions.base import CommandExtension
 from helga.log import setup_logger
@@ -15,6 +17,13 @@ class ControlExtension(CommandExtension):
 
     def __init__(self, registry, *args, **kwargs):
         self.registry = registry
+
+        # Hack for le instance callbacks
+        @smokesignal.on('signon')
+        def callback():
+            if db is not None:
+                self._init_disabled()
+
         super(CommandExtension, self).__init__(*args, **kwargs)
 
     def handle_message(self, opts, message):
@@ -32,11 +41,10 @@ class ControlExtension(CommandExtension):
         # This is converted to multiple lines
         return 'Extensions on this channel: ' + ', '.join(enabled)
 
-    def on(self, event, *args, **kwargs):
-        if event == 'signon':
-            for rec in db.disabled_extensions.find():
-                for channel in rec['channels']:
-                    self.disable_extension(rec['extension'], channel, nodb=True)
+    def _init_disabled(self):
+        for rec in db.disabled_extensions.find():
+            for channel in rec['channels']:
+                self.disable_extension(rec['extension'], channel, nodb=True)
 
     def _init_db_rec(self, ext, channel=None):
         channels = [channel] if channel else []
