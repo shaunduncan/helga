@@ -28,7 +28,7 @@ class OperatorExtension(CommandExtension):
         @smokesignal.on('signon')
         def callback():
             if db is not None:
-                self.join_autojoin_channels()
+                self.join_autojoined_channels()
 
         super(OperatorExtension, self).__init__(*args, **kwargs)
 
