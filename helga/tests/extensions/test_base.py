@@ -111,3 +111,30 @@ class CommandExtensionTestCase(TestCase):
         }
 
         assert not self.ext.should_handle_message(opts, msg)
+
+    def test_should_handle_message_nick_with_comma(self):
+        msg = Mock(is_public=True)
+        opts = {
+            'BOTNICK': self.ext.bot.nick + ',',
+            'foo': True
+        }
+
+        assert self.ext.should_handle_message(opts, msg)
+
+    def test_should_handle_message_nick_with_colon(self):
+        msg = Mock(is_public=True)
+        opts = {
+            'BOTNICK': self.ext.bot.nick + ':',
+            'foo': True
+        }
+
+        assert self.ext.should_handle_message(opts, msg)
+
+    def test_should_handle_message_nick_with_diff_nick_ending(self):
+        msg = Mock(is_public=True)
+        opts = {
+            'BOTNICK': self.ext.bot.nick + 't',
+            'foo': True
+        }
+
+        assert not self.ext.should_handle_message(opts, msg)

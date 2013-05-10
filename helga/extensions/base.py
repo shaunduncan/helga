@@ -84,6 +84,8 @@ class CommandExtension(HelgaExtension):
             return False
 
         botnick = opts.get('BOTNICK', '')
+        if botnick and botnick.endswith((',', ':',)):
+            botnick = botnick[:-1]
 
         if botnick and botnick == self.bot.nick:
             return True
