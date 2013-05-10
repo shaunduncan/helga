@@ -11,7 +11,12 @@ def _connect():
         warnings.warn('MongoDB is not available. Some features may not work')
         return None, None
     else:
-        return client, client[settings.MONGODB['DB']]
+        db = client[settings.MONGODB['DB']]
+
+        if 'USERNAME' in settings.MONGODB and 'PASSWORD' in settings.MONGODB:
+            db.authenticate(settings.MONGODB['USERNAME'], settings.MONGODB['PASSWORD'])
+
+        return client, db
 
 
 client, db = _connect()
