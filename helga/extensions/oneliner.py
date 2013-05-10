@@ -26,8 +26,6 @@ class OneLinerExtension(HelgaExtension):
 
     responses = {
         # Direct text responses
-        r'^olga': ("%(nick)s, you should talk to me instead. Olga is no more",),
-
         r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),
 
         r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),),
