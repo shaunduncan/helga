@@ -56,7 +56,12 @@ class FactExtension(CommandExtension, ContextualExtension):
         if opts['forget']:
             message.response = self.remove_fact(opts['<thing>'].lower())
         elif opts['is'] or opts['are']:
-            is_reply = opts['REPLY'] == '<reply>'
+            if opts['INPUT'][0] == '<reply>':
+                # Weird case where <reply> is part of the input?
+                is_reply = True
+                opts['INPUT'] = opts['INPUT'][1:]
+            else:
+                is_reply = opts['REPLY'] == '<reply>'
 
             # We have to add matched reply thing to input because of how it matches
             if not is_reply:
@@ -87,7 +92,7 @@ class FactExtension(CommandExtension, ContextualExtension):
             return '%s (%s%s)' % (record['fact'], record['set_by'], set_on)
 
     def add_fact(self, term, fact, nick='nobody'):
-        logger.info('Adding new fact %s' % term)
+        logger.info('Adding new fact %s: %s' % (term, fact))
 
         if not db.facts.find({'term': term}).count():
             db.facts.insert({
