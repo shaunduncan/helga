@@ -34,6 +34,7 @@ EXTENSIONS = (
     'helga.extensions.tanka',
     'helga.extensions.loljava',
     'helga.extensions.oneliner',
+    'helga.extensions.no_more_olga',
     'helga.extensions.stfu',
     'helga.extensions.dubstep',
     'helga.extensions.icanhazascii',
