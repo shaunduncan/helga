@@ -24,7 +24,7 @@ class ContextualExtensionTestCase(TestCase):
         msg = Mock(message='two things: foo1 and foo2')
 
         self.ext.contextualize(msg)
-        assert msg.response == 'foo1, foo2'
+        assert msg.response == 'foo1 foo2'
 
     def test_contextualize_returns_one(self):
         self.ext.allow_many = False
