@@ -48,6 +48,14 @@ class ExtensionRegistryTestCase(TestCase):
         assert 'bar' in enabled
         assert 'baz' in enabled
 
+    def test_get_disabled(self):
+        self.registry.extension_names = set(['foo', 'bar', 'baz'])
+        self.registry.disabled_extensions = {'#bots': set(['foo'])}
+
+        disabled = self.registry.get_disabled('#bots')
+
+        assert 'foo' in disabled
+
     def test_disable_unknown_extension_name(self):
         self.registry.disabled_extensions = {}
         self.registry.extension_names = set()
