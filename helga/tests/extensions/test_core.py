@@ -20,10 +20,31 @@ class ControlExtensionTestCase(TestCase):
         self.ctl.handle_message({'extension': True, 'disable': True, '<ext>': 'foo'}, Mock())
         assert self.ctl.disable_extension.called
 
-    def test_list_extensions(self):
+    def test_list_extensions_enabled(self):
         self.ctl.registry.get_enabled.return_value = set(['foo'])
 
-        assert self.ctl.list_extensions('bar') == 'Extensions on this channel: foo'
+        assert self.ctl.list_extensions('bar', type='enabled') == 'Enabled extensions on bar: foo'
+
+    def test_list_extensions_disabled(self):
+        self.ctl.registry.get_disabled.return_value = set(['foo'])
+
+        assert self.ctl.list_extensions('bar', type='disabled') == 'Disabled extensions on bar: foo'
+
+    def test_list_extensions(self):
+        # Test that we get both
+        self.ctl.registry.get_enabled.return_value = set(['foo'])
+        self.ctl.registry.get_disabled.return_value = set(['baz'])
+
+        ret = self.ctl.list_extensions('bar')
+        assert ret == ['Enabled extensions on bar: foo', 'Disabled extensions on bar: baz']
+
+    def test_list_extensions_all_for_unknown_type(self):
+        # Test that we get both
+        self.ctl.registry.get_enabled.return_value = set(['foo'])
+        self.ctl.registry.get_disabled.return_value = set(['baz'])
+
+        ret = self.ctl.list_extensions('bar', type='foobar')
+        assert ret == ['Enabled extensions on bar: foo', 'Disabled extensions on bar: baz']
 
     @patch('helga.extensions.core.db')
     def test_disable_extension_disables(self, db):

@@ -13,7 +13,7 @@ class ControlExtension(CommandExtension):
     Helga's control surface. Anyone can tell her what to do
     """
     NAME = 'controls'
-    usage = '[BOTNICK] extension (list|(disable|enable) <ext>)'
+    usage = '[BOTNICK] extension (list <type>|(disable|enable) <ext>)'
 
     def __init__(self, registry, *args, **kwargs):
         self.registry = registry
@@ -29,17 +29,38 @@ class ControlExtension(CommandExtension):
     def handle_message(self, opts, message):
         if opts['extension']:
             if opts.get('list', False):
-                message.response = self.list_extensions(message.channel)
+                message.response = self.list_extensions(message.channel, type=opts.get('<type>', 'all'))
             elif opts.get('disable', False):
                 message.response = self.disable_extension(opts['<ext>'], message.channel)
             elif opts.get('enable', False):
                 message.response = self.enable_extension(opts['<ext>'], message.channel)
 
-    def list_extensions(self, channel):
+    def _list_enabled_extensions(self, channel):
         enabled = self.registry.get_enabled(channel)
+        return 'Enabled extensions on %s: %s' % (channel, ', '.join(enabled))
 
-        # This is converted to multiple lines
-        return 'Extensions on this channel: ' + ', '.join(enabled)
+    def _list_disabled_extensions(self, channel):
+        disabled = self.registry.get_disabled(channel)
+        print type(disabled)
+        return 'Disabled extensions on %s: %s' % (channel, ', '.join(disabled))
+
+    def list_extensions(self, channel, type='all'):
+        # Ensure a usable default
+        if not type:
+            type = 'all'
+
+        type = type.lower()
+
+        if type == 'enabled':
+            return self._list_enabled_extensions(channel)
+        elif type == 'disabled':
+            return self._list_disabled_extensions(channel)
+        else:
+            # Multiple lines
+            return [
+                self._list_enabled_extensions(channel),
+                self._list_disabled_extensions(channel),
+            ]
 
     def _init_disabled(self):
         for rec in db.disabled_extensions.find():

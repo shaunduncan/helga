@@ -159,7 +159,13 @@ class ExtensionRegistry(object):
         """
         Returns a set of extensions enabled on this channel
         """
-        return self.extension_names - self.disabled_extensions.get(channel, set())
+        return self.extension_names - self.get_disabled(channel)
+
+    def get_disabled(self, channel):
+        """
+        Returns a set of extensions disabled on this channel
+        """
+        return self.disabled_extensions.get(channel, set())
 
     def get_all_extensions(self, core=False):
         extensions = self.extensions['commands'].union(self.extensions['contexts'])
