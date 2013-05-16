@@ -150,7 +150,7 @@ class ContextualExtension(HelgaExtension):
 
             message.response = self.response_fmt % {
                 'nick': '%(nick)s',  # Yes, this is annoying, but whatever
-                'response': ', '.join(found)
+                'response': ' '.join(found)
             }
 
     def process(self, message):
