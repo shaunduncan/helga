@@ -13,7 +13,7 @@ class ControlExtension(CommandExtension):
     Helga's control surface. Anyone can tell her what to do
     """
     NAME = 'controls'
-    usage = '[BOTNICK] extension (list <type>|(disable|enable) <ext>)'
+    usage = '[BOTNICK] extension (list|list <type>|(disable|enable) <ext>)'
 
     def __init__(self, registry, *args, **kwargs):
         self.registry = registry

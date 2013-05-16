@@ -168,7 +168,7 @@ class OneLinerExtension(HelgaExtension):
 
         r'^indeed$': imgur('bQcbpki'),
 
-        r'f(f{6}|7)(u(u{11}|12))?': 'http://i.minus.com/ibnfJRQi1h4z30.gif',
+        r'f(f{6}|7)u(u{11}|12)': 'http://i.minus.com/ibnfJRQi1h4z30.gif',
 
 
         # Various modern unicode emoticons
