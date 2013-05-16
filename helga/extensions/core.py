@@ -144,6 +144,9 @@ class HelpExtension(CommandExtension):
             ext_name = opts.get('<name>', '')
             message.response = self.help(ext_name) if ext_name else self.help_all()
 
+            # Side effect - this extension PMs the user asking
+            message.resp_channel = message.from_nick
+
 
 class IgnoreExtension(CommandExtension):
     """
