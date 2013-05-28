@@ -26,9 +26,9 @@ class OneLinerExtension(HelgaExtension):
 
     responses = {
         # Direct text responses
-        r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),
+        r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),  # Dumb and Dumber Gag
 
-        r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),),
+        r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),), # Ryan Stiles, Whose Line, pulling middle finger from pocket
 
         r'womp womp': ("http://www.sadtrombone.com/?play=true",
                        "http://www.youtube.com/watch?v=_-GaXa8tSBE"),
@@ -43,7 +43,7 @@ class OneLinerExtension(HelgaExtension):
 
         r'^select( .* )from(.*)': "'; DROP TABLES;",
 
-        r'mongo(db)?': 'http://youtu.be/b2F-DItXtZs',
+        r'mongo(db)?': 'http://youtu.be/b2F-DItXtZs',  # MongoDB is webscale
 
         r'gem install': "%(nick)s, don't. just don't",
 
@@ -71,55 +71,54 @@ class OneLinerExtension(HelgaExtension):
 
 
         # lol, gifs
-        r'(bravo|well done)': (imgur('wSvsV'),
-                               imgur('HUKCsCv'),
-                               imgur('FwqHZ6Z')),
+        r'(bravo|well done)': (imgur('wSvsV'),     # Citizen Kane slow clap
+                               imgur('HUKCsCv'),   # Colbert & Stewart bravo
+                               imgur('FwqHZ6Z')),  # Gamer conceding defeat
 
         r'is \w+ down\?': imgur('yX5o8rZ'),  # THE F5 HAMMER
 
-        r"(i don't care|do i look like i care|zero fucks)": (imgur('oKydfNm'),
-                                                             imgur('KowlC'),
-                                                             imgur('xYOqXJv')),
+        r"(i don't care|do i look like i care|zero fucks)": (imgur('oKydfNm'),   # Bird bouncing on hawk's head
+                                                             imgur('KowlC'),     # Gangam style 'do i look like i care'
+                                                             imgur('xYOqXJv')),  # Dog hitting cat with tail
 
-        r'^nope$': (imgur('iSm1aZu'),
-                    imgur('2xwe756'),
-                    imgur('zCtbl'),
-                    imgur('ErtgS'),
-                    imgur('foEHo'),
-                    imgur('xKYs9'),
-                    imgur('ST9lw3U'),
-                    imgur('c4gTe5p')),
+        r'^nope$': (imgur('iSm1aZu'),   # Arrested development NOPE
+                    imgur('2xwe756'),   # Lonley island like a boss NOPE
+                    imgur('zCtbl'),     # Tracy Morgan NOPE
+                    imgur('ErtgS'),     # Spok NOPE button
+                    imgur('foEHo'),     # Spongebob buried in sand
+                    imgur('xKYs9'),     # Puppy does not like lime
+                    imgur('ST9lw3U'),   # Seinfeld I'm Out
+                    imgur('c4gTe5p')),  # Cat thriller walk I'm Out
 
-        r'tl;?dr': (imgur('dnMjc'),
-                    imgur('V2H9y')),
+        r'tl;?dr': (imgur('dnMjc'),   # Lightsaber did not read
+                    imgur('V2H9y')),  # Craig Robinson did not read
 
-        r'panic': (imgur('tpGQV'),
-                   imgur('Jz2Iu'),
-                   imgur('WS4S2'),
-                   imgur('rhNOy3I'),
-                   imgur('SNvM6CZ'),
-                   imgur('H7PXV'),
-                   imgur('fH9e2')),
+        r'panic': (imgur('tpGQV'),    # Aladding start panicking
+                   imgur('WS4S2'),    # Colbert screaming in terror
+                   imgur('rhNOy3I'),  # Panic cat bug eyes
+                   imgur('SNvM6CZ'),  # Girl leans on escalator handrail
+                   imgur('H7PXV'),    # Ain't nobody got time for that
+                   imgur('fH9e2')),   # Out of control truck on collision course
 
-        r'shock(ed|ing)?': (imgur('zVyOBlR'),
-                            imgur('Q4bI5'),
-                            imgur('wdA2Z'),
-                            imgur('nj3yp'),
-                            imgur('AGnOQ'),
-                            imgur('wkY1FUI'),
-                            imgur('AXuUYIj')),
+        r'shock(ed|ing)?': (imgur('zVyOBlR'),   # Cartoon is shocked
+                            imgur('Q4bI5'),     # Shocked cat is shocked
+                            imgur('wdA2Z'),     # Monsters Inc watching Boo in compactor
+                            imgur('nj3yp'),     # Spock is shocked
+                            imgur('AGnOQ'),     # PeeWee is shocked
+                            imgur('wkY1FUI'),   # Shocked looks around
+                            imgur('AXuUYIj')),  # Simpsons jaw drop
 
-        r'(bloody mary|vodka)': imgur('W9SS4iJ'),
+        r'(bloody mary|vodka)': imgur('W9SS4iJ'),  # Sterling Archer: Bloody Mary, full of vodka, blessed are you among cocktails
 
-        r'popcorn': (imgur('00IJgSZ'),
-                     imgur('5px9l')),
+        r'popcorn': (imgur('00IJgSZ'),  # Thriller popcorn
+                     imgur('5px9l')),   # Colbert popcorn
 
-        r'deal with it': (imgur('12WoH'),
-                          imgur('6E6n1'),
-                          imgur('hYdy4'),
-                          imgur('pqmfX'),
-                          imgur('9WbAL'),
-                          imgur('KdldmZk'),
+        r'deal with it': (imgur('12WoH'),    # Slip n slide DWI
+                          imgur('6E6n1'),    # WTF Oprah
+                          imgur('hYdy4'),    # Baseball catch deal with it
+                          imgur('pqmfX'),    # WTF pouring water from nose
+                          imgur('9WbAL'),    # A three toed sloth in a chair
+                          imgur('KdldmZk'),  # Polar bear jumping out of water
                           imgur('49UtI5N'),  # The Fresh Prince of DEAL WITH IT
                           u'(⌐■_■)',
 
@@ -134,41 +133,41 @@ class OneLinerExtension(HelgaExtension):
                            u'.     B :-|',
                            u'.       B-| deal with it')),
 
-        r'(mind blown|blew my mind)': (imgur('U6kCXUp'),
-                                       imgur('1HMveGj')),
+        r'(mind blown|blew my mind)': (imgur('U6kCXUp'),   # Head asploding
+                                       imgur('1HMveGj')),  # Tim and Eric mind blown
 
-        r'(sweet jesus|mother of god)': (imgur('5vXdAOV'),
-                                         imgur('g155Wra'),
-                                         imgur('dyeHb'),
-                                         imgur('VkHiG6D'),
-                                         imgur('aiH4Mts'),
-                                         imgur('nOJme'),
-                                         imgur('KtdHWhs'),
-                                         imgur('z5hhSsU'),
-                                         imgur('zuc9tAm')),
+        r'(sweet jesus|mother of god)': (imgur('5vXdAOV'),   # Captain Kirk
+                                         imgur('g155Wra'),   # Star Trek freaking out
+                                         imgur('dyeHb'),     # BJ Novak looks confused
+                                         imgur('VkHiG6D'),   # Face twitching
+                                         imgur('aiH4Mts'),   # Christopher Lloyd realizes something
+                                         imgur('nOJme'),     # Cookie monster sweet jesus
+                                         imgur('KtdHWhs'),   # Fight club realization
+                                         imgur('z5hhSsU'),   # Cat with toy: OMG it was you!
+                                         imgur('zuc9tAm')),  # Dinosaurs show - drops beer
 
-        r'nailed it': (imgur('KsQzQTF'),
-                       imgur('5nrEk'),
-                       imgur('n9zw0'),
-                       imgur('puZy04m'),
-                       imgur('MBdxv'),
-                       imgur('6XRqt'),
-                       imgur('dFuBE'),
-                       imgur('vUACp'),
-                       imgur('59h9A8e')),
+        r'nailed it': (imgur('KsQzQTF'),   # Cat not trying to catch rat
+                       imgur('5nrEk'),     # Olympic diving fail
+                       imgur('n9zw0'),     # squirrel spinning on bird feeder
+                       imgur('puZy04m'),   # Kid jumping into pool fail
+                       imgur('MBdxv'),     # Girl trying to jump bike ramp fail
+                       imgur('6XRqt'),     # FIXME
+                       imgur('dFuBE'),     # Cat jumps into a box
+                       imgur('vUACp'),     # Backflip off bleachers
+                       imgur('59h9A8e')),  # Backflip off tree
 
-        r'unacceptable': imgur('BwdP2xl'),
+        r'unacceptable': imgur('BwdP2xl'),  # 3D rendering goes wrong
 
-        r'^(iknorite|right)\?$': imgur('RvquHs0'),
+        r'^(iknorite|right)\?$': imgur('RvquHs0'),  # Breaking Bad: You're god damn right
 
-        r'fuck yea': (imgur('GZ5CD5r'),
-                      imgur('nEmrMkq')),
+        r'fuck yea': (imgur('GZ5CD5r'),   # Data shooting dice
+                      imgur('nEmrMkq')),  # Top Gun ... DANGER ZONE
 
-        r'\w+ broke prod': imgur('SuCGnum'),
+        r'\w+ broke prod': imgur('SuCGnum'),  # Anchorman: You ate the whole wheel of cheese?
 
-        r'^indeed$': imgur('bQcbpki'),
+        r'^indeed$': imgur('bQcbpki'),  # Leonardo DiCaprio in Django Unchained
 
-        r'f(f{6}|7)u(u{11}|12)': 'http://i.minus.com/ibnfJRQi1h4z30.gif',
+        r'f(f{6}|7)u(u{11}|12)': 'http://i.minus.com/ibnfJRQi1h4z30.gif',  # Workaholics: FUUUUUUUUUUUUUU
 
 
         # Various modern unicode emoticons
