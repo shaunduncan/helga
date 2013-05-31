@@ -35,6 +35,15 @@ class ContextualExtensionTestCase(TestCase):
         self.ext.contextualize(msg)
         assert msg.response == 'foo1'
 
+    def test_contextualize_no_duplicates(self):
+        self.ext.allow_many = True
+        self.ext.context = r'foo[\d]+'
+        self.ext.response_fmt = '%(response)s'
+        msg = Mock(message='foo1 foo1 foo1')
+
+        self.ext.contextualize(msg)
+        assert msg.response == 'foo1'
+
 
 class CommandExtensionTestCase(TestCase):
 
