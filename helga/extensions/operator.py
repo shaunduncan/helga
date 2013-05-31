@@ -57,8 +57,11 @@ class OperatorExtension(CommandExtension):
 
     def join_autojoined_channels(self):
         for channel in db.autojoin.find():
-            # Damn mongo unicode messin with my twisted
-            self.bot.client.join(str(channel['channel']))
+            try:
+                # Damn mongo unicode messin with my twisted
+                self.bot.client.join(str(channel['channel']))
+            except:
+                logger.exception('Could not autojoin %s' % channel['channel'])
 
     def join(self, channel):
         self.bot.client.join(str(channel))
