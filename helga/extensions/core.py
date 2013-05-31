@@ -145,7 +145,10 @@ class HelpExtension(CommandExtension):
             message.response = self.help(ext_name) if ext_name else self.help_all()
 
             # Side effect - this extension PMs the user asking
-            message.resp_channel = message.from_nick
+            if message.is_public:
+                logger.critical(dir(self.bot.client))
+                self.bot.client.describe(message.resp_channel, 'whispers to %s' % message.from_nick)
+                message.resp_channel = message.from_nick
 
 
 class IgnoreExtension(CommandExtension):
