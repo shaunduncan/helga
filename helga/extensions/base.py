@@ -143,7 +143,7 @@ class ContextualExtension(HelgaExtension):
             found.append(self.transform_match(match))
 
         # filter Nones
-        found = filter(lambda x: x is not None, found)
+        found = filter(lambda x: x is not None, set(found))
 
         if found:
             found = found if self.allow_many else [found[0]]
