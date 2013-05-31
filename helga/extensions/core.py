@@ -147,7 +147,7 @@ class HelpExtension(CommandExtension):
             # Side effect - this extension PMs the user asking
             if message.is_public:
                 logger.critical(dir(self.bot.client))
-                self.bot.client.describe(message.resp_channel, 'whispers to %s' % message.from_nick)
+                self.bot.client.me(message.resp_channel, 'whispers to %s' % message.from_nick)
                 message.resp_channel = message.from_nick
 
 

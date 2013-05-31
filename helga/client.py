@@ -148,3 +148,10 @@ class HelgaClient(irc.IRCClient):
         """
         if command.lower() == 'invite':
             self.on_invite(prefix, params[0], params[1])
+
+    def me(self, channel, message):
+        """
+        A proxy for the WTF-named method `describe`. Basically the same as doing
+        /me waves
+        """
+        irc.IRCClient.describe(self, channel, message)
