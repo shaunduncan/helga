@@ -39,9 +39,11 @@ EXTENSIONS = (
     'helga.extensions.dubstep',
     'helga.extensions.icanhazascii',
     'helga.extensions.mts',
+    'helga.extensions.wiki_whois',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
+WIKI_URL = 'http://intranet.cmgdigital.com/display/~%(user)s/Home'
 REVIEWBOARD_URL = 'http://reviews.ddtc.cmgdigital.com/r/%(review)s'
 
 ALLOW_NICK_CHANGE = False
