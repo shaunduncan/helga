@@ -67,7 +67,7 @@ class CommandExtension(HelgaExtension):
     usage = '[BOTNICK] [COMMAND] [INPUT ...]'
 
     def parse_command(self, message):
-        argv = message.message.strip().split()
+        argv = message.message.strip().lower().split()
         usage = self.usage
 
         # make sure usage is right - this is a docopt complainy thing. maybe i'll fix it.
