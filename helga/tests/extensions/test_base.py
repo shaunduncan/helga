@@ -69,6 +69,11 @@ class CommandExtensionTestCase(TestCase):
         msg = Mock(message='foo')
         assert self.ext.parse_command(msg)
 
+    def test_parse_command_mixed_case(self):
+        self.ext.usage = 'BOTNICK foo'
+        msg = Mock(message='helga Foo')
+        assert self.ext.parse_command(msg)
+
     def test_should_handle_message_private_without_nick(self):
         msg = Mock(is_public=False)
         opts = {
