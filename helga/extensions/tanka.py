@@ -7,7 +7,7 @@ class TankaExtension(HaikuExtension):
 
     NAME = 'tanka'
 
-    usage = '[BOTNICK] tanka [tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
+    usage = '[BOTNICK] tanka [blame|tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
 
     def use(self, syllables, message):
         poem = self.make_poem()
