@@ -40,6 +40,7 @@ EXTENSIONS = (
     'helga.extensions.icanhazascii',
     'helga.extensions.mts',
     'helga.extensions.wiki_whois',
+    'helga.extensions.fredoism',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
