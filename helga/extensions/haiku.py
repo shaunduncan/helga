@@ -14,7 +14,7 @@ class HaikuExtension(CommandExtension):
 
     NAME = 'haiku'
 
-    usage = '[BOTNICK] haiku [tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
+    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
 
     syllable_map = {
         'fives': 5,
@@ -37,6 +37,8 @@ class HaikuExtension(CommandExtension):
 
         if opts['tweet']:
             response = self.tweet(message.channel)
+        elif opts['blame']:
+            response = self.blame(message.channel)
         elif opts['about']:
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
@@ -110,6 +112,26 @@ class HaikuExtension(CommandExtension):
             resp = '%(nick)s that probably did not work'
 
         return resp
+
+    def blame(self, channel):
+        """
+        Show who helped make the last haiku possible
+        """
+        if channel not in self.last:
+            return "%(nick)s, why don't you try making one first?"
+
+        authors = []
+
+        for line in self.last[channel]:
+            try:
+                rec = db.haiku.find_one({'message': line})
+            except:
+                authors.append(self.bot.nick)
+            else:
+                authors.append(rec.get('author', None) or self.bot.nick)
+
+        del self.last[channel]
+        return "The last haiku was brought to you by (in order): %s" % ', '.join(authors)
 
     def add(self, syllables, input, author=None):
         logger.info('Adding %d syllable line: %s' % (syllables, input))
