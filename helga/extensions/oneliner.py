@@ -51,18 +51,6 @@ class OneLinerExtension(HelgaExtension):
 
         r'^docs\?$': 'http://docs.cmgdigital.com/',
 
-        r'alfredo(deza)?': [
-            "trollfredo:::everything you are doing is wrong",
-            "trollfredo:::if you aren't using zsh, %(nick)s, you are doing it wrong",
-            "trollfredo:::you are wrong %(nick)s",
-            "trollfredo:::i have a vim plugin that shows you how wrong you are",
-            "trollfredo:::i can't believe how wrong you are",
-            "trollfredo:::wrong wrong wrong",
-            "trollfredo:::what is dis? WRONG",
-        ],
-
-        r'random': "trollfredo:::there is no such thing as random",
-
         r'\\m/': 'rock on, %(nick)s',
 
         r'((beetle|betel)(geuse|juice)\s?){3}': "beetlejuice:::i'm the ghost with the most",
