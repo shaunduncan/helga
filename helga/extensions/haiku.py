@@ -130,8 +130,7 @@ class HaikuExtension(CommandExtension):
             else:
                 authors.append(rec.get('author', None) or self.bot.nick)
 
-        del self.last[channel]
-        return "The last haiku was brought to you by (in order): %s" % ', '.join(authors)
+        return "The last poem was brought to you by (in order): %s" % ', '.join(authors)
 
     def add(self, syllables, input, author=None):
         logger.info('Adding %d syllable line: %s' % (syllables, input))
