@@ -41,13 +41,18 @@ class HaikuExtension(CommandExtension):
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
             fn_name = self.firstof(opts, 'add', 'add_use', 'use', 'remove')
+
             if fn_name:
                 input = ' '.join(opts['INPUT'] or [])
                 syllables = self.syllable_map.get(self.firstof(opts, 'fives', 'sevens'), None)
                 call_me_maybe = getattr(self, fn_name, None)
+                kwargs = {}
+
+                if fn_name in ('add', 'add_use'):
+                    kwargs['author'] = message.from_nick
 
                 if call_me_maybe:
-                    response = call_me_maybe(syllables, input)
+                    response = call_me_maybe(syllables, input, **kwargs)
 
             # just make a poem
             else:
@@ -106,21 +111,22 @@ class HaikuExtension(CommandExtension):
 
         return resp
 
-    def add(self, syllables, input):
+    def add(self, syllables, input, author=None):
         logger.info('Adding %d syllable line: %s' % (syllables, input))
 
         db.haiku.insert({
             'syllables': syllables,
             'message': input,
+            'author': author,
         })
 
         return random.choice(self.add_acks)
 
-    def add_use(self, syllables, input):
+    def add_use(self, syllables, input, author=None):
         """
         Stores a poem input and uses it in the response
         """
-        self.add(syllables, input)
+        self.add(syllables, input, author=author)
         return self.use(syllables, input)
 
     def use(self, syllables, input):
