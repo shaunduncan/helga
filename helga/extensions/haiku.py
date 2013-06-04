@@ -14,7 +14,7 @@ class HaikuExtension(CommandExtension):
 
     NAME = 'haiku'
 
-    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|(add|add_use|use|remove) (fives|sevens) (INPUT ...)]'
+    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
 
     syllable_map = {
         'fives': 5,
@@ -50,7 +50,7 @@ class HaikuExtension(CommandExtension):
                 call_me_maybe = getattr(self, fn_name, None)
                 kwargs = {}
 
-                if fn_name in ('add', 'add_use'):
+                if fn_name in ('add', 'add_use', 'claim'):
                     kwargs['author'] = message.from_nick
 
                 if call_me_maybe:
@@ -131,6 +131,14 @@ class HaikuExtension(CommandExtension):
                 authors.append(rec.get('author', None) or self.bot.nick)
 
         return "The last poem was brought to you by (in order): %s" % ', '.join(authors)
+
+    def claim(self, syllables, input, author=None):
+        try:
+            db.haiku.update({'message': input}, {'$set': { 'author': author }})
+            logger.info('%s has claimed the line: %s' % (author, input))
+            return "%s has claimed the line: %s" % (author, input)
+        except:
+            return "Sorry, I don't know that line."
 
     def add(self, syllables, input, author=None):
         logger.info('Adding %d syllable line: %s' % (syllables, input))
