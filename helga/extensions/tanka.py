@@ -7,7 +7,7 @@ class TankaExtension(HaikuExtension):
 
     NAME = 'tanka'
 
-    usage = '[BOTNICK] tanka [blame|tweet|about (<thing> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
+    usage = '[BOTNICK] tanka [blame|tweet|about (<thing> ...)|by (<author_nick> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
 
     def use(self, syllables, message):
         poem = self.make_poem()
@@ -21,18 +21,20 @@ class TankaExtension(HaikuExtension):
 
         return poem
 
-    def make_poem(self, about=None):
-        poem = super(TankaExtension, self).make_poem(about=about)
+    def make_poem(self, about=None, by=None):
+        poem = super(TankaExtension, self).make_poem(about=about, by=by)
 
         if poem is None:
             return None
 
         poem.extend([
-            self.get_random_line(7, about),
-            self.get_random_line(7, about)
+            self.get_random_line(7, about, by),
+            self.get_random_line(7, about, by)
         ])
 
         if about is not None:
             return self.fix_repitition(poem, about=about, start=4, syllables=7)
+        elif by is not None:
+            return self.fix_repitition(poem, by=by, start=4, syllables=7)
         else:
             return poem
