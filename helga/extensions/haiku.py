@@ -14,7 +14,7 @@ class HaikuExtension(CommandExtension):
 
     NAME = 'haiku'
 
-    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
+    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|by (<author_nick> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
 
     syllable_map = {
         'fives': 5,
@@ -39,6 +39,8 @@ class HaikuExtension(CommandExtension):
             response = self.tweet(message.channel)
         elif opts['blame']:
             response = self.blame(message.channel)
+        elif opts['by']:
+            response = self.make_poem(by=' '.join(opts['<author_nick>']))
         elif opts['about']:
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
@@ -69,15 +71,21 @@ class HaikuExtension(CommandExtension):
     def _make_term_pattern(self, term):
         return re.compile(term, re.I)
 
-    def get_random_line(self, syllables, about=None):
+    def get_random_line(self, syllables, about=None, by=None):
         """
         Returns a single random line with the given number of syllables.
-        Optionally will find lines containing a keyword. If no entries are found
-        with that keyword, we just return a random one
+        Optionally will find lines containing a keyword or by an author.
+        If no entries are found with that keyword or by that author,
+        we just return a random line.
         """
         finder = {
             'syllables': syllables
         }
+
+        if by:
+            finder.update({
+                'author': {'$regex': self._make_term_pattern(by)}
+            })
 
         if about:
             finder.update({
@@ -88,10 +96,10 @@ class HaikuExtension(CommandExtension):
         num_rows = qs.count()
 
         if num_rows == 0:
-            if not about:
-                return None
-            else:
+            if about or by:
                 return self.get_random_line(syllables)
+            else:
+                return None
 
         skip = random.randint(0, num_rows - 1)
 
@@ -182,13 +190,13 @@ class HaikuExtension(CommandExtension):
 
         return random.choice(self.delete_acks)
 
-    def fix_repitition(self, poem, about=None, start=0, check=-1, syllables=5):
+    def fix_repitition(self, poem, about=None, by=None, start=0, check=-1, syllables=5):
         """
         If line ``check`` repeats line ``check``, try to get a random line
         a second time, falling back to ignoring abouts
         """
         if poem[start] == poem[check]:
-            repl = self.get_random_line(syllables, about)
+            repl = self.get_random_line(syllables, about, by)
 
             if repl == poem[start]:
                 poem[check] = self.get_random_line(syllables)
@@ -197,11 +205,11 @@ class HaikuExtension(CommandExtension):
 
         return poem
 
-    def make_poem(self, about=None):
+    def make_poem(self, about=None, by=None):
         poem = [
-            self.get_random_line(5, about),
-            self.get_random_line(7, about),
-            self.get_random_line(5, about)
+            self.get_random_line(5, about, by),
+            self.get_random_line(7, about, by),
+            self.get_random_line(5, about, by)
         ]
 
         if not all(poem):
@@ -209,5 +217,7 @@ class HaikuExtension(CommandExtension):
 
         if about is not None:
             return self.fix_repitition(poem, about=about)
+        elif by is not None:
+            return self.fix_repitition(poem, by=by)
         else:
             return poem
