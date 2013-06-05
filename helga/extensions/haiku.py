@@ -42,7 +42,7 @@ class HaikuExtension(CommandExtension):
         elif opts['about']:
             response = self.make_poem(about=' '.join(opts['<thing>']))
         else:
-            fn_name = self.firstof(opts, 'add', 'add_use', 'use', 'remove')
+            fn_name = self.firstof(opts, 'add', 'add_use', 'use', 'remove', 'claim')
 
             if fn_name:
                 input = ' '.join(opts['INPUT'] or [])
