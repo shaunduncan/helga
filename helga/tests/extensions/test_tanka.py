@@ -19,7 +19,7 @@ class TankaExtensionTestCase(TestCase):
     def test_make_poem(self):
 
         # We mock out the find, because we will do sorting and slicing
-        def fake_random_line(syllables, about=None):
+        def fake_random_line(syllables, about=None, by=None):
             if syllables == 5:
                 return 'fives'
             elif syllables == 7:
