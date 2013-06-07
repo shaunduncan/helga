@@ -4,5 +4,5 @@ python:
   - 2.7
 before_install:
   - pip install -r requirements.txt
-  - pip install pytest mock
+  - pip install pytest mock pretend
 script: py.test
