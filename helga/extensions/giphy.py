@@ -1,8 +1,13 @@
 import random
 
-from giphypop import Giphy, GiphyApiException
+from giphypop import Giphy, GiphyApiException, GIPHY_PUBLIC_KEY
 
+from helga import settings
 from helga.extensions.base import CommandExtension
+from helga.log import setup_logger
+
+
+logger = setup_logger(__name__)
 
 
 class GiphyExtension(CommandExtension):
@@ -21,7 +26,10 @@ class GiphyExtension(CommandExtension):
     ]
 
     def __init__(self, *args, **kwargs):
-        self.api = Giphy(strict=True)
+        self.api_key = getattr(settings, 'GIPHY_API_KEY', GIPHY_PUBLIC_KEY)
+        logger.info('Connecting to Giphy API with key %s' % self.api_key)
+
+        self.api = Giphy(api_key=GIPHY_PUBLIC_KEY, strict=True)
         super(GiphyExtension, self).__init__(*args, **kwargs)
 
     def handle_message(self, opts, message):
