@@ -42,7 +42,7 @@ class GiphyExtension(CommandExtension):
             except GiphyApiException:
                 try:
                     return self.api.search_list(search, limit=1)[0].media_url
-                except GiphyApiException:
+                except (GiphyApiException, IndexError):
                     pass
 
         return random.choice(self.sad_panda)
