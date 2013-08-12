@@ -26,24 +26,15 @@ class ExtensionRegistry(object):
     def _make_import_args(self, path):
         return path, {}, {}, [path.split('.')[-1]]
 
-    def _get_possible_extensions(self, mod):
-        return filter(lambda x: not x.startswith('__'), dir(mod))
-
-    def load_module_members(self, module):
-        # See if there are any HelgaExtensions
-        for member in self._get_possible_extensions(module):
-            cls = getattr(module, member)
-            if cls == HelgaExtension:  # XXX Maybe we don't need to do this anymore
-                continue
-
-            try:
-                if issubclass(cls, HelgaExtension) and cls.NAME not in self.extension_names:
-                    category = 'commands' if self._is_command(cls) else 'contexts'
-                    self.extensions[category].add(cls(bot=self.bot))
-                    self.extension_names.add(cls.NAME)
-            except (TypeError, AttributeError):
-                # Either it's not a class, or it doesn't have ``NAME``
-                continue
+    def load_module_members(self, cls):
+        try:
+            if issubclass(cls, HelgaExtension) and cls.NAME not in self.extension_names:
+                category = 'commands' if self._is_command(cls) else 'contexts'
+                self.extensions[category].add(cls(bot=self.bot))
+                self.extension_names.add(cls.NAME)
+        except (TypeError, AttributeError):
+            # Either it's not a class, or it doesn't have ``NAME``
+            logger.error('Attempted to load a non-plugin: %s' % repr(cls))
 
     def load(self):
         for module in _load_library_extensions():
