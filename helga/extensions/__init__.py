@@ -1,3 +1,4 @@
+import pkg_resources
 from helga import settings
 from helga.extensions.base import (HelgaExtension,
                                    CommandExtension)
@@ -32,7 +33,7 @@ class ExtensionRegistry(object):
         # See if there are any HelgaExtensions
         for member in self._get_possible_extensions(module):
             cls = getattr(module, member)
-            if cls == HelgaExtension:
+            if cls == HelgaExtension:  # XXX Maybe we don't need to do this anymore
                 continue
 
             try:
@@ -45,17 +46,11 @@ class ExtensionRegistry(object):
                 continue
 
     def load(self):
-        for path in getattr(settings, 'EXTENSIONS', []):
-            logger.debug('Loading extension extension %s' % path)
-
-            try:
-                module = __import__(*self._make_import_args(path))
-            except ImportError:
-                logger.warning('Cannot import extension %s' % path)
-                continue
-
+        for module in _load_library_extensions():
+            logger.debug('Loading extension extension %s' % repr(module))
             self.load_module_members(module)
 
+        # XXX Core has already loaded :/
         # Core loading
         self.core = set([
             ControlExtension(self, self.bot),
@@ -208,9 +203,9 @@ def _load_library_extensions():
     plugins = []
     for ep in entry_points:
         try:
-            logger.debug('loading %s' % ep.NAME)
+            logger.debug('loading %s' % ep.name)
             plugin = ep.load()
-            plugin._helga_name_ = ep.NAME
+            plugin._helga_name_ = ep.name
             plugins.append(plugin)
         except Exception as error:
             logger.error("Error initializing plugin %s: %s" % (ep, error))
