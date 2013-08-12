@@ -183,3 +183,35 @@ class ExtensionRegistry(object):
 
     def is_extension_name(self, name):
         return name in self.extension_names
+
+
+#
+# Plugin loader Helpers
+#
+
+def _load_library_extensions():
+    """
+    Locate all setuptools entry points by the name 'helga_handlers'
+    and initialize them.
+    Any third-party library may register an entry point by adding the
+    following to their setup.py::
+
+        entry_points = {
+            'helga_handlers': [
+                'plugin_name = mylib.mymodule:Handler_Class',
+            ],
+        },
+
+    """
+    group = 'helga_handlers'
+    entry_points = pkg_resources.iter_entry_points(group=group)
+    plugins = []
+    for ep in entry_points:
+        try:
+            logger.debug('loading %s' % ep.NAME)
+            plugin = ep.load()
+            plugin._helga_name_ = ep.NAME
+            plugins.append(plugin)
+        except Exception as error:
+            logger.error("Error initializing plugin %s: %s" % (ep, error))
+    return plugins
