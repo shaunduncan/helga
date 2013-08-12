@@ -10,7 +10,9 @@ SERVER = {
 LOG_LEVEL = 'DEBUG'
 
 DEFAULT_NICK = 'helga'
-CHANNELS = ('#bots',)
+CHANNELS = (
+    ('#bots',),
+)
 
 AUTO_RECONNECT = True
 RATE_LIMIT = None
@@ -26,22 +28,22 @@ MONGODB = {
 
 # Modules and their settings
 EXTENSIONS = (
-    'helga.extensions.operator',
-    'helga.extensions.reviewboard',
-    'helga.extensions.jira',
-    'helga.extensions.facts',
-    'helga.extensions.haiku',
-    'helga.extensions.tanka',
-    'helga.extensions.loljava',
-    'helga.extensions.oneliner',
-    'helga.extensions.no_more_olga',
-    'helga.extensions.stfu',
-    'helga.extensions.dubstep',
-    'helga.extensions.icanhazascii',
-    'helga.extensions.mts',
-    'helga.extensions.wiki_whois',
-    'helga.extensions.fredoism',
-    'helga.extensions.giphy',
+    'operator',
+    'reviewboard',
+    'jira',
+    'facts',
+    'haiku',
+    'tanka',
+    'loljava',
+    'oneliner',
+    'no_more_olga',
+    'stfu',
+    'dubstep',
+    'icanhazascii',
+    'mts',
+    'wiki_whois',
+    'fredoism',
+    'giphy',
 )
 
 JIRA_URL = 'https://jira.cmgdigital.com/browse/%(ticket)s'
