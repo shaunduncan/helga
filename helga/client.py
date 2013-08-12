@@ -76,7 +76,10 @@ class HelgaClient(irc.IRCClient):
 
     def signedOn(self):
         for channel in settings.CHANNELS:
-            self.join(channel)
+            if len(channel) >1:
+                self.join(channel[0], channel[1])
+            else:
+                self.join(channel)
 
         # Hook FTW
         smokesignal.emit('signon')
