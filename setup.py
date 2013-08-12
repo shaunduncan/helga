@@ -19,8 +19,30 @@ setup(name="helga",
       url='https://github.com/shaunduncan/helga',
       license='MIT',
       packages=find_packages(),
-      entry_points={
-          'console_scripts': [
-              'helga = helga.run:run'
-          ]
-      })
+      entry_points = dict(
+          helga_handlers = [
+              'haiku = helga.extensions.haiku:HaikuExtension',
+              'dubstep = helga.extensions.dubstep:DubstepExtension',
+              'ascii_artz = helga.extensions.icanhazascii:ICanHazAsciiExtension',
+              'fredoisms = helga.extensions.fredoism:FredoismExtension',
+              'facts = helga.extensions.facts:FactExtension',
+              'giphy = helga.extensions.giphy:GiphyExtension',
+              'controls = helga.extensions.core:ControlExtension',
+              'ignore = helga.extensions.core:IgnoreExtension',
+              'help = helga.extensions.core:HelpExtension',
+              'jira = helga.extensions.jira:JiraExtension',
+              'loljava = helga.extensions.loljava:LOLJavaExtension',
+              'meanttosay = helga.extensions.mts:MTSExtension',
+              'no_more_olga = helga.extensions.no_more_olga:NoMoreOlgaExtension',
+              'oneliner = helga.extensions.oneliner:OneLinerExtension',
+              'oper = helga.extensions.operator:OperatorExtension',
+              'reviewboard = helga.extensions.reviewboard:ReviewboardExtension',
+              'stfu = helga.extensions.stfu:STFUExtension',
+              'tanka = helga.extensions.tanka:TankaExtension',
+              'wiki_whois = helga.extensions.wiki_whois:WikiWhoisExtension',
+          ],
+          console_scripts = [
+              'helga = helga.run:run',
+          ],
+      ),
+)
