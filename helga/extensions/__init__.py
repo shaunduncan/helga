@@ -38,8 +38,9 @@ class ExtensionRegistry(object):
 
     def load(self):
         for module in _load_library_extensions():
-            logger.debug('Loading extension extension %s' % repr(module))
-            self.load_module_members(module)
+            if module.NAME in settings.EXTENSIONS:
+                logger.debug('Loading extension extension %s' % repr(module))
+                self.load_module_members(module)
 
         # XXX Core has already loaded :/
         # Core loading
@@ -194,7 +195,7 @@ def _load_library_extensions():
     plugins = []
     for ep in entry_points:
         try:
-            logger.debug('loading %s' % ep.name)
+            logger.debug('loading entry_point %s' % ep.name)
             plugin = ep.load()
             plugin._helga_name_ = ep.name
             plugins.append(plugin)
