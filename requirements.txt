@@ -1,8 +1,8 @@
-twisted
-pymongo
-tweepy
-pytz
-pyopenssl
+Twisted==13.1.0
+pymongo==2.5.2
+tweepy==2.1
+pytz==2013b
+pyOpenSSL==0.13
 
 # Because it handles optional arguments better
 -e git://github.com/shaunduncan/docopt.git@8423a6175f#egg=docopt
