@@ -42,7 +42,6 @@ EXTENSIONS = (
     'icanhazascii',
     'mts',
     'wiki_whois',
-    'fredoism',
     'giphy',
 )
 
