@@ -20,24 +20,6 @@ class ExtensionRegistryTestCase(TestCase):
         assert ret[0] == 'foo'
         assert ret[-1] == ['foo']
 
-    def test_get_possible_extensions(self):
-        class FakeModule(object):
-            def __ignored(self):
-                pass
-
-            def not_ignored(self):
-                pass
-
-            def _also_not_ignored(self):
-                pass
-
-        fake = FakeModule()
-        ret = self.registry._get_possible_extensions(fake)
-
-        assert '__ignored' not in ret
-        assert 'not_ignored' in ret
-        assert '_also_not_ignored' in ret
-
     def test_get_enabled(self):
         self.registry.extension_names = set(['foo', 'bar', 'baz'])
         self.registry.disabled_extensions = {'#bots': set(['foo'])}
