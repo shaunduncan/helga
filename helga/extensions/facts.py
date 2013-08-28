@@ -19,12 +19,12 @@ class FactExtension(CommandExtension, ContextualExtension):
     NAME = 'facts'
 
     # contextual
-    context = r'^([\w]+)\?$'
+    context = r'^([\w\s]+)\?$'
     allow_many = False
     response_fmt = '%(response)s'
 
     # commands
-    usage = '[BOTNICK] forget <thing> | <thing> (is|are) [REPLY] (INPUT ...)'
+    usage = '[BOTNICK] forget (<thing> ...) | (<thing> ...) (is|are) [REPLY] (INPUT ...)'
 
     def should_handle_message(self, opts, message):
         # If we match 'forget', see what super() says about it
@@ -53,8 +53,10 @@ class FactExtension(CommandExtension, ContextualExtension):
             self.handle_message(opts, message)
 
     def handle_message(self, opts, message):
+        thing = ' '.join(opts.get('<thing>', []))
+
         if opts['forget']:
-            message.response = self.remove_fact(opts['<thing>'].lower())
+            message.response = self.remove_fact(thing)
         elif opts['is'] or opts['are']:
             if opts['INPUT'][0] == '<reply>':
                 # Weird case where <reply> is part of the input?
@@ -67,7 +69,7 @@ class FactExtension(CommandExtension, ContextualExtension):
             if not is_reply:
                 opts['INPUT'].insert(0, opts['REPLY'])
 
-            term = opts['<thing>'].lower()
+            term = thing.lower()
 
             fact = ' '.join(opts['INPUT']) if is_reply else message.message
 
