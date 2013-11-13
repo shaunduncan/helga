@@ -36,7 +36,7 @@ class OneLinerExtension(HelgaExtension):
         r'^:w?q': ("this ain't your vi",
                    "this ain't your vi, but at least you're not using emacs"),
 
-        r'^((sudo|ls|cd|rm)( .+)?|pwd)': "%(nick)s, this ain't your shell",
+        r'^((sudo|ls|cd|rm)\s( .+)?|pwd)': "%(nick)s, this ain't your shell",
 
         r'php': ("php is just terrible",
                  "MERGE ALL THE PULL REQUESTS"),
