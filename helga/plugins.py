@@ -9,7 +9,7 @@ server.
 """
 import re
 
-from functools import wraps
+from functools import partial, wraps
 
 
 def command(cmd='', aliases=None, help=''):
@@ -23,44 +23,55 @@ def command(cmd='', aliases=None, help=''):
     """
     def decorator(fn):
         @wraps(fn)
-        def wrapped(channel, nick, message, channel_is_public):
+        def wrapped(channel, nick, message):
             pass
         return wrapped
     return decorator
 
 
-def match(pattern_or_fn=None, response_or_fn=None):
+def match(pattern_or_fn=None):
     """
     A match is a type of plugin that will make helga respond if the contents
     of a user's message match a pattern. For example, if a match plugin looks
     for the string "foo", helga will respond with "bar" without being asked
     to do so.
 
-    :param pattern_or_fn: either a regular expression or a callable that accepts
-                          a string and returns a boolean if there is a match. If
-                          this argument is a callable, it must accept four args:
-                              - channel: the channel the message was sent on
-                              - nick: the current nick of the user sending the message
-                              - message: the raw message sent by the user
-                              - channel_is_public: boolean, True if channel is public
-    :param response_or_fn: either a string or a callable that returns a string response.
-                           If this argument is a callable, it must accept no arguments
+    The only argument to this decorator is either a regular expression or a
+    callable. If the argument is a callable, it must accept a single string
+    argument, which will be the message that has been received over IRC. By
+    convention, this callable should return something that can be checked for
+    truthines (i.e. a string, or list of strings).
+
+    The decorated method should accept four arguments:
+
+    - channel: the channel on which the message was received
+    - nick: the current nick of the message sender
+    - message: the message string itself
+    - found: if the decorator argument is a callable, this will be its return value.
+      If it is a regex string, this will be the return value of ``re.findall``
     """
     def decorator(fn):
         @wraps(fn)
-        def wrapped(channel, nick, message, channel_is_public):
+        def wrapped(channel, nick, message):
             if callable(pattern_or_fn):
-                try:
-                    should_respond = pattern_or_fn(channel, nick, message, channel_is_public)
-                except TypeError:
-                    # FIXME: Log warning here
-                    return u''
+                matcher = pattern_or_fn
             else:
-                should_respond = bool(re.findall(pattern_or_fn, message))
+                matcher = partial(re.findall, pattern_or_fn)
 
-            if not should_respond:
-                return u''
+            try:
+                found = matcher(message)
+            except TypeError:
+                # FIXME: Log warning here
+                return None
 
-            return response_or_fn() if callable(response_or_fn) else response_or_fn
+            if not bool(found):
+                return None
+
+            try:
+                return fn(channel, nick, message, found)
+            except TypeError:
+                # FIXME: Log warning here
+                return None
+
         return wrapped
     return decorator
