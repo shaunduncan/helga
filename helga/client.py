@@ -76,7 +76,7 @@ class HelgaClient(irc.IRCClient):
 
     def signedOn(self):
         for channel in settings.CHANNELS:
-            if len(channel) >1:
+            if len(channel) > 1:
                 self.join(channel[0], channel[1])
             else:
                 self.join(channel[0])
