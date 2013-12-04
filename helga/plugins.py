@@ -322,7 +322,7 @@ def match(pattern=''):
     None, then no response will be sent over IRC. A simple command example::
 
         @match('foo')
-        def foo(channel, nick, message, found):
+        def foo(channel, nick, message, matches):
             return '%s said foo' % nick
 
     Using the above example may produce the following results in IRC::
