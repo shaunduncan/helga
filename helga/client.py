@@ -4,12 +4,11 @@ import smokesignal
 from twisted.words.protocols import irc
 
 from helga import settings
-from helga.bot import Helga
+from helga.bot import bot
 from helga.log import setup_logger
 
 
 logger = setup_logger(__name__)
-helga = Helga()
 
 
 class Message(object):
@@ -67,12 +66,12 @@ class HelgaClient(irc.IRCClient):
     def connectionMade(self):
         logger.info('Connection made to %s' % settings.SERVER['HOST'])
         irc.IRCClient.connectionMade(self)
-        helga.client = self
+        bot.client = self
 
     def connectionLost(self, reason):
         logger.info('Connection to %s lost' % settings.SERVER['HOST'])
         irc.IRCClient.connectionLost(self, reason)
-        helga.client = None
+        bot.client = None
 
     def signedOn(self):
         for channel in settings.CHANNELS:
@@ -86,7 +85,7 @@ class HelgaClient(irc.IRCClient):
 
     def joined(self, channel):
         logger.info('Joined %s' % channel)
-        helga.join_channel(channel)
+        bot.join_channel(channel)
         smokesignal.emit('join', channel)
 
     def parse_nick(self, full_nick):
@@ -105,11 +104,11 @@ class HelgaClient(irc.IRCClient):
         logger.debug('[<--] %s/%s - %s' % (channel, user, message))
 
         msg = Message(user, channel, message, self.is_public_channel(channel))
-        helga.process(msg)
+        bot.process(msg)
 
     def user_renamed(self, oldnick, newnick):
         logger.debug('User %s is now known as %s' % (oldnick, newnick))
-        helga.update_user_nick(oldnick, newnick)
+        bot.update_user_nick(oldnick, newnick)
 
     def alterCollidedNick(self, nickname):
         """
@@ -128,12 +127,12 @@ class HelgaClient(irc.IRCClient):
 
     def kickedFrom(self, channel, kicker, message):
         logger.warning('%s kicked bot from %s: %s' % (kicker, channel, message))
-        helga.leave_channel(channel)
+        bot.leave_channel(channel)
 
     def userJoined(self, user, channel):
         user = self.parse_nick(user)
         logger.debug('%s joined %s' % (user, channel))
-        helga.update_user_nick(user, user)
+        bot.update_user_nick(user, user)
 
     def msg(self, channel, message):
         logger.debug('[-->] %s - %s' % (channel, message))
