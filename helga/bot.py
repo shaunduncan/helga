@@ -69,3 +69,6 @@ class Helga(object):
 
         if getattr(settings, 'ALLOW_NICK_CHANGE', False):
             self.client.setNick(current_nick)
+
+
+bot = Helga()
