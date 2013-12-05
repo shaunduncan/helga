@@ -1,8 +1,97 @@
+import functools
+import logging
+import pkg_resources
 import re
 
-from functools import partial, wraps
+from collections import defaultdict
 
-from helga.bot import bot
+
+logger = logging.getLogger(__name__)
+
+
+class Registry(object):
+    """
+    Simple plugin registry that handles dispatching messages to registered plugins.
+    Plugins can be disabled per channel. By default, plugins are loaded, but not
+    enabled unless ENABLED_PLUGINS is set in helga settings. This is done so that
+    potentially annoying plugins can be enabled on-demand
+    """
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Only here so we only maintain one registry for the life of the application. There
+        is some state-specific things that shouldn't be lost in the event the IRC client
+        loses the connection to the server
+        """
+        if cls.__instance is None:
+            cls.__instance = super(Registry, cls).__new__(cls, *args, **kwargs)
+        return cls.__instance
+
+    def __init__(self):
+        if not hasattr(self, 'plugins'):
+            self.plugins = {}
+
+        if not hasattr(self, 'enabled_plugins'):
+            self.enabled_plugins = defaultdict(set)
+
+    def register(self, name, fn_or_cls):
+        # Make sure we're working with an instance
+        try:
+            if issubclass(fn_or_cls, Plugin):
+                fn_or_cls = fn_or_cls()
+        except TypeError:
+            pass
+
+        if not isinstance(fn_or_cls, Plugin) and not hasattr(fn_or_cls, 'process'):
+            raise TypeError("Plugin %s must be a subclass of Plugin, or a decorated function" % name)
+
+        self.plugins[name] = fn_or_cls
+
+    def disable(self, channel, *plugins):
+        self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(plugins)
+
+    def enable(self, channel, *plugins):
+        self.enabled_plugins[channel].union(plugins)
+
+    def load(self):
+        """
+        Locate all setuptools entry points by the name 'helga_plugins'
+        and initialize them. Any third-party library may register a plugin by
+        addint the following to their setup.py::
+
+            entry_points = {
+                'helga_plugins': [
+                    'plugin_name = mylib.mymodule:MyPluginClass',
+                ],
+            },
+
+        """
+        for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
+            try:
+                logger.debug('loading entry_point %s' % entry_point.name)
+                self.register(entry_point.name, entry_point.load())
+            except Exception:
+                logger.exception("Error initializing plugin %s" % entry_point)
+
+    def process(self, client, channel, nick, message):
+        responses = []
+
+        for name in self.enabled_plugins[channel]:
+            if name not in self.plugins:
+                logger.debug('Plugin %s is enabled on %s, but not loaded' % (name, channel))
+                continue
+
+            try:
+                resp = self.plugins[name].process(client, channel, nick, message)
+            except:
+                logger.exception("Calling process on plugin %s failed" % name)
+                resp = None
+
+            if resp is not None:
+                responses.append(resp.strip())
+
+        return filter(bool, responses)
 
 
 class Plugin(object):
@@ -30,19 +119,20 @@ class Plugin(object):
                 if message.startswith('!time'):
                     return self.run(channel, nick, message)
     """
-    def run(self, channel, nick, message, *args, **kwargs):
+    def run(self, client, channel, nick, message, *args, **kwargs):
         """
         Runs the plugin to generate a response. At a minimum this should accept
         three arguments. It should also either return None, if no response is to be
         sent back over IRC, or a non-empty string.
 
+        :param client: an instance of :class:`helga.comm.Client`
         :param channel: the channel on which the message was received
         :param nick: the current nick of the message sender
         :param message: the message string itself
         """
         return None
 
-    def process(self, channel, nick, message):
+    def process(self, client, channel, nick, message):
         """
         This is the global entry point for plugins according to helga's plugin registry.
         Each plugin will be called when a message is received over IRC with the channel
@@ -51,11 +141,12 @@ class Plugin(object):
         response is to be sent back over IRC, or a non-empty string. In most cases, this
         should just return whatever the return value of calling ``self.run`` is.
 
+        :param client: an instance of :class:`helga.comm.Client`
         :param channel: the channel on which the message was received
         :param nick: the current nick of the message sender
         :param message: the message string itself
         """
-        return self.run(channel, nick, message)
+        return self.run(client, channel, nick, message)
 
     def decorate(self, fn):
         """
@@ -65,10 +156,14 @@ class Plugin(object):
         the subclass implementation sends to its ``run`` method.
         """
         self.run = fn
-        return self
+        fn.process = self
+        return fn
 
-    def __call__(self, channel, nick, message):
-        return self.process(channel, nick, message)
+    def __call__(self, client, channel, nick, message):
+        """
+        Proxy for ``process``
+        """
+        return self.process(client, channel, nick, message)
 
 
 class Command(Plugin):
@@ -85,8 +180,9 @@ class Command(Plugin):
     - **help**: Useful help string on how to use this command
 
     In addition to these attributes, subclasses must also implement a ``run`` method
-    that accepts five arguments:
+    that accepts six arguments:
 
+    - **client**: an instance of :class:`helga.comm.Client`
     - **channel**: the channel on which the message was received
     - **nick**: the current nick of the message sender
     - **message**: the message string itself
@@ -120,18 +216,19 @@ class Command(Plugin):
         self.aliases = aliases or self.aliases
         self.help = help or self.help
 
-    def parse(self, message):
+    def parse(self, botnick, message):
         """
         Parse the incoming message using the current nick of the bot, the defined
         command string of this object, plus any aliases. Will return the actual
         command parsed (which could be an alias), plus whitespaced delimited list
         of strings that follow the parsed command.
 
+        :param botnick: helga's current nickname
         :param message: the incoming IRC message
         :returns: string of parsed command, whitespaced delimited string list of args
         """
         choices = [self.command] + list(self.aliases)
-        pat = r'%s\W*\s(%s)\s?(.*)$' % (bot.nick, '|'.join(choices))
+        pat = r'%s\W*\s(%s)\s?(.*)$' % (botnick, '|'.join(choices))
         try:
             cmd, argstr = re.findall(pat, message)[0]
         except (IndexError, ValueError):
@@ -140,12 +237,13 @@ class Command(Plugin):
 
         return cmd, argstr.strip().split(' ')
 
-    def run(self, channel, nick, message, command, args):
+    def run(self, client, channel, nick, message, command, args):
         """
         This is where any actual work should be done for a command. Generally, this
         is only used for subclasses of the base Command class. The @command decorator
         will monkey patch this method with whatever the decorated function is.
 
+        :param client: an instance of :class:`helga.comm.Client`
         :param channel: the channel on which the message was received
         :param nick: the current nick of the message sender
         :param message: the message string itself
@@ -154,7 +252,7 @@ class Command(Plugin):
         """
         return None
 
-    def process(self, channel, nick, message):
+    def process(self, client, channel, nick, message):
         """
         Processes a message sent by a user on a given channel. This will return
         None if this command should respond to the incoming message, or if there
@@ -164,13 +262,18 @@ class Command(Plugin):
         Generally, subclasses should not have to worry about this method, and
         instead, should focus on the implementation of ``run``, which is called should
         this command be invoked.
+
+        :param client: an instance of :class:`helga.comm.Client`
+        :param channel: the channel on which the message was received
+        :param nick: the current nick of the message sender
+        :param message: the message string itself
         """
-        command, args = self.parse(message)
+        command, args = self.parse(client.nickname, message)
         if command != self.command and command not in self.aliases:
             return None
 
         try:
-            return self.run(channel, nick, message, command, args)
+            return self.run(client, channel, nick, message, command, args)
         except (NotImplementedError, TypeError):
             # FIXME: Log warning here
             return None
@@ -192,12 +295,12 @@ class Match(Plugin):
     required.
 
     In addition to this class attribute, subclasses must also implement a ``run``
-    method that accepts four arguments:
+    method that accepts five arguments:
 
+    - **client**: an instance of :class:`helga.comm.Client`
     - **channel**: the channel on which the message was received
     - **nick**: the current nick of the message sender
     - **message**: the message string itself
-    - **command**: the parsed command, which is either the preferred command or a command alias
     - **matches**: if the ``pattern`` attribute is a callable, this will be its return value,
       otherwise it will be the return value of ``re.findall``.
 
@@ -219,16 +322,16 @@ class Match(Plugin):
     def __init__(self, pattern=''):
         self.pattern = pattern or self.pattern
 
-    def run(self, channel, nick, message, matches):
+    def run(self, client, channel, nick, message, matches):
         """
         This is where any actual work should be done for a command. Generally, this
         is only used for subclasses of the base Command class. The @command decorator
         will monkey patch this method with whatever the decorated function is.
 
+        :param client: an instance of :class:`helga.comm.Client`
         :param channel: the channel on which the message was received
         :param nick: the current nick of the message sender
         :param message: the message string itself
-        :param command: the parsed command, which is either the preferred command or a command alias
         :param matches: if the ``pattern`` attribute of this class is a callable, this will be its
                         return value, otherwise it will be the return value of ``re.findall``
         """
@@ -246,7 +349,7 @@ class Match(Plugin):
         if callable(self.pattern):
             fn = self.pattern
         else:
-            fn = partial(re.findall, self.pattern)
+            fn = functools.partial(re.findall, self.pattern)
 
         try:
             return fn(message)
@@ -256,7 +359,7 @@ class Match(Plugin):
 
         return None
 
-    def process(self, channel, nick, message):
+    def process(self, client, channel, nick, message):
         """
         Processes a message sent by a user on a given channel. This will return
         None if the message does not match the plugin's pattern, or a non-empty string
@@ -265,6 +368,11 @@ class Match(Plugin):
         Generally, subclasses should not have to worry about this method, and
         instead, should focus on the implementation of ``run``, which is called should
         the incoming message be matched against the plugin's pattern.
+
+        :param client: an instance of :class:`helga.comm.Client`
+        :param channel: the channel on which the message was received
+        :param nick: the current nick of the message sender
+        :param message: the message string itself
         """
         matches = self.match(message)
         if not bool(matches):
@@ -281,8 +389,9 @@ def command(command, aliases=None, help=''):
     """
     A decorator for creating simple commands where subclassing the ``Command``
     plugin type may be overkill. This is generally the easiest way to create helga
-    commands. However, decorated functions must adhere to accepting five arguments:
+    commands. However, decorated functions must adhere to accepting six arguments:
 
+    - **client**: an instance of :class:`helga.comm.Client`
     - **channel**: the channel on which the message was received
     - **nick**: the current nick of the message sender
     - **message**: the message string itself
@@ -293,7 +402,7 @@ def command(command, aliases=None, help=''):
     None, then no response will be sent over IRC. A simple command example::
 
         @command('foo', aliases=('bar', 'baz'))
-        def foo(channel, nick, message, command, args):
+        def foo(client, channel, nick, message, command, args):
             return '%s said %s' % (nick, command)
 
     Using the above example may produce the following results in IRC::
@@ -310,8 +419,9 @@ def match(pattern=''):
     """
     A decorator for creating simple regex matches where subclassing the ``Match``
     plugin type may be overkill. This is generally the easiest way to create helga
-    match plugins. However, decorated functions must adhere to accepting four arguments:
+    match plugins. However, decorated functions must adhere to accepting five arguments:
 
+    - **client**: an instance of :class:`helga.comm.Client`
     - **channel**: the channel on which the message was received
     - **nick**: the current nick of the message sender
     - **message**: the message string itself
@@ -322,7 +432,7 @@ def match(pattern=''):
     None, then no response will be sent over IRC. A simple command example::
 
         @match('foo')
-        def foo(channel, nick, message, matches):
+        def foo(client, channel, nick, message, matches):
             return '%s said foo' % nick
 
     Using the above example may produce the following results in IRC::

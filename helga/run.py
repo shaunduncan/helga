@@ -3,7 +3,6 @@ import sys
 from twisted.internet import reactor, ssl
 
 from helga import settings
-from helga.db import db
 from helga.factory import HelgaFactory
 from helga.log import setup_logger
 
@@ -12,12 +11,11 @@ logger = setup_logger(__name__)
 
 
 _help = """
-Usage: helga option
+Usage: helga <option>
 
 Avalable options:
 help        Show this message
 start       Start the helga bot (CTRL-C to stop)
-loaddata    Load JSON directly into MongoDB
 """
 
 
