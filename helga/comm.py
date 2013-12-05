@@ -1,17 +1,47 @@
+import logging
 import time
 
 import smokesignal
+
+from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
-from helga import settings
-from helga.bot import bot
-from helga.log import setup_logger
+from helga import plugins, settings
 
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class HelgaClient(irc.IRCClient):
+class Factory(protocol.ClientFactory):
+    """
+    The client factory for twisted. Does little more than add in some logging along the
+    way and make sure the client is properly created. Also handles auto reconnect if it
+    is configured in settings.
+    """
+
+    def buildProtocol(self, address):
+        logger.debug('Constructing Helga protocol')
+        return Client(factory=self)
+
+    def clientConnectionLost(self, connector, reason):
+        logger.info('Connection to server lost: %s' % reason)
+
+        # FIXME: Max retries
+        if getattr(settings, 'AUTO_RECONNECT', True):
+            connector.connect()
+        else:
+            raise reason
+
+    def clientConnectionFailed(self, connector, reason):
+        logger.warning('Connection to server failed: %s' % reason)
+        reactor.stop()
+
+
+class Client(irc.IRCClient):
+    """
+    Implementation of twisted IRCClient using settings as overrides for default
+    values. Some methods are subclassed here only to provide logging output.
+    """
 
     nickname = getattr(settings, 'DEFAULT_NICK', 'helga')
 
@@ -24,15 +54,26 @@ class HelgaClient(irc.IRCClient):
     sourceURL = 'http://github.com/shaunduncan/helga'
     encode = 'UTF-8'
 
+    def __init__(self, factory=None):
+        self.factory = factory
+
+        # Pre-configured helga admins
+        self.operators = set(getattr(settings, 'OPERATORS', []))
+        plugins.registry.client = self
+
+        # The plugin registry
+        self.plugins = plugins.Registry()
+
+        # Things to keep track of
+        self.channels = set()
+
     def connectionMade(self):
         logger.info('Connection made to %s' % settings.SERVER['HOST'])
         irc.IRCClient.connectionMade(self)
-        bot.client = self
 
     def connectionLost(self, reason):
         logger.info('Connection to %s lost' % settings.SERVER['HOST'])
         irc.IRCClient.connectionLost(self, reason)
-        bot.client = None
 
     def signedOn(self):
         for channel in settings.CHANNELS:
@@ -46,7 +87,12 @@ class HelgaClient(irc.IRCClient):
 
     def joined(self, channel):
         logger.info('Joined %s' % channel)
-        bot.join_channel(channel)
+        self.channels.add(channel)
+        smokesignal.emit('join', channel)
+
+    def left(self, channel):
+        logger.info('Joined %s' % channel)
+        self.channels.discard(channel)
         smokesignal.emit('join', channel)
 
     def parse_nick(self, full_nick):
@@ -63,11 +109,20 @@ class HelgaClient(irc.IRCClient):
         message = message.strip()
 
         logger.debug('[<--] %s/%s - %s' % (channel, user, message))
-        bot.process(channel, user, message)
 
-    def user_renamed(self, oldnick, newnick):
-        logger.debug('User %s is now known as %s' % (oldnick, newnick))
-        bot.update_user_nick(oldnick, newnick)
+        # When we get a priv msg, the channel is our current nick, so we need to
+        # respond to the user that is talking to us
+        channel = channel if self.is_public_channel(channel) else user
+
+        # Some things should go first: FIXME
+        # channel, nick, message = self.plugins.pre_process(self, channel, nick, message)
+
+        # if not message.has_response:
+        responses = self.plugins.process(self, channel, user, message)
+
+        if responses:
+            # FIXME: Should have a setting to only allow a single response
+            self.msg(channel, '\n'.join(responses))
 
     def alterCollidedNick(self, nickname):
         """
@@ -86,12 +141,7 @@ class HelgaClient(irc.IRCClient):
 
     def kickedFrom(self, channel, kicker, message):
         logger.warning('%s kicked bot from %s: %s' % (kicker, channel, message))
-        bot.leave_channel(channel)
-
-    def userJoined(self, user, channel):
-        user = self.parse_nick(user)
-        logger.debug('%s joined %s' % (user, channel))
-        bot.update_user_nick(user, user)
+        self.channels.discard(channel)
 
     def msg(self, channel, message):
         logger.debug('[-->] %s - %s' % (channel, message))
@@ -112,7 +162,6 @@ class HelgaClient(irc.IRCClient):
 
     def me(self, channel, message):
         """
-        A proxy for the WTF-named method `describe`. Basically the same as doing
-        /me waves
+        A proxy for the WTF-named method `describe`. Basically the same as doing `/me waves`
         """
         irc.IRCClient.describe(self, channel, message)

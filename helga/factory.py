@@ -1,7 +1,7 @@
 from twisted.internet import protocol, reactor
 
 from helga import settings
-from helga.client import HelgaClient
+from helga.client import Client
 from helga.log import setup_logger
 
 
@@ -12,7 +12,7 @@ class HelgaFactory(protocol.ClientFactory):
 
     def buildProtocol(self, address):
         logger.debug('Constructing Helga protocol')
-        helga = HelgaClient()
+        helga = Client()
         helga.factory = self
         return helga
 
