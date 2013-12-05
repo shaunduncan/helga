@@ -71,7 +71,7 @@ class Registry(object):
             try:
                 logger.debug('loading entry_point %s' % entry_point.name)
                 self.register(entry_point.name, entry_point.load())
-            except Exception:
+            except:
                 logger.exception("Error initializing plugin %s" % entry_point)
 
     def process(self, client, channel, nick, message):
@@ -229,6 +229,7 @@ class Command(Plugin):
         """
         choices = [self.command] + list(self.aliases)
         pat = r'%s\W*\s(%s)\s?(.*)$' % (botnick, '|'.join(choices))
+
         try:
             cmd, argstr = re.findall(pat, message)[0]
         except (IndexError, ValueError):
@@ -272,11 +273,7 @@ class Command(Plugin):
         if command != self.command and command not in self.aliases:
             return None
 
-        try:
-            return self.run(client, channel, nick, message, command, args)
-        except (NotImplementedError, TypeError):
-            # FIXME: Log warning here
-            return None
+        return self.run(client, channel, nick, message, command, args)
 
 
 class Match(Plugin):
@@ -354,10 +351,7 @@ class Match(Plugin):
         try:
             return fn(message)
         except TypeError:
-            # FIXME: Log warning here
-            pass
-
-        return None
+            return None
 
     def process(self, client, channel, nick, message):
         """
@@ -378,11 +372,7 @@ class Match(Plugin):
         if not bool(matches):
             return None
 
-        try:
-            return self.run(channel, nick, message, matches)
-        except TypeError:
-            # FIXME: Log warning here
-            return None
+        return self.run(client, channel, nick, message, matches)
 
 
 def command(command, aliases=None, help=''):
