@@ -5,7 +5,6 @@ pytz==2013b
 pyOpenSSL==0.13
 
 # Because it handles optional arguments better
--e git://github.com/shaunduncan/docopt.git@8423a6175f#egg=docopt
 -e git://github.com/shaunduncan/smokesignal.git@e66cf26576#egg=smokesignal
 -e git://github.com/shaunduncan/giphypop.git@v0.1#egg=giphypop
 
