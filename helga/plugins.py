@@ -1,12 +1,13 @@
 import functools
-import logging
 import pkg_resources
 import re
 
 from collections import defaultdict
 
+from helga import log
 
-logger = logging.getLogger(__name__)
+
+logger = log.getLogger(__name__)
 
 
 class Registry(object):
