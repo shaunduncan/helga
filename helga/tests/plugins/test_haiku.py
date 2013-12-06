@@ -76,6 +76,14 @@ def test_use_fives(make_poem, add):
 
 @patch('helga.plugins.haiku.add')
 @patch('helga.plugins.haiku.make_poem')
+def test_use_fives_tanka(make_poem, add):
+    make_poem.return_value = ['one', 'two', 'three', 'four', 'five']
+    poem = haiku.use(5, 'foo', poem_type='tanka')
+    assert 'foo' in (poem[0], poem[2])
+
+
+@patch('helga.plugins.haiku.add')
+@patch('helga.plugins.haiku.make_poem')
 def test_use_fives_does_not_duplicate(make_poem, add):
     make_poem.return_value = ['foo', 'two', 'three']
     poem = haiku.use(5, 'foo')
@@ -89,3 +97,25 @@ def test_use_sevens(make_poem, add):
     make_poem.return_value = ['one', 'two', 'three']
     poem = haiku.use(7, 'foo')
     assert poem[1] == 'foo'
+
+
+@patch('helga.plugins.haiku.add')
+@patch('helga.plugins.haiku.make_poem')
+def test_use_sevens_tanka(make_poem, add):
+    make_poem.return_value = ['one', 'two', 'three', 'four', 'five']
+    poem = haiku.use(7, 'foo', poem_type='tanka')
+    assert 'foo' in (poem[1], poem[3], poem[4])
+
+
+@patch('helga.plugins.haiku.get_random_line')
+def test_make_poem(get_random_line):
+    get_random_line.side_effect = ['one', 'two', 'three', 'four', 'five']
+    poem = haiku.make_poem()
+    assert poem == ['one', 'two', 'three']
+
+
+@patch('helga.plugins.haiku.get_random_line')
+def test_make_poem_tanka(get_random_line):
+    get_random_line.side_effect = ['one', 'two', 'three', 'four', 'five']
+    poem = haiku.make_poem(poem_type='tanka')
+    assert poem == ['one', 'two', 'three', 'four', 'five']
