@@ -10,6 +10,20 @@ from helga import log
 logger = log.getLogger(__name__)
 
 
+ACKS = [
+    'roger',
+    '10-4',
+    'no problem',
+    'will do',
+    'you got it',
+    'anything you say',
+    'sure thing',
+    'ok',
+    'right-o',
+    'consider it done',
+]
+
+
 class Registry(object):
     """
     Simple plugin registry that handles dispatching messages to registered plugins.
