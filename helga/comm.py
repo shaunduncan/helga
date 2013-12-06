@@ -1,4 +1,3 @@
-import logging
 import time
 
 import smokesignal
@@ -6,10 +5,10 @@ import smokesignal
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
-from helga import plugins, settings
+from helga import plugins, settings, log
 
 
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 
 class Factory(protocol.ClientFactory):

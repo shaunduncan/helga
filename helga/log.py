@@ -5,7 +5,7 @@ import sys
 from helga import settings
 
 
-def setup_logger(name):
+def getLogger(name):
     """
     Make some logger the same for all points in the app
     """
