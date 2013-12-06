@@ -94,6 +94,9 @@ class Registry(object):
         return filter(bool, responses)
 
 
+registry = Registry()
+
+
 class Plugin(object):
     """
     Base class for creating helga plugins. Plugins have a minimal API, and there

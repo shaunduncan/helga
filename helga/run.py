@@ -2,12 +2,7 @@ import sys
 
 from twisted.internet import reactor, ssl
 
-from helga import settings
-from helga.factory import HelgaFactory
-from helga.log import setup_logger
-
-
-logger = setup_logger(__name__)
+from helga import comm, settings
 
 
 _help = """
@@ -20,7 +15,7 @@ start       Start the helga bot (CTRL-C to stop)
 
 
 def start():
-    factory = HelgaFactory()
+    factory = comm.Factory()
     if settings.SERVER.get('SSL', False):
         reactor.connectSSL(settings.SERVER['HOST'],
                            settings.SERVER['PORT'],
