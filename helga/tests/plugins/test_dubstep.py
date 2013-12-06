@@ -1,25 +1,24 @@
 import time
 
-from unittest import TestCase
+from functools import partial
 
-from helga.extensions.dubstep import DubstepExtension
-from helga.tests.util import mock_bot
+from helga.plugins.dubstep import dubstep
 
 
-class DubstepExtensionTestCase(TestCase):
+def test_dubstep_gives_wubs():
+    assert 'wubwub' in dubstep('', '', '', '', '')
 
-    def setUp(self):
-        self.dubstep = DubstepExtension(mock_bot())
 
-    def test_transform_match_does_wubs(self):
-        assert 'wubwub' in self.dubstep.transform_match('foo')
+def test_dubstep_stops_after_max():
+    dubstep._last = time.time()
+    dubstep._counts['#bots'] = 0
 
-    def test_transform_match_stops_after_max(self):
-        self.dubstep.last_wub = time.time()
-        self.dubstep.max_wubs = 3
+    run = partial(dubstep, '', '#bots', '', '', '')
 
-        assert 'wubwub' in self.dubstep.transform_match('foo')
-        assert 'wubwub' in self.dubstep.transform_match('foo')
-        assert 'wubwub' in self.dubstep.transform_match('foo')
-        assert 'STOP' in self.dubstep.transform_match('foo')
-        assert 'wubwub' in self.dubstep.transform_match('foo')
+    assert 'wubwub' in run()
+    assert 'wubwub' in run()
+    assert 'wubwub' in run()
+    assert 'STOP' in run()
+
+    # Should start over now
+    assert 'wubwub' in run()
