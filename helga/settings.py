@@ -26,6 +26,11 @@ DATABASE = {
     'DB': 'helga',
 }
 
+TIMEZONE = 'US/Eastern'
+
+# Plugin settings
+FACTS_REQUIRE_NICKNAME = False
+
 
 if 'HELGA_SETTINGS' in os.environ:
     try:

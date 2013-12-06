@@ -1,112 +1,142 @@
 import random
+import re
 import time
 
 from datetime import datetime
 
 import pytz
 
+from helga import log, settings
 from helga.db import db
-from helga.extensions.base import (ContextualExtension,
-                                   CommandExtension)
-from helga.log import setup_logger
+from helga.plugins import command, match, ACKS
 
 
-logger = setup_logger(__name__)
+logger = log.getLogger(__name__)
 
 
-class FactExtension(CommandExtension, ContextualExtension):
+def term_regex(term):
+    """
+    Returns a case-insensitive regex for searching terms
+    """
+    return re.compile('^{0}$'.format(term), re.IGNORECASE)
 
-    NAME = 'facts'
 
-    # contextual
-    context = r'^([\w\s]+)\?$'
-    allow_many = False
-    response_fmt = '%(response)s'
+def show_fact(term):
+    """
+    Shows a fact stored for a given term, using a case-insensitive search.
+    If a fact has an author, it will be shown. If it has a timestamp, that will
+    also be shown.
+    """
+    logger.info('Showing fact {0}'.format(term))
+    record = db.facts.find_one({'term': term_regex(term)})
 
-    # commands
-    usage = '[BOTNICK] forget (<thing> ...) | (<thing> ...) (is|are) [REPLY] (INPUT ...)'
+    if record is None:
+        return None
 
-    def should_handle_message(self, opts, message):
-        # If we match 'forget', see what super() says about it
-        if opts and opts['forget']:
-            return super(FactExtension, self).should_handle_message(opts, message)
+    # If it isn't authored
+    if not record.get('set_by', ''):
+        return record['fact']
 
-        # Otherwise, if we have something, we should handle it
-        elif opts:
-            return True
+    if 'set_date' not in record:
+        return '{fact} ({set_by})'.format(**record)
 
-        # Nope
+    # Otherwise, do normal formatting
+    tz = getattr(settings, 'TIMEZONE', 'US/Eastern')
+    timestamp = datetime.fromtimestamp(record['set_date'], tz=pytz.timezone(tz))
+    record['fmt_dt'] = datetime.strftime(timestamp, '%m/%d/%Y %I:%M%p')
+
+    return '{fact} ({set_by} on {fmt_dt})'.format(**record)
+
+
+def add_fact(term, fact, author=''):
+    """
+    Records a new fact with a given term. Optionally can set an author
+    """
+    logger.info('Adding new fact {0}: {1}'.format(term, fact))
+
+    if not db.facts.find({'term': term_regex(term)}).count():
+        db.facts.insert({
+            'term': term,
+            'fact': fact,
+            'set_by': author,
+            'set_date': time.time()
+        })
+        db.facts.ensure_index('term')
+
+
+def forget_fact(term):
+    """
+    Forgets a fact by removing it from the database
+    """
+    logger.info('Removing fact {0}'.format(term))
+    db.facts.remove({'term': term_regex(term)})
+    return random.choice(ACKS)
+
+
+def facts_command(client, channel, nick, message, cmd, args):
+    if cmd == 'forget':
+        return forget_fact(' '.join(args))
+
+
+def facts_match(client, channel, nick, message, found):
+    parts = found[0]
+
+    # Like: foo?
+    if isinstance(parts, basestring):
+        return show_fact(parts)
+
+    # Allow customizing facts to be non-automatic and work more like commands
+    if getattr(settings, 'FACTS_REQUIRE_NICKNAME', False):
+        try:
+            nonick = re.findall(r'^{0}\W*\s(.*)$'.format(client.nickname), parts[0])[0]
+        except IndexError:
+            logger.debug('Facts require the current bot nick. Ignoring: {0}'.format(parts[0]))
+            return None
         else:
-            return False
+            parts = [nonick] + list(parts[1:])
 
-    def process(self, message):
-        # Try to contextualize
-        self.contextualize(message)
+    if parts[2].strip() == '<reply>':
+        fact = parts[-1]
+    else:
+        # This nasty join is to ignore the empty part for <reply>
+        fact = ' '.join(parts[:2] + parts[-1:])
 
-        if message.has_response:
-            return
+    return add_fact(parts[0], fact)
 
-        # Try to handle commands
-        opts = self.parse_command(message)
 
-        if self.should_handle_message(opts, message):
-            self.handle_message(opts, message)
+@command('forget', help='Forget a stored fact. Usage: <botnick> forget foo')
+@match(r'(.*?) (is|are)( <reply>)? (.*)?')  # Storing facts
+@match(r'^(.*)\?$')  # Showing facts
+def facts(client, channel, nick, message, *args):
+    """
+    A plugin for helga to automatically remember important things. Unless specified
+    by the setting ``FACTS_REQUIRE_NICKNAME``, facts are automatically stored when
+    a user says: ``something is something else``. Otherwise, facts must be explicitly
+    added: ``helga something is something else``.
 
-    def handle_message(self, opts, message):
-        thing = ' '.join(opts.get('<thing>', []))
+    Response format is, by default, the full message that was sent, including an author
+    and timestamp. However, if a user specifies the string '<reply>' in their message,
+    then only the words that follow '<reply>' will be returned in the response.
 
-        if opts['forget']:
-            message.response = self.remove_fact(thing)
-        elif opts['is'] or opts['are']:
-            if opts['INPUT'][0] == '<reply>':
-                # Weird case where <reply> is part of the input?
-                is_reply = True
-                opts['INPUT'] = opts['INPUT'][1:]
-            else:
-                is_reply = opts['REPLY'] == '<reply>'
+    For example::
 
-            # We have to add matched reply thing to input because of how it matches
-            if not is_reply:
-                opts['INPUT'].insert(0, opts['REPLY'])
+        <sduncan> foo is bar
+        <sduncan> foo?
+        <helga> foo is bar (sduncan on 12/02/2013)
 
-            term = thing.lower()
+    Or::
 
-            fact = ' '.join(opts['INPUT']) if is_reply else message.message
+        <sduncan> foo is <reply> bar
+        <sduncan> foo?
+        <helga> bar (sduncan on 12/02/2013)
 
-            message.response = self.add_fact(term, fact, message.from_nick)
+    To remove a fact, you must ask specifically using the ``forget`` command::
 
-    def transform_match(self, match):
-        return self.show_fact(match.lower())
+        <sduncan> helga forget foo
+        <helga> forgotten
+    """
+    if len(args) == 2:
+        return facts_command(client, channel, nick, message, *args)
 
-    def show_fact(self, term):
-        logger.info('Showing fact %s' % term)
-        record = db.facts.find_one({'term': term})
-
-        if record is not None:
-            if 'set_date' in record:
-                # Eastern time
-                timestamp = datetime.fromtimestamp(record['set_date'], tz=pytz.timezone('US/Eastern'))
-                formatted_dt = datetime.strftime(timestamp, '%m/%d/%Y %I:%M%p')
-                set_on = ' on %s' % formatted_dt
-            else:
-                set_on = ''
-
-            return '%s (%s%s)' % (record['fact'], record['set_by'], set_on)
-
-    def add_fact(self, term, fact, nick='nobody'):
-        logger.info('Adding new fact %s: %s' % (term, fact))
-
-        if not db.facts.find({'term': term}).count():
-            db.facts.insert({
-                'term': term.lower(),
-                'fact': fact,
-                'set_by': nick,
-                'set_date': time.time()
-            })
-            db.facts.ensure_index('term')
-
-    def remove_fact(self, term):
-        logger.info('Removing fact %s' % term)
-        db.facts.remove({'term': term})
-
-        return random.choice(self.delete_acks)
+    # Anything else is a match
+    return facts_match(client, channel, nick, message, args[0])
