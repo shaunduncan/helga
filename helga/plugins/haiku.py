@@ -20,21 +20,22 @@ SYLLABLES_TO_INT = {
 last_poem = defaultdict(list)
 
 
-@command('haiku', help="Usage: helga haiku [blame|tweet|about <thing>|by <author_nick>|"
-                       "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
+@command('haiku', aliases=['tanka'],
+         help="Usage: helga (haiku|tanka) [blame|tweet|about <thing>|by <author_nick>|"
+              "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
 def haiku(client, channel, nick, message, cmd, args):
     global last_poem
     subcmd = args[0]
 
     # Just a poem
     if not args:
-        poem = make_poem()
+        poem = make_poem(poem_type=cmd)
         last_poem[channel] = poem
         return poem
 
     # Other commands
     if subcmd in ('about', 'by'):
-        poem = make_poem(**{subcmd: ' '.join(args[1:])})
+        poem = make_poem(**{'poem_type': cmd, subcmd: ' '.join(args[1:])})
         last_poem[channel] = poem
         return poem
     elif subcmd == 'blame':
@@ -114,7 +115,10 @@ def get_random_line(syllables, about=None, by=None):
     return str(qs.limit(-1).skip(skip).next()['message'])
 
 
-def make_poem(about=None, by=None):
+def make_poem(about=None, by=None, poem_type='haiku'):
+    """
+    Makes a haiku poem
+    """
     poem = [
         get_random_line(5, about, by),
         get_random_line(7, about, by),
@@ -124,12 +128,24 @@ def make_poem(about=None, by=None):
     if not all(poem):
         return None
 
+    fixrep_kw = {}
     if about is not None:
-        return fix_repitition(poem, about=about)
+        fixrep_kw['about'] = about
     elif by is not None:
-        return fix_repitition(poem, by=by)
-    else:
-        return poem
+        fixrep_kw['by'] = by
+
+    poem = fix_repitition(poem, **fixrep_kw)
+
+    if poem_type == 'tanka':
+        poem.extend([
+            get_random_line(7, about, by),
+            get_random_line(7, about, by)
+        ])
+
+        fixrep_kw.update({'start': 3, 'syllables': 7})
+        poem = fix_repitition(poem, **fixrep_kw)
+
+    return poem
 
 
 def add(syllables, input, author=None):
@@ -150,17 +166,25 @@ def add_use(syllables, input, author=None):
     return use(syllables, input)
 
 
-def use(syllables, input):
+def use(syllables, input, poem_type='haiku'):
     """
     Uses input in a poem without storing it
     """
-    poem = make_poem()
+    poem = make_poem(poem_type=poem_type)
 
-    if syllables == 5 and input not in poem:
-        which = random.choice([0, 2])
-        poem[which] = input
+    # Already used
+    if input in poem:
+        return poem
+
+    repl_idx = None
+
+    if syllables == 5:
+        repl_idx = random.choice([0, 2])
     elif syllables == 7:
-        poem[1] = input
+        repl_idx = random.choice([1] if poem_type == 'haiku' else [1, 3, 4])
+
+    if repl_idx is not None:
+        poem[repl_idx] = input
 
     return poem
 
