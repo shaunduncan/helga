@@ -1,78 +1,94 @@
 from mock import patch
-from unittest import TestCase
+from pretend import stub
 
-from helga.extensions.facts import FactExtension
-from helga.tests.util import mock_bot
+from helga.plugins import facts
 
 
-class FactExtensionTestCase(TestCase):
+def test_term_regex():
+    pat = facts.term_regex('foo')
 
-    def setUp(self):
-        self.facts = FactExtension(mock_bot())
+    assert bool(pat.match('foo'))
+    assert not bool(pat.match('will not match foo'))
 
-    def patch_db_count(self, db, count_val):
-        db.facts.find.return_value = db
-        db.count.return_value = count_val
 
-    @patch('helga.extensions.facts.db')
-    def test_add_fact_adds_db_record(self, db):
-        self.patch_db_count(db, 0)
-        self.facts.add_fact('foo', 'me') is None
+@patch('helga.plugins.facts.db')
+def test_show_fact_without_author(db):
+    fact = {
+        'term': 'foo',
+        'fact': 'foo is bar',
+    }
 
-        assert db.facts.insert.called
+    db.facts.find_one.return_value = fact
+    assert facts.show_fact('foo') == 'foo is bar'
 
-    @patch('helga.extensions.facts.db')
-    def test_add_fact_adds_db_record_adds_correct_data(self, db):
-        self.patch_db_count(db, 0)
-        self.facts.add_fact('foo', 'foo is bar') is None
 
-        db.facts.insert.assertCalledWith({
-            'term': 'foo',
-            'fact': 'foo is bar'
-        })
+@patch('helga.plugins.facts.db')
+def test_show_fact_without_set_time(db):
+    fact = {
+        'term': 'foo',
+        'fact': 'foo is bar',
+        'set_by': 'sduncan',
+    }
 
-    @patch('helga.extensions.facts.db')
-    def test_add_fact_exising_record(self, db):
-        self.patch_db_count(db, 1)
-        self.facts.add_fact('foo', 'bar')
-        assert not db.facts.insert.called
+    db.facts.find_one.return_value = fact
+    assert facts.show_fact('foo') == 'foo is bar (sduncan)'
 
-    @patch('helga.extensions.facts.db')
-    def test_remove_fact(self, db):
-        assert self.facts.remove_fact('foo')
 
-    @patch('helga.extensions.facts.db')
-    def test_show_fact_no_match(self, db):
-        db.facts.find_one.return_value = None
-        assert self.facts.show_fact('well ok then?') is None
+@patch('helga.plugins.facts.db')
+def test_show_fact(db):
+    fact = {
+        'term': 'foo',
+        'fact': 'foo is bar',
+        'set_by': 'sduncan',
+        'set_date': 1360849874.686594,  # 02/14/2013 08:51AM
+    }
 
-    @patch('helga.extensions.facts.db')
-    def test_show_fact_not_in_db(self, db):
-        db.facts.find_one.return_value = None
-        assert self.facts.show_fact('foo') is None
-        assert db.facts.find_one.called
+    db.facts.find_one.return_value = fact
+    assert facts.show_fact('foo') == 'foo is bar (sduncan on 02/14/2013 08:51AM)'
 
-    @patch('helga.extensions.facts.db')
-    def test_show_fact_gets_db_record_no_set_time(self, db):
-        db.facts.find_one.return_value = {
-            'term': 'foo',
-            'fact': 'foo is bar',
-            'set_by': 'nobody'
-        }
 
-        ret = self.facts.show_fact('foo')
+@patch('helga.plugins.facts.settings')
+@patch('helga.plugins.facts.add_fact')
+def test_facts_match_with_nick(add_fact, settings):
+    settings.FACTS_REQUIRE_NICKNAME = True
+    client = stub(nickname='helga')
 
-        assert ret == 'foo is bar (nobody)'
+    # The format the regex will use
+    found = [('helga: foo bar', 'is', '', 'this is the response')]
+    add_fact.return_value = 'ok'
 
-    @patch('helga.extensions.facts.db')
-    def test_show_fact_gets_db_record_with_set_time(self, db):
-        db.facts.find_one.return_value = {
-            'term': 'foo',
-            'fact': 'foo is bar',
-            'set_by': 'nobody',
-            'set_date': 1360849874.686594,  # 02/14/2013 08:51AM
-        }
+    assert 'ok' == facts.facts_match(client, '', '', '', found)
+    add_fact.assertCalledWith('foo bar', 'foo bar is this is the response')
 
-        ret = self.facts.show_fact('foo')
 
-        assert ret == 'foo is bar (nobody on 02/14/2013 08:51AM)'
+@patch('helga.plugins.facts.settings')
+@patch('helga.plugins.facts.add_fact')
+def test_facts_match_requires_nick(add_fact, settings):
+    settings.FACTS_REQUIRE_NICKNAME = True
+    client = stub(nickname='helga')
+
+    # The format the regex will use
+    found = [('foo bar', 'is', '', 'this is the response')]
+    add_fact.return_value = 'ok'
+
+    assert facts.facts_match(client, '', '', '', found) is None
+
+
+@patch('helga.plugins.facts.add_fact')
+def test_facts_as_reply(add_fact):
+    # The format the regex will use
+    found = [('foo bar', 'is', '<reply>', 'this is the response')]
+    add_fact.return_value = 'ok'
+
+    assert 'ok' == facts.facts_match('', '', '', '', found)
+    add_fact.assertCalledWith('foo bar', 'this is the response')
+
+
+@patch('helga.plugins.facts.add_fact')
+def test_facts(add_fact):
+    # The format the regex will use
+    found = [('foo bar', 'is', '', 'this is the response')]
+    add_fact.return_value = 'ok'
+
+    assert 'ok' == facts.facts_match('', '', '', '', found)
+    add_fact.assertCalledWith('foo bar', 'foo bar is this is the response')
