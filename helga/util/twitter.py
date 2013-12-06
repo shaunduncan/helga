@@ -29,9 +29,7 @@ def message_140(message):
 def get_api():
     auth = tweepy.OAuthHandler(settings.TWITTER_CONSUMER_KEY, settings.TWITTER_CONSUMER_SECRET)
     auth.set_access_token(settings.TWITTER_OAUTH_TOKEN, settings.TWITTER_OAUTH_TOKEN_SECRET)
-    api = tweepy.API(auth)
-
-    return api
+    return tweepy.API(auth)
 
 
 def tweet(message):
