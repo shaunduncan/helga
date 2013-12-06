@@ -1,5 +1,6 @@
 import functools
 import pkg_resources
+import random
 import re
 
 from collections import defaultdict
@@ -22,6 +23,10 @@ ACKS = [
     'right-o',
     'consider it done',
 ]
+
+
+def random_ack():
+    return random.choice(ACKS)
 
 
 class Registry(object):
