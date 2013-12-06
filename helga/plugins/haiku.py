@@ -1,223 +1,221 @@
 import random
 import re
 
+from collections import defaultdict
+
+from helga import log
 from helga.db import db
-from helga.extensions.base import CommandExtension
-from helga.log import setup_logger
-from helga.util.twitter import tweet
+from helga.plugins import command, random_ack
+from helga.util.twitter import tweet as send_tweet
 
 
-logger = setup_logger(__name__)
+logger = log.getLogger(__name__)
 
 
-class HaikuExtension(CommandExtension):
+SYLLABLES_TO_INT = {
+    'fives': 5,
+    'sevens': 7,
+}
 
-    NAME = 'haiku'
+last_poem = defaultdict(list)
 
-    usage = '[BOTNICK] haiku [blame|tweet|about (<thing> ...)|by (<author_nick> ...)|(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]'
 
-    syllable_map = {
-        'fives': 5,
-        'sevens': 7,
-    }
+@command('haiku', help="Usage: helga haiku [blame|tweet|about <thing>|by <author_nick>|"
+                       "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
+def haiku(client, channel, nick, message, cmd, args):
+    global last_poem
+    subcmd = args[0]
 
-    last = {}
+    # Just a poem
+    if not args:
+        poem = make_poem()
+        last_poem[channel] = poem
+        return poem
 
-    def firstof(self, dictionary, *keys):
-        """
-        Returns key of first non-falsey value in dictionary by checking keys that match
-        a list of argument strings
-        """
-        for k, v in dictionary.iteritems():
-            if k in keys and v:
-                return k
+    # Other commands
+    if subcmd in ('about', 'by'):
+        poem = make_poem(**{subcmd: ' '.join(args[1:])})
+        last_poem[channel] = poem
+        return poem
+    elif subcmd == 'blame':
+        return blame(channel, requested_by=nick, default_author=client.nickname)
+    else:
+        num_syllables = SYLLABLES_TO_INT[args[1]]
+        input = ' '.join(args[2:])
 
-    def handle_message(self, opts, message):
-        response = None
+        if subcmd == 'add':
+            return add(num_syllables, input, nick)
+        elif subcmd == 'add_use':
+            return add_use(num_syllables, input, nick)
+        elif subcmd == 'use':
+            return use(num_syllables, input)
+        elif subcmd == 'remove':
+            return remove(num_syllables, input)
+        elif subcmd == 'claim':
+            return claim(num_syllables, input, nick)
 
-        if opts['tweet']:
-            response = self.tweet(message.channel)
-        elif opts['blame']:
-            response = self.blame(message.channel)
-        elif opts['by']:
-            response = self.make_poem(by=' '.join(opts['<author_nick>']))
-        elif opts['about']:
-            response = self.make_poem(about=' '.join(opts['<thing>']))
+
+def fix_repitition(poem, about=None, by=None, start=0, check=-1, syllables=5):
+    """
+    If line ``check`` repeats line ``start``, try to get a random line
+    a second time, falling back to ignoring abouts
+
+    :param poem: a list of strings
+    :param about: any string or regex will search for a line with this pattern
+    :param by: string of user nick to use to search for haiku lines
+    :param start: start index (leftmost) of poem list
+    :param check: index of poem list that will be replaced if it matches ``start``
+    :param syllables: number of syllables of the poem at ``start`` and ``check``
+    """
+    if poem[start] == poem[check]:
+        repl = get_random_line(syllables, about, by)
+
+        if repl == poem[start]:
+            poem[check] = get_random_line(syllables)
         else:
-            fn_name = self.firstof(opts, 'add', 'add_use', 'use', 'remove', 'claim')
+            poem[check] = repl
 
-            if fn_name:
-                input = ' '.join(opts['INPUT'] or [])
-                syllables = self.syllable_map.get(self.firstof(opts, 'fives', 'sevens'), None)
-                call_me_maybe = getattr(self, fn_name, None)
-                kwargs = {}
+    return poem
 
-                if fn_name in ('add', 'add_use', 'claim'):
-                    kwargs['author'] = message.from_nick
 
-                if call_me_maybe:
-                    response = call_me_maybe(syllables, input, **kwargs)
+def get_random_line(syllables, about=None, by=None):
+    """
+    Returns a single random line with the given number of syllables.
+    Optionally will find lines containing a keyword or by an author.
+    If no entries are found with that keyword or by that author,
+    we just return a random line.
 
-            # just make a poem
-            else:
-                response = self.make_poem()
+    :param syllables: integer number of syllables, 5 or 7
+    :param about: any string or regex will search for a line with this pattern
+    :param by: string of user nick to use to search for haiku lines
+    """
+    query = {'syllables': syllables}
 
-        # It's a poem, dude
-        if isinstance(response, list):
-            self.last[message.channel] = response
+    if by:
+        query.update({'author': {'$regex': re.compile(by, re.I)}})
 
-        message.response = response
+    if about:
+        query.update({'message': {'$regex': re.compile(about, re.I)}})
 
-    def _make_term_pattern(self, term):
-        return re.compile(term, re.I)
+    qs = db.haiku.find(query)
+    num_rows = qs.count()
 
-    def get_random_line(self, syllables, about=None, by=None):
-        """
-        Returns a single random line with the given number of syllables.
-        Optionally will find lines containing a keyword or by an author.
-        If no entries are found with that keyword or by that author,
-        we just return a random line.
-        """
-        finder = {
-            'syllables': syllables
-        }
-
-        if by:
-            finder.update({
-                'author': {'$regex': self._make_term_pattern(by)}
-            })
-
-        if about:
-            finder.update({
-                'message': {'$regex': self._make_term_pattern(about)}
-            })
-
-        qs = db.haiku.find(finder)
-        num_rows = qs.count()
-
-        if num_rows == 0:
-            if about or by:
-                return self.get_random_line(syllables)
-            else:
-                return None
-
-        skip = random.randint(0, num_rows - 1)
-
-        # Bleh, this is how we randomly grab one
-        return str(qs.limit(-1).skip(skip).next()['message'])
-
-    def tweet(self, channel):
-        if channel not in self.last:
-            return "%(nick)s, why don't you try making one first?"
-
-        # fives / sevens / fives
-        resp = tweet('\n'.join(self.last[channel]))
-
-        # This will keep it from over tweeting
-        del self.last[channel]
-
-        if not resp:
-            resp = '%(nick)s that probably did not work'
-
-        return resp
-
-    def blame(self, channel):
-        """
-        Show who helped make the last haiku possible
-        """
-        if channel not in self.last:
-            return "%(nick)s, why don't you try making one first?"
-
-        authors = []
-
-        for line in self.last[channel]:
-            try:
-                rec = db.haiku.find_one({'message': line})
-            except:
-                authors.append(self.bot.nick)
-            else:
-                authors.append(rec.get('author', None) or self.bot.nick)
-
-        return "The last poem was brought to you by (in order): %s" % ', '.join(authors)
-
-    def claim(self, syllables, input, author=None):
-        try:
-            db.haiku.update({'message': input}, {'$set': { 'author': author }})
-            logger.info('%s has claimed the line: %s' % (author, input))
-            return "%s has claimed the line: %s" % (author, input)
-        except:
-            return "Sorry, I don't know that line."
-
-    def add(self, syllables, input, author=None):
-        logger.info('Adding %d syllable line: %s' % (syllables, input))
-
-        db.haiku.insert({
-            'syllables': syllables,
-            'message': input,
-            'author': author,
-        })
-
-        return random.choice(self.add_acks)
-
-    def add_use(self, syllables, input, author=None):
-        """
-        Stores a poem input and uses it in the response
-        """
-        self.add(syllables, input, author=author)
-        return self.use(syllables, input)
-
-    def use(self, syllables, input):
-        """
-        Uses input in a poem without storing it
-        """
-        poem = self.make_poem()
-
-        if syllables == 5 and input not in poem:
-            which = random.choice([0, 2])
-            poem[which] = input
-        elif syllables == 7:
-            poem[1] = input
-
-        return poem
-
-    def remove(self, syllables, input):
-        logger.info('Removing %s syllable line: %s' % (syllables, input))
-
-        db.haiku.remove({
-            'syllables': syllables,
-            'message': input
-        })
-
-        return random.choice(self.delete_acks)
-
-    def fix_repitition(self, poem, about=None, by=None, start=0, check=-1, syllables=5):
-        """
-        If line ``check`` repeats line ``check``, try to get a random line
-        a second time, falling back to ignoring abouts
-        """
-        if poem[start] == poem[check]:
-            repl = self.get_random_line(syllables, about, by)
-
-            if repl == poem[start]:
-                poem[check] = self.get_random_line(syllables)
-            else:
-                poem[check] = repl
-
-        return poem
-
-    def make_poem(self, about=None, by=None):
-        poem = [
-            self.get_random_line(5, about, by),
-            self.get_random_line(7, about, by),
-            self.get_random_line(5, about, by)
-        ]
-
-        if not all(poem):
+    if num_rows == 0:
+        if about or by:
+            # If no results using either an author or general search
+            return get_random_line(syllables)
+        else:
+            # Bail
             return None
 
-        if about is not None:
-            return self.fix_repitition(poem, about=about)
-        elif by is not None:
-            return self.fix_repitition(poem, by=by)
+    skip = random.randint(0, num_rows - 1)
+
+    # Bleh, this is how we randomly grab one
+    return str(qs.limit(-1).skip(skip).next()['message'])
+
+
+def make_poem(about=None, by=None):
+    poem = [
+        get_random_line(5, about, by),
+        get_random_line(7, about, by),
+        get_random_line(5, about, by)
+    ]
+
+    if not all(poem):
+        return None
+
+    if about is not None:
+        return fix_repitition(poem, about=about)
+    elif by is not None:
+        return fix_repitition(poem, by=by)
+    else:
+        return poem
+
+
+def add(syllables, input, author=None):
+    logger.info('Adding {0} syllable line: {1}'.format(syllables, input))
+    db.haiku.insert({
+        'syllables': syllables,
+        'message': input,
+        'author': author,
+    })
+    return random_ack()
+
+
+def add_use(syllables, input, author=None):
+    """
+    Stores a poem input and uses it in the response
+    """
+    add(syllables, input, author=author)
+    return use(syllables, input)
+
+
+def use(syllables, input):
+    """
+    Uses input in a poem without storing it
+    """
+    poem = make_poem()
+
+    if syllables == 5 and input not in poem:
+        which = random.choice([0, 2])
+        poem[which] = input
+    elif syllables == 7:
+        poem[1] = input
+
+    return poem
+
+
+def remove(syllables, input):
+    logger.info('Removing {0} syllable line: {1}'.format(syllables, input))
+    db.haiku.remove({'syllables': syllables, 'message': input})
+    return random_ack()
+
+
+def claim(syllables, input, author=None):
+    try:
+        db.haiku.update({'message': input}, {'$set': {'author': author}})
+        logger.info('{0} has claimed the line: {1}'.format(author, input))
+        return "{0} has claimed the line: {1}".format(author, input)
+    except:
+        return "Sorry, I don't know that line."
+
+
+def tweet(channel, requested_by):
+    global last_poem
+    last = last_poem[channel]
+
+    if not last:
+        return "{0}, why don't you try making one first".format(requested_by)
+
+    resp = send_tweet('\n'.join(last))
+
+    if not resp:
+        return "{0}, that probably did not work :(".format(requested_by)
+    else:
+        # This will keep it from over tweeting
+        del last_poem[channel]
+
+    return resp
+
+
+def blame(channel, requested_by, default_author=''):
+    """
+    Show who helped make the last haiku possible
+    """
+    global last_poem
+    last = last_poem[channel]
+
+    if not last:
+        return "{0}, why don't you try making one first".format(requested_by)
+
+    authors = []
+
+    for line in last:
+        try:
+            rec = db.haiku.find_one({'message': line})
+        except:
+            authors.append(default_author)
         else:
-            return poem
+            authors.append(rec.get('author', None) or default_author)
+
+    return "The last poem was brought to you by (in order): {0}".format(', '.join(authors))

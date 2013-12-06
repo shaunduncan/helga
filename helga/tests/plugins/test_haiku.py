@@ -1,100 +1,91 @@
 from mock import Mock, patch
-from unittest import TestCase
 
-from helga.extensions.haiku import HaikuExtension
-from helga.tests.util import mock_bot
+from helga.plugins import haiku
 
 
-class HaikuExtensionTestCase(TestCase):
+@patch('helga.plugins.haiku.get_random_line')
+def test_fix_repitition_replaces(get_random_line):
+    poem = ['foo', 'bar', 'foo']
+    get_random_line.return_value = 'baz'
+    poem = haiku.fix_repitition(poem)
 
-    def setUp(self):
-        self.haiku = HaikuExtension(mock_bot())
+    assert poem == ['foo', 'bar', 'baz']
 
-    @patch('helga.extensions.haiku.db')
-    def test_add(self, db):
-        self.haiku.add(5, 'foobar')
 
-        assert db.haiku.insert.called
+@patch('helga.plugins.haiku.get_random_line')
+def test_fix_repititions_gives_up_after_retry(get_random_line):
+    poem = ['foo', 'bar', 'foo']
+    get_random_line.return_value = 'foo'
+    poem = haiku.fix_repitition(poem)
 
-    @patch('helga.extensions.haiku.db')
-    def test_remove(self, db):
-        self.haiku.remove(5, 'foobar')
+    assert poem == ['foo', 'bar', 'foo']
+    assert haiku.get_random_line.call_count == 2
 
-        assert db.haiku.remove.called
 
-    @patch('helga.extensions.haiku.db')
-    def test_get_random_line(self, db):
+@patch('helga.plugins.haiku.get_random_line')
+def test_fix_repitition_does_not_replace(get_random_line):
+    poem = ['foo', 'bar', 'baz']
+    poem = haiku.fix_repitition(poem)
 
-        # We mock out the find, because we will do sorting and slicing
-        def fake_find(q_dict):
-            result = Mock()
-            result.sort = result
-            result.count.return_value = 1
-            result.limit.return_value = result
-            result.skip.return_value = result
-            result.next.return_value = {'message': 'fives1'}
+    assert poem == ['foo', 'bar', 'baz']
+    assert not haiku.get_random_line.called
 
-            return result
 
-        db.haiku.find = fake_find
-        line = self.haiku.get_random_line(5)
+@patch('helga.plugins.haiku.db')
+def test_add(db):
+    haiku.add(5, 'foobar')
+    assert db.haiku.insert.called
 
-        assert line == 'fives1'
 
-    @patch('helga.extensions.haiku.db')
-    def test_get_random_line_returns_none(self, db):
-        db.haiku.find.return_value = db
-        db.count.return_value = 0
+@patch('helga.plugins.haiku.db')
+def test_remove(db):
+    haiku.remove(5, 'foobar')
+    assert db.haiku.remove.called
 
-        assert self.haiku.get_random_line(5) is None
 
-    def test_use_fives(self):
-        self.haiku.add = Mock()
-        self.haiku.make_poem = Mock()
-        self.haiku.make_poem.return_value = ['one', 'two', 'three']
+@patch('helga.plugins.haiku.db')
+def test_get_random_line(db):
+    result = Mock()
+    result.sort = result
+    result.count.return_value = 1
+    result.limit.return_value = result
+    result.skip.return_value = result
+    result.next.return_value = {'message': 'fives1'}
 
-        poem = self.haiku.use(5, 'foo')
+    fake_find = Mock(return_value=result)
 
-        assert 'foo' in (poem[0], poem[2])
+    db.haiku.find = fake_find
+    line = haiku.get_random_line(5)
+    assert line == 'fives1'
 
-    def test_use_fives_does_not_duplicate(self):
-        self.haiku.add = Mock()
-        self.haiku.make_poem = Mock()
-        self.haiku.make_poem.return_value = ['foo', 'two', 'three']
 
-        poem = self.haiku.use(5, 'foo')
+@patch('helga.plugins.haiku.db')
+def test_get_random_line_returns_none(db):
+    db.haiku.find.return_value = db
+    db.count.return_value = 0
+    assert haiku.get_random_line(5) is None
 
-        assert poem[0] == 'foo'
-        assert poem[2] != 'foo'
 
-    def test_use_sevens(self):
-        self.haiku.add = Mock()
-        self.haiku.make_poem = Mock()
-        self.haiku.make_poem.return_value = ['one', 'two', 'three']
+@patch('helga.plugins.haiku.add')
+@patch('helga.plugins.haiku.make_poem')
+def test_use_fives(make_poem, add):
+    make_poem.return_value = ['one', 'two', 'three']
+    poem = haiku.use(5, 'foo')
+    assert 'foo' in (poem[0], poem[2])
 
-        poem = self.haiku.use(7, 'foo')
 
-        assert poem[1] == 'foo'
+@patch('helga.plugins.haiku.add')
+@patch('helga.plugins.haiku.make_poem')
+def test_use_fives_does_not_duplicate(make_poem, add):
+    make_poem.return_value = ['foo', 'two', 'three']
+    poem = haiku.use(5, 'foo')
+    assert poem[0] == 'foo'
+    assert poem[2] != 'foo'
 
-    def test_fix_repitition_replaces(self):
-        poem = ['foo', 'bar', 'foo']
-        self.haiku.get_random_line = Mock(return_value='baz')
-        poem = self.haiku.fix_repitition(poem)
 
-        assert poem == ['foo', 'bar', 'baz']
-
-    def test_fix_repititions_gives_up_after_retry(self):
-        poem = ['foo', 'bar', 'foo']
-        self.haiku.get_random_line = Mock(return_value='foo')
-        poem = self.haiku.fix_repitition(poem)
-
-        assert poem == ['foo', 'bar', 'foo']
-        assert self.haiku.get_random_line.call_count == 2
-
-    def test_fix_repitition_does_not_replace(self):
-        poem = ['foo', 'bar', 'baz']
-        self.haiku.get_random_line = Mock()
-        poem = self.haiku.fix_repitition(poem)
-
-        assert poem == ['foo', 'bar', 'baz']
-        assert not self.haiku.get_random_line.called
+@patch('helga.plugins.haiku.add')
+@patch('helga.plugins.haiku.make_poem')
+def test_use_sevens(make_poem, add):
+    make_poem.return_value = ['one', 'two', 'three']
+    poem = haiku.use(7, 'foo')
+    assert poem[1] == 'foo'
