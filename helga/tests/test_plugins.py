@@ -55,6 +55,15 @@ class CommandTestCase(TestCase):
         cmd.run = lambda client, chan, nick, msg, cmd, args: 'runner'
         assert 'runner' == cmd.process(self.client, '#bots', 'me', 'helga foo')
 
+    def test_multiple_decorators(self):
+        @plugins.command('foo')
+        @plugins.command('bar')
+        def foobar(*args):
+            return args[-2]
+
+        #assert [None, 'foo'] == foobar.process(self.client, '#bots', 'me', 'helga foo')
+        assert ['bar', None] == foobar.process(self.client, '#bots', 'me', 'helga bar')
+
     def test_decorator_sets_process_attr(self):
         @plugins.command('foo')
         def foo(client, chan, nick, msg, cmd, args):
