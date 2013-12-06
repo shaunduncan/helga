@@ -23,7 +23,7 @@ last_poem = defaultdict(list)
 @command('haiku', aliases=['tanka'],
          help="Usage: helga (haiku|tanka) [blame|tweet|about <thing>|by <author_nick>|"
               "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
-def haiku(client, channel, nick, message, cmd, args):
+def poems(client, channel, nick, message, cmd, args):
     global last_poem
     subcmd = args[0]
 

@@ -2,55 +2,37 @@ import random
 
 from giphypop import Giphy, GiphyApiException, GIPHY_PUBLIC_KEY
 
-from helga import settings
-from helga.extensions.base import CommandExtension
-from helga.log import setup_logger
+from helga import log, settings
+from helga.plugins import command
 
 
-logger = setup_logger(__name__)
+logger = log.getLogger(__name__)
+
+# Snarky responses on failure
+responses = [
+    "Well this is embarassing...",
+    "Yeah I've got nothing {nick}",
+    "I couldn't find anything for you {nick}",
+    "PC LOAD LETTER",
+]
 
 
-class GiphyExtension(CommandExtension):
-    """
-    A plugin for all things gifs
-    """
-    NAME = 'giphy'
+@command('gif', aliases=['gifme'], help='Search giphy for an animated gif. Usage: helga gif <search term>')
+def giphy(client, channel, nick, message, cmd, args):
+    key = getattr(settings, 'GIPHY_API_KEY', GIPHY_PUBLIC_KEY)
+    api = Giphy(api_key=key, strict=True)
 
-    usage = '[BOTNICK] (gif|gifme) [<search_term> ...]'
+    search = ' '.join(args)
 
-    sad_panda = [
-        "Well this is embarassing...",
-        "Yeah I've got nothing %(nick)s",
-        "I couldn't find anything for you %(nick)s",
-        "PC LOAD LETTER",
-    ]
-
-    def __init__(self, *args, **kwargs):
-        self.api_key = getattr(settings, 'GIPHY_API_KEY', GIPHY_PUBLIC_KEY)
-        logger.info('Connecting to Giphy API with key %s' % self.api_key)
-
-        self.api = Giphy(api_key=GIPHY_PUBLIC_KEY, strict=True)
-        super(GiphyExtension, self).__init__(*args, **kwargs)
-
-    def handle_message(self, opts, message):
-        search = ' '.join(opts['<search_term>'])
-        message.response = self.gifme(search=search)
-
-    def gifme(self, search=None):
-        """
-        Hook into giphypop to find a gif. If no search term, just
-        return a random gif. If a search term is given, try to translate
-        it and default back to a search
-        """
+    try:
+        return api.random_gif(search).media_url
+    except GiphyApiException:
         try:
-            return self.api.random_gif(search).media_url
+            return api.translate(search).media_url
         except GiphyApiException:
             try:
-                return self.api.translate(search).media_url
-            except GiphyApiException:
-                try:
-                    return self.api.search_list(search, limit=1)[0].media_url
-                except (GiphyApiException, IndexError):
-                    pass
+                return api.search_list(search, limit=1)[0].media_url
+            except (GiphyApiException, IndexError):
+                pass
 
-        return random.choice(self.sad_panda)
+    return random.choice(responses).format(nick=nick)
