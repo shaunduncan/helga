@@ -43,7 +43,7 @@ class Client(irc.IRCClient):
     values. Some methods are subclassed here only to provide logging output.
     """
 
-    nickname = getattr(settings, 'DEFAULT_NICK', 'helga')
+    nickname = settings.NICK
 
     # Server related things
     username = settings.SERVER.get('USERNAME', None)
@@ -59,10 +59,6 @@ class Client(irc.IRCClient):
 
         # Pre-configured helga admins
         self.operators = set(getattr(settings, 'OPERATORS', []))
-        plugins.registry.client = self
-
-        # The plugin registry
-        self.plugins = plugins.Registry()
 
         # Things to keep track of
         self.channels = set()
@@ -81,8 +77,6 @@ class Client(irc.IRCClient):
                 self.join(channel[0], channel[1])
             else:
                 self.join(channel[0])
-
-        # Hook FTW
         smokesignal.emit('signon')
 
     def joined(self, channel):
@@ -93,7 +87,7 @@ class Client(irc.IRCClient):
     def left(self, channel):
         logger.info('Joined %s' % channel)
         self.channels.discard(channel)
-        smokesignal.emit('join', channel)
+        smokesignal.emit('left', channel)
 
     def parse_nick(self, full_nick):
         """
@@ -115,10 +109,10 @@ class Client(irc.IRCClient):
         channel = channel if self.is_public_channel(channel) else user
 
         # Some things should go first: FIXME
-        # channel, nick, message = self.plugins.pre_process(self, channel, nick, message)
+        # channel, nick, message = plugins.registry.pre_process(self, channel, nick, message)
 
         # if not message.has_response:
-        responses = self.plugins.process(self, channel, user, message)
+        responses = plugins.registry.process(self, channel, user, message)
 
         if responses:
             # FIXME: Should have a setting to only allow a single response
