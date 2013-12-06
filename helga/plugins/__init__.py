@@ -104,7 +104,12 @@ class Registry(object):
                 resp = None
 
             if resp is not None:
-                responses.append(resp.strip())
+                # Chained decorator style plugins return a list of strings
+                if isinstance(responses, list):
+                    # Be sure to filter Nones, then strip
+                    responses.extend(map(lambda s: s.strip(), filter(bool, resp)))
+                else:
+                    responses.append(resp.strip())
 
         return filter(bool, responses)
 
@@ -171,10 +176,22 @@ class Plugin(object):
         A helper used for establishing decorators for plugin classes. This does nothing
         more than monkey patch the ``run`` method of the instance with whatever function
         is being decorated. Note that the decorated function should accept whatever arguments
-        the subclass implementation sends to its ``run`` method.
+        the subclass implementation sends to its ``run`` method. Instances of plugin objects
+        are kept in a list attribute of the decorated function. This allows chainable decorators
+        that function as intended, providing improved plugin functionality.
         """
         self.run = fn
-        fn.process = self
+
+        try:
+            fn._plugins.append(self)
+        except AttributeError:
+            fn._plugins = [self]
+
+        if hasattr(fn, 'process') or len(fn._plugins) > 1:
+            fn.process = lambda *a, **kw: [p.process(*a, **kw) for p in fn._plugins]
+        else:
+            fn.process = self
+
         return fn
 
     def __call__(self, client, channel, nick, message):
