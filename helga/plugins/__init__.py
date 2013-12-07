@@ -134,7 +134,7 @@ class Plugin(object):
     should accept the same arguments as ``__call__`` but subclasses my define any additional
     arguments if necessary.
 
-    In other words, ``__call__`` should decide if a message is worthy of a response, and
+    In other words, ``process`` should decide if a message is worthy of a response, and
     ``run`` should provide the response. As a simple example::
 
         import time
@@ -143,7 +143,7 @@ class Plugin(object):
             def run(self, channel, nick, message):
                 return 'Current timestamp: %d' % time.time()
 
-            def __call__(self, channel, nick, message):
+            def process(self, channel, nick, message):
                 if message.startswith('!time'):
                     return self.run(channel, nick, message)
     """

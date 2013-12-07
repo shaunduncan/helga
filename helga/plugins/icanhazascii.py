@@ -1,17 +1,14 @@
 import re
 import time
 
-from helga.extensions.base import HelgaExtension
+from helga.plugins import match
 
+FLOOD_RATE = 30
 
-class ICanHazAsciiExtension(HelgaExtension):
+LAST_USED = {}
 
-    NAME = 'ascii_artz'
-    FLOOD_RATE = 30
-    last_used = {}
-
-    omg_ascii = {
-        r'((p|br)oniez|pony|brony)': """
+ANIMALZ = {
+    r'((p|br)oniez|pony|brony)': """
             .,,.
          ,;;*;;;;,
         .-'``;-');;.
@@ -31,7 +28,7 @@ class ICanHazAsciiExtension(HelgaExtension):
        '*;;*/     |       /    |      ;*;
             `\"\"\"\"`        `\"\"\"\"`     ;'""",
 
-        r'(pupp|dogg)iez': """
+    r'(pupp|dogg)iez': """
                               _
                            ,:'/   _..._
                           // ( `\"\"-.._.'
@@ -54,7 +51,7 @@ class ICanHazAsciiExtension(HelgaExtension):
             (__.  `  ))-'  \\_    ))'
                 `'--\"`       `\"\"\"`""",
 
-        r'dolphinz': """
+    r'dolphinz': """
                                        __     HAI!
                                    _.-~  )
                         _..--~~~~,'   ,-/     _
@@ -70,7 +67,7 @@ class ICanHazAsciiExtension(HelgaExtension):
           .  . . |  _____..---.._/
     ~---~~~~----~~~~             ~~~~~~~~~~~~~~~""",
 
-        r'kitt(iez|[ie]nz)': """
+    r'kitt(iez|[ie]nz|eh)': """
        _             _
       | '-.       .-' |
        \\'-.'-\"\"\"-'.-'/    _
@@ -90,7 +87,7 @@ class ICanHazAsciiExtension(HelgaExtension):
      (,,/:.|.-'-.|.:\\,,)
        (,,,/     \\,,,)""",
 
-       r'bat.?signal': """
+    r'bat.?signal': """
        _==/          i     i          \==_
      /XX/            |\___/|            \XX\\
    /XXXX\            |XXXXX|            /XXXX\\
@@ -103,18 +100,25 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   |XXX|       \XXX/^^\XXXXX/^^\XXX/       |XXX|
     \XX\       \X/    \XXX/    \X/       /XX/
        "\       "      \X/      "      /" """,
-    }
+}
 
-    def is_flooded(self, channel):
-        return channel in self.last_used and (time.time() - self.last_used[channel]) < self.FLOOD_RATE
 
-    def process(self, message):
-        for pat, ascii in self.omg_ascii.iteritems():
-            if not re.match(pat, message.message, re.I):
-                continue
+def find_animal(message):
+    for pat, ascii in ANIMALZ.iteritems():
+        if re.match(pat, message, re.I):
+            return ascii
 
-            # Flood control
-            if not self.is_flooded(message.channel):
-                self.last_used[message.channel] = time.time()
-                message.response = ascii
-                return
+
+@match(find_animal)
+def icanhazascii(client, channel, nick, message, found):
+    """
+    A plugin for generating showing ascii artz
+    """
+    global FLOOD_RATE, LAST_USED
+    now = time.time()
+
+    if channel in LAST_USED and (now - LAST_USED[channel]) < FLOOD_RATE:
+        return
+
+    LAST_USED[channel] = now
+    return found
