@@ -1,70 +1,54 @@
 import random
 
-from helga.extensions.base import CommandExtension
+from helga.plugins import command, preprocessor
 
 
-class STFUExtension(CommandExtension):
-    """
-    Toggles helga's level of vocal-ness on any given channel
-    """
-    NAME = 'stfu'
+silence_acks = (
+    'silence is golden',
+    'shutting up',
+    'biting my tongue',
+    'fine, whatever',
+)
 
-    usage = '[BOTNICK] (stfu|speak)'
+unsilence_acks = (
+    'speaking once again',
+    'did you miss me?',
+    'FINALLY',
+    'thanks {nick}, i was getting bored'
+)
 
-    silence_acks = (
-        'silence is golden',
-        'shutting up',
-        'biting my tongue',
-        'fine, whatever',
-    )
+snarks = (
+    'why would you want to do that {nick}?',
+    'do you really despise me that much {nick}?',
+    'whatever i do what i want',
+    'no can do, i love the sound of my own voice',
+)
 
-    unsilence_acks = (
-        'speaking once again',
-        'did you miss me?',
-        'FINALLY',
-        'thanks %(nick)s, i was getting bored'
-    )
+# Set of silenced channels
+silenced = set()
 
-    snarks = (
-        'why would you want to do that %(nick)s?',
-        'do you really despise me that much %(nick)s?',
-        'whatever i do what i want',
-        'no can do, i love the sound of my own voice',
-    )
 
-    def __init__(self, *args, **kwargs):
-        self.silenced = set()
-        super(STFUExtension, self).__init__(*args, **kwargs)
+@preprocessor
+@command('stfu', aliases=['speak'], help="Tell the bot to be quiet or not. Usage: helga (speak|stfu)")
+def stfu(client, channel, nick, message, *args):
+    global silenced
 
-    def preprocess(self, message):
-        # A hack, we hook into how commands work
-        super(STFUExtension, self).process(message)
+    # Handle the message preprocesor
+    if len(args) == 0:
+        if channel in silenced:
+            message = ''
+        return channel, nick, message
 
-        if self.is_silenced(message.channel):
-            message.message = ''
+    elif len(args) == 2:
+        resp = ''
 
-    def handle_message(self, opts, message):
-        if message.is_public:
-            if opts['stfu']:
-                message.response = self.silence(message.channel)
+        if channel == nick:  # Private message
+            resp = random.choice(snarks)
+        elif args[0] == 'stfu':
+            silenced.add(channel)
+            resp = random.choice(silence_acks)
+        elif args[0] == 'speak':
+            silenced.discard(channel)
+            resp = random.choice(unsilence_acks)
 
-            elif opts['speak']:
-                message.response = self.unsilence(message.channel)
-        else:
-            # Be an asshole
-            message.response = random.choice(self.snarks)
-
-    def is_silenced(self, channel):
-        return channel in self.silenced
-
-    def silence(self, channel):
-        was_silenced = channel in self.silenced
-        self.silenced.add(channel)
-        if not was_silenced:
-            return random.choice(self.silence_acks)
-
-    def unsilence(self, channel):
-        was_silenced = channel in self.silenced
-        self.silenced.discard(channel)
-        if was_silenced:
-            return random.choice(self.unsilence_acks)
+        return resp.format(nick=nick)

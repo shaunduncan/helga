@@ -8,6 +8,36 @@ from mock import Mock
 from helga import plugins
 
 
+class PluginTestCase(TestCase):
+
+    def setUp(self):
+        self.plugin = plugins.Plugin()
+        self.client = Mock(nickname='helga')
+
+    def test_decorate_as_preprocessor(self):
+        foo = lambda client, chan, nick, msg: ('foo', 'bar', 'baz')
+        foo = self.plugin.decorate(foo, preprocessor=True)
+        expected = ('foo', 'bar', 'baz')
+        args = (self.client, '#bots', 'me', 'foobar')
+
+        assert hasattr(foo, 'preprocess')
+        assert expected == foo(*args)
+        assert expected == foo.preprocess(*args)
+        assert expected == self.plugin.preprocess(*args)
+
+    def test_preprocessor_decorator(self):
+        @plugins.preprocessor
+        def foo(client, channel, nick, message):
+            return 'foo', 'bar', 'baz'
+
+        expected = ('foo', 'bar', 'baz')
+        args = (self.client, '#bots', 'me', 'foobar')
+
+        assert hasattr(foo, 'preprocess')
+        assert expected == foo(*args)
+        assert expected == foo.preprocess(*args)
+
+
 class CommandTestCase(TestCase):
 
     def setUp(self):

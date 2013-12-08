@@ -94,6 +94,14 @@ class Registry(object):
             except:
                 logger.exception("Error initializing plugin %s" % entry_point)
 
+    def preprocess(self, client, channel, nick, message):
+        for name in self.enabled_plugins[channel]:
+            try:
+                channel, nick, message = self.plugins[name].preprocess(client, channel, nick, message)
+            except (TypeError, ValueError):
+                continue
+        return channel, nick, message
+
     def process(self, client, channel, nick, message):
         responses = []
 
@@ -159,6 +167,23 @@ class Plugin(object):
         :param message: the message string itself
         """
         return None
+
+    def preprocess(self, client, channel, nick, message):
+        """
+        A preprocessing filter for plugins. This allows a plugin to modify a received
+        message prior to be being sent to a plugin's ``process`` method. Implementations
+        of this must return a three-tuple containing, any of which could be modified:
+
+        - **channel**: the channel on which the message was received
+        - **nick**: the current nick of the message sender
+        - **message**: the message string itself
+
+        :param client: an instance of :class:`helga.comm.Client`
+        :param channel: the channel on which the message was received
+        :param nick: the current nick of the message sender
+        :param message: the message string itself
+        """
+        return channel, nick, message
 
     def process(self, client, channel, nick, message):
         """
@@ -471,3 +496,23 @@ def match(pattern=''):
         <helga> sduncan said foo
     """
     return Match(pattern).decorate
+
+
+def preprocessor(fn):
+    """
+    A decorator for creating a simple preprocessor type plugin. Decorated functions must
+    accept four arguments:
+
+    - **client**: an instance of :class:`helga.comm.Client`
+    - **channel**: the channel on which the message was received
+    - **nick**: the current nick of the message sender
+    - **message**: the message string itself
+
+    They must return a three-tuple consisting of (in order):
+
+    - **channel**: the channel on which the message was received
+    - **nick**: the current nick of the message sender
+    - **message**: the message string itself
+    """
+    fn.preprocess = fn
+    return fn

@@ -111,7 +111,7 @@ class Client(irc.IRCClient):
         channel = channel if self.is_public_channel(channel) else user
 
         # Some things should go first: FIXME
-        # channel, nick, message = plugins.registry.pre_process(self, channel, nick, message)
+        channel, nick, message = plugins.registry.preprocess(self, channel, nick, message)
 
         # if not message.has_response:
         responses = plugins.registry.process(self, channel, user, message)

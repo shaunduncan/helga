@@ -1,61 +1,36 @@
 from mock import Mock
-from unittest import TestCase
+from pretend import stub
 
-from helga.extensions.stfu import STFUExtension
-from helga.tests.util import mock_bot
+from helga.plugins import stfu
 
 
-class STFUExtensionTestCase(TestCase):
+def test_stfu_preprocess_does_nothing():
+    stfu.silenced = set()
+    chan, nick, msg = stfu.stfu.preprocess(None, '#bots', 'me', 'foo')
+    assert msg == 'foo'
 
-    def setUp(self):
-        self.stfu = STFUExtension(mock_bot())
 
-    def test_is_silenced(self):
-        self.stfu.silence('foo')
-        assert self.stfu.is_silenced('foo')
+def test_stfu_preprocess_blanks_message_when_silenced():
+    stfu.silenced = set(['#bots'])
+    chan, nick, msg = stfu.stfu.preprocess(None, '#bots', 'me', 'foo')
+    assert msg == ''
 
-    def test_is_silenced_not_silenced(self):
-        self.stfu.unsilence('foo')
-        assert not self.stfu.is_silenced('foo')
 
-    def test_preprocess_no_action(self):
-        msg = Mock(message='foo', channel='bar', response=None)
-        self.stfu.preprocess(msg)
-        assert msg.response is None
+def test_stfu_snark_on_private_message():
+    stfu.silenced = set()
+    resp = stfu.stfu.process(stub(nickname='helga'), 'me', 'me', 'helga stfu')
+    assert resp in map(lambda x: x.format(nick='me'), stfu.snarks)
 
-    def test_preprocess_responds_with_snark(self):
-        msg = Mock(message='stfu', channel='bar', is_public=False, response=None)
-        self.stfu.preprocess(msg)
-        assert msg.response in self.stfu.snarks
 
-    def test_preprocess_silences_channel(self):
-        assert not self.stfu.is_silenced('bar')
-        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
-        self.stfu.preprocess(msg)
-        assert self.stfu.is_silenced('bar')
+def test_stfu_silences_channel():
+    stfu.silenced = set()
+    resp = stfu.stfu.process(stub(nickname='helga'), '#bots', 'me', 'helga stfu')
+    assert resp in map(lambda x: x.format(nick='me'), stfu.silence_acks)
+    assert '#bots' in stfu.silenced
 
-    def test_preprocess_silences_channel_responds_once(self):
-        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
-        self.stfu.preprocess(msg)
-        assert msg.response
 
-        msg = Mock(message='helga stfu', channel='bar', is_public=True, response=None)
-        self.stfu.preprocess(msg)
-        assert not msg.response
-
-    def test_preprocess_unsilences_channel(self):
-        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
-        self.stfu.silence('bar')
-        self.stfu.preprocess(msg)
-        assert not self.stfu.is_silenced('bar')
-
-    def test_preprocess_unsilences_channel_responds_once(self):
-        self.stfu.silence('bar')
-
-        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
-        self.stfu.preprocess(msg)
-        assert msg.response
-
-        msg = Mock(message='helga speak', channel='bar', is_public=True, response=None)
-        self.stfu.preprocess(msg)
-        assert not msg.response
+def test_stfu_unsilences_channel():
+    stfu.silenced = set(['#bots'])
+    resp = stfu.stfu.process(stub(nickname='helga'), '#bots', 'me', 'helga speak')
+    assert resp in map(lambda x: x.format(nick='me'), stfu.unsilence_acks)
+    assert '#bots' not in stfu.silenced
