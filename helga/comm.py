@@ -1,5 +1,7 @@
 import time
 
+from collections import defaultdict
+
 import smokesignal
 
 from twisted.internet import protocol, reactor
@@ -61,6 +63,7 @@ class Client(irc.IRCClient):
 
         # Things to keep track of
         self.channels = set()
+        self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
 
     def connectionMade(self):
         logger.info('Connection made to %s' % settings.SERVER['HOST'])
@@ -116,6 +119,9 @@ class Client(irc.IRCClient):
         if responses:
             # FIXME: Should have a setting to only allow a single response
             self.msg(channel, '\n'.join(responses))
+
+        # Update last message
+        self.last_message[channel][user] = message
 
     def alterCollidedNick(self, nickname):
         """
