@@ -110,7 +110,7 @@ class Registry(object):
 
             if resp is not None:
                 # Chained decorator style plugins return a list of strings
-                if isinstance(responses, list):
+                if isinstance(responses, (tuple, list)):
                     # Be sure to filter Nones, then strip
                     responses.extend(map(lambda s: s.strip(), filter(bool, resp)))
                 else:
