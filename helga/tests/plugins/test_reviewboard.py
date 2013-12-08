@@ -1,16 +1,17 @@
 from mock import patch
-from unittest import TestCase
 
-from helga.extensions.reviewboard import ReviewboardExtension
-from helga.tests.util import mock_bot
+from helga.plugins import reviewboard
 
 
-class ReviewboardExtensionTestCase(TestCase):
+@patch('helga.plugins.reviewboard.settings')
+def test_reviewboard(settings):
+    settings.REVIEWBOARD_URL = 'http://example.com/{review}'
+    expected = 'me might be talking about codereview: http://example.com/1234'
+    assert reviewboard.reviewboard(None, '#bots', 'me', 'cr1234', ['1234']) == expected
 
-    def setUp(self):
-        self.rb = ReviewboardExtension(mock_bot())
 
-    @patch('helga.extensions.reviewboard.settings')
-    def test_transform_match(self, settings):
-        settings.REVIEWBOARD_URL = 'http://example.com/%(review)s'
-        assert self.rb.transform_match('1234') == 'http://example.com/1234'
+@patch('helga.plugins.reviewboard.settings')
+def test_reviewboard_handles_many(settings):
+    settings.REVIEWBOARD_URL = 'http://example.com/{review}'
+    expected = 'me might be talking about codereview: http://example.com/123, http://example.com/456'
+    assert reviewboard.reviewboard(None, '#bots', 'me', 'cr123 cr456', ['123', '456']) == expected
