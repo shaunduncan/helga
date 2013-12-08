@@ -1,22 +1,18 @@
 import re
 
-from unittest import TestCase
-
-from helga.extensions.loljava import LOLJavaExtension
-from helga.tests.util import mock_bot
+from helga.plugins import loljava
 
 
-class LOLJavaExtensionTestCase(TestCase):
+def test_make_bullshit_java_thing():
+    assert loljava.make_bullshit_java_thing(None, '#bots', 'me', 'java', ['java'])
 
-    def setUp(self):
-        self.loljava = LOLJavaExtension(mock_bot())
 
-    def test_make_bullshit_java_thing(self):
-        assert self.loljava.make_bullshit_java_thing()
+def test_regex_matches_java():
+    plugin = loljava.make_bullshit_java_thing._plugins[0]
+    assert re.match(plugin.pattern, 'java')
+    assert re.match(plugin.pattern, 'loljava')
 
-    def test_regex_matches_java(self):
-        assert re.match(self.loljava.context, 'java')
-        assert re.match(self.loljava.context, 'loljava')
 
-    def test_regex_ignores_javascript(self):
-        assert not re.match(self.loljava.context, 'javascript')
+def test_regex_ignores_javascript():
+    plugin = loljava.make_bullshit_java_thing._plugins[0]
+    assert not re.match(plugin.pattern, 'javascript')
