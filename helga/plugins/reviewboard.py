@@ -1,14 +1,13 @@
 from helga import settings
-from helga.extensions.base import ContextualExtension
+from helga.plugins import match
 
 
-class ReviewboardExtension(ContextualExtension):
-
-    NAME = 'reviewboard'
-
-    context = r'cr([\d]+)'
-    allow_many = True
-    response_fmt = '%(nick)s might be talking about codereview: %(response)s'
-
-    def transform_match(self, match):
-        return settings.REVIEWBOARD_URL % {'review': match}
+@match(r'cr(\d+)')
+def reviewboard(client, channel, nick, message, matches):
+    """
+    Automatically responds to reviewboard urls if a user mentions a pattern
+    like cr####. Requires REVIEWBOARD_URL to exist in settings with formattable
+    substring '{review}'
+    """
+    reviews = [settings.REVIEWBOARD_URL.format(review=cr) for cr in matches]
+    return '{0} might be talking about codereview: {1}'.format(nick, ', '.join(reviews))
