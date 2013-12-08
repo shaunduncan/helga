@@ -1,95 +1,94 @@
 from mock import Mock, patch
+from pretend import stub
 from unittest import TestCase
 
-from helga import settings
-from helga.extensions.jira import JiraExtension
-from helga.tests.util import mock_bot
+from helga.plugins import jira
 
 
-class JiraExtensionTestCase(TestCase):
+settings_stub = stub(JIRA_URL='http://example.com/{ticket}')
 
-    def setUp(self):
-        self.jira = JiraExtension(mock_bot())
-        settings.JIRA_URL = 'http://example.com/%(ticket)s'
 
-    @patch('helga.extensions.jira.db')
-    def test_add_re_inserts_new_record(self, db):
-        db.jira.find.return_value = db
-        db.count.return_value = 0
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.db')
+def test_init_jira_patterns(mock_db):
+    mock_db.jira.find.return_value = [{'re': 'foo'}]
+    jira.JIRA_PATTERNS.clear()
 
-        self.jira.add_re('foo')
+    assert 'foo' not in jira.JIRA_PATTERNS
+    jira.init_jira_patterns()
+    assert 'foo' in jira.JIRA_PATTERNS
 
-        assert 'foo' in self.jira.jira_pats
-        assert db.jira.insert.called
 
-    @patch('helga.extensions.jira.db')
-    def test_add_re_has_existing_record_in_db(self, db):
-        db.jira.find.return_value = db
-        db.count.return_value = 1
+def test_find_jira_numbers_ignores_url():
+    message = 'this has a url http://example.com/foobar-123'
+    jira.JIRA_PATTERNS = set('foobar')
+    assert jira.find_jira_numbers(message) == []
 
-        self.jira.add_re('foo')
 
-        assert 'foo' in self.jira.jira_pats
-        assert not db.jira.insert.called
+def test_find_jira_numbers_finds_all():
+    message = 'this ia about foo-123, bar-456, baz-789, and qux-000'
+    jira.JIRA_PATTERNS = set(['foo', 'bar', 'baz'])
 
-    def test_add_re_does_nothing_important(self):
-        self.jira.jira_pats = ('foo',)
+    tickets = jira.find_jira_numbers(message)
+    assert 'foo-123' in tickets
+    assert 'bar-456' in tickets
+    assert 'baz-789' in tickets
 
-        assert self.jira.add_re('foo')
 
-    @patch('helga.extensions.jira.db')
-    def test_remove_re_does_removing(self, db):
-        self.jira.remove_re('foo')
-        assert db.jira.remove.called
+def test_find_jira_numbers_ignores_unknown():
+    message = 'this ia about foo-123, bar-456, baz-789, and qux-000'
+    jira.JIRA_PATTERNS = set(['foo', 'bar', 'baz'])
 
-    @patch('helga.extensions.jira.db')
-    def test_remove_re_removes_ticket(self, db):
-        self.jira.jira_pats = set(['foo'])
+    tickets = jira.find_jira_numbers(message)
+    assert 'quz-000' not in tickets
 
-        self.jira.remove_re('foo')
 
-        assert db.jira.remove.called
-        assert 'foo' not in self.jira.jira_pats
+@patch('helga.plugins.jira.db')
+def test_add_re_inserts_new_record(db):
+    db.jira.find.return_value = db
+    db.count.return_value = 0
+    jira.JIRA_PATTERNS.clear()
 
-    def test_contextualize_no_patterns(self):
-        msg = Mock(message='foo', response=None)
-        self.jira.contextualize(msg)
+    jira.add_re('foo')
 
-        assert msg.response is None
+    assert 'foo' in jira.JIRA_PATTERNS
+    assert db.jira.insert.called
 
-    def test_contextualize_no_pattern_match(self):
-        msg = Mock(message='barfoo-123', response=None)
-        self.jira.jira_pats = ('foobar',)
-        self.jira.contextualize(msg)
 
-        assert msg.response is None
+@patch('helga.plugins.jira.db')
+def test_add_re_has_existing_record_in_db(db):
+    db.jira.find.return_value = db
+    db.count.return_value = 1
+    jira.JIRA_PATTERNS.clear()
 
-    def test_contextualize_responds_with_url(self):
-        msg = Mock(message='my message is foobar-123', response=None)
-        self.jira.jira_pats = ('foobar',)
-        self.jira.contextualize(msg)
+    jira.add_re('foo')
 
-        assert 'http://example.com/foobar-123' in msg.response
+    assert 'foo' in jira.JIRA_PATTERNS
+    assert not db.jira.insert.called
 
-    def test_contextualize_responds_many_urls(self):
-        msg = Mock(message='look at foobar-123 and foobar-42', response=None)
-        self.jira.jira_pats = ('foobar',)
-        self.jira.contextualize(msg)
 
-        assert 'http://example.com/foobar-123' in msg.response
-        assert 'http://example.com/foobar-42' in msg.response
+@patch('helga.plugins.jira.db')
+def test_remove_re_does_removing(db):
+    jira.remove_re('foo')
+    assert db.jira.remove.called
 
-    def test_contextualize_responds_many_url_patterns(self):
-        msg = Mock(message='look at foobar-123 and bazqux-10', response=None)
-        self.jira.jira_pats = ('foobar', 'bazqux')
-        self.jira.contextualize(msg)
 
-        assert 'http://example.com/foobar-123' in msg.response
-        assert 'http://example.com/bazqux-10' in msg.response
+@patch('helga.plugins.jira.db')
+def test_remove_re_removes_ticket(db):
+    jira.JIRA_PATTERNS = set(['foo'])
+    jira.remove_re('foo')
 
-    def test_contextualize_ignores_urls(self):
-        msg = Mock(message='look at http://foo.com/foobar-123', response=None)
-        self.jira.jira_pats = ('foobar',)
-        self.jira.contextualize(msg)
+    assert db.jira.remove.called
+    assert 'foo' not in jira.JIRA_PATTERNS
 
-        assert msg.response is None
+
+@patch('helga.plugins.jira.settings', settings_stub)
+def test_jira_match():
+    expected = 'me might be talking about: http://example.com/foo-123'
+    assert expected == jira.jira_match(None, '#bots', 'me', 'this is about foo-123', ['foo-123'])
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+def test_jira_match_multiple():
+    expected = 'me might be talking about: http://example.com/foo-123, http://example.com/bar-456'
+    assert expected == jira.jira_match(None, '#bots', 'me', 'foo-123 and bar-456', ['foo-123', 'bar-456'])

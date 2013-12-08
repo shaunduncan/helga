@@ -30,6 +30,7 @@ TIMEZONE = 'US/Eastern'
 
 # Plugin settings
 FACTS_REQUIRE_NICKNAME = False
+JIRA_URL = 'http://localhost/{ticket}'
 
 
 if 'HELGA_SETTINGS' in os.environ:
