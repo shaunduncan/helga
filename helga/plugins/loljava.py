@@ -33,6 +33,9 @@ oop = ('Thread', 'Bean', 'Command', 'Prototype', 'Factory', 'Builder', 'Singleto
 
 @match(r'(lol)?java(?!script)')
 def make_bullshit_java_thing(client, channel, nick, message, matches):
+    """
+    Java class naming is hilariously enterprise...
+    """
     return (random.choice(descriptors) +
             random.choice(frameworks) +
             random.choice(things + oop) +
