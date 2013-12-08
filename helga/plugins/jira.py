@@ -16,7 +16,7 @@ JIRA_PATTERNS = set()
 
 
 @smokesignal.on('signon')
-def init_jira_patterns():
+def init_jira_patterns(*args, **kwargs):
     """
     Signal callback for IRC signon. This pulls down and caches all the stored
     JIRA ticket patterns so we don't have to do it on every message received

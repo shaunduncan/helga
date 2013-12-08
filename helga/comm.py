@@ -79,17 +79,17 @@ class Client(irc.IRCClient):
                 self.join(channel[0], channel[1])
             else:
                 self.join(channel[0])
-        smokesignal.emit('signon')
+        smokesignal.emit('signon', self)
 
     def joined(self, channel):
         logger.info('Joined %s' % channel)
         self.channels.add(channel)
-        smokesignal.emit('join', channel)
+        smokesignal.emit('join', self, channel)
 
     def left(self, channel):
         logger.info('Joined %s' % channel)
         self.channels.discard(channel)
-        smokesignal.emit('left', channel)
+        smokesignal.emit('left', self, channel)
 
     def parse_nick(self, full_nick):
         """
