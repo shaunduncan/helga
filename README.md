@@ -146,17 +146,17 @@ Some plugins do both matching and act as a command. For this reason, plugin deco
 However, remember that different plugin types expect decorated functions to accept different arguments.
 It is best to accept ``*args`` for these:
 
-    ```python
-    from helga.plugins import command, match, preprocessor
+```python
+from helga.plugins import command, match, preprocessor
 
-    @preprocessor
-    @match(r'bar')
-    @command('foo')
-    def complex(client, channel, nick, message, *args):
-        # len(args) == 0 for preprocessors
-        # len(args) == 1 for matches
-        # len(args) == 2 for commands
-    ```
+@preprocessor
+@match(r'bar')
+@command('foo')
+def complex(client, channel, nick, message, *args):
+    # len(args) == 0 for preprocessors
+    # len(args) == 1 for matches
+    # len(args) == 2 for commands
+```
 
 ### Publishing plugins
 
