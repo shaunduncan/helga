@@ -28,6 +28,25 @@ DATABASE = {
 
 TIMEZONE = 'US/Eastern'
 
+# The default set of plugins enabled on any channel.
+# By default, potentially noisy plugins are disabled
+ENABLED_PLUGINS = [
+    'dubstep',
+    'facts',
+    # 'giphy',
+    # 'icanhazascii',
+    'jira',
+    # 'loljava',
+    'manager',
+    'meant_to_say',
+    # 'oneliner',
+    'operator',
+    'poems',
+    'reviewboard',
+    'stfu',
+    'wiki_whois',
+]
+
 # Plugin settings
 FACTS_REQUIRE_NICKNAME = False
 JIRA_URL = 'http://localhost/{ticket}'

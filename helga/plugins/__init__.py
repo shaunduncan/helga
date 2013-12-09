@@ -5,7 +5,7 @@ import re
 
 from collections import defaultdict
 
-from helga import log
+from helga import log, settings
 
 
 logger = log.getLogger(__name__)
@@ -53,7 +53,7 @@ class Registry(object):
             self.plugins = {}
 
         if not hasattr(self, 'enabled_plugins'):
-            self.enabled_plugins = defaultdict(set)
+            self.enabled_plugins = defaultdict(lambda: getattr(settings, 'ENABLED_PLUGINS', set()))
 
     def register(self, name, fn_or_cls):
         # Make sure we're working with an instance
@@ -63,10 +63,16 @@ class Registry(object):
         except TypeError:
             pass
 
-        if not isinstance(fn_or_cls, Plugin) and not hasattr(fn_or_cls, 'process'):
+        if not (isinstance(fn_or_cls, Plugin) or
+                hasattr(fn_or_cls, 'process') or
+                hasattr(fn_or_cls, 'preprocess')):
             raise TypeError("Plugin %s must be a subclass of Plugin, or a decorated function" % name)
 
         self.plugins[name] = fn_or_cls
+
+    @property
+    def all_plugins(self, channel):
+        return self.plugins.keys()
 
     def disable(self, channel, *plugins):
         self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(plugins)
