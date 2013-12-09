@@ -47,7 +47,7 @@ ENABLED_PLUGINS = [
     'wiki_whois',
 ]
 
-# Plugin settings
+# MISC PLUGIN SETTINGS
 FACTS_REQUIRE_NICKNAME = False
 JIRA_URL = 'http://localhost/{ticket}'
 REVIEWBOARD_URL = 'http://localhost/{review}'
