@@ -69,7 +69,11 @@ should return one of:
 - Non-empty string for a single line response
 - List of strings for multiline responses
 
-Below is a simple example:
+Really, as long as you follow the above conventions, you can write plugins however you wish.
+However, you should try to keep plugins simple and use the included decorators ``command``,
+``match``, and ``preprocessor`` (explained later). However, if you prefer writing a plugin
+as a class, you can subclass the included ``Plugin`` base class, provided you have followed
+the above rules. Here is a simple example:
 
 ```python
 import time
@@ -83,6 +87,9 @@ class MyPlugin(Plugin):
         if message.startswith('!time'):
             return self.run(channel, nick, message)
 ```
+
+**NOTE** the previous example is not the preferred way. You should use the included
+decorators instead (shown below).
 
 ### Plugin Types
 

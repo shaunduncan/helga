@@ -311,10 +311,20 @@ class Command(Plugin):
         :returns: string of parsed command, whitespaced delimited string list of args
         """
         choices = [self.command] + list(self.aliases)
-        pat = r'{0}\W*\s({1})\s?(.*)$'.format(botnick, '|'.join(choices))
+
+        # Handle multiple ways to parse this command
+        if getattr(settings, 'COMMAND_PREFIX_BOTNICK', True):
+            nick_prefix = '{0}\W*\s'.format(botnick)
+        else:
+            nick_prefix = ''
+
+        prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
+        prefix = '({0})'.format('|'.join(prefixes))
+
+        pat = r'^{0}({1})\s?(.*)$'.format(prefix, '|'.join(choices))
 
         try:
-            cmd, argstr = re.findall(pat, message)[0]
+            _, cmd, argstr = re.findall(pat, message)[0]
         except (IndexError, ValueError):
             # FIXME: Log here?
             return u'', []

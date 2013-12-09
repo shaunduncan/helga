@@ -59,6 +59,15 @@ ENABLED_PLUGINS = [
 # send its response back over IRC.
 PLUGIN_FIRST_RESPONDER_ONLY = False
 
+# If set to True, a command can be run by asking directly.
+# For example `helga foo`
+COMMAND_PREFIX_BOTNICK = True
+
+# If non-empty, this char can be used to invoke a command without
+# requiring the bot's nick. For example `helga foo` could be run with
+# `!foo` instead
+COMMAND_PREFIX_CHAR = '!'
+
 # MISC PLUGIN SETTINGS
 FACTS_REQUIRE_NICKNAME = False
 JIRA_URL = 'http://localhost/{ticket}'
