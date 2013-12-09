@@ -40,7 +40,7 @@ def add_autojoin(channel):
 
 
 def remove_autojoin(channel):
-    logger.info('Removing Autojoin %s' % channel)
+    logger.info('Removing Autojoin {0}'.format(channel))
     db.autojoin.remove({'channel': channel})
     return random.choice(ACKS)
 
