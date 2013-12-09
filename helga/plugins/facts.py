@@ -96,16 +96,19 @@ def facts_match(client, channel, nick, message, found):
             parts = [nonick] + list(parts[1:])
 
     if parts[2].strip() == '<reply>':
+        author = ''
         fact = parts[-1]
     else:
         # This nasty join is to ignore the empty part for <reply>
+        author = nick
         fact = ' '.join(parts[:2] + parts[-1:])
 
-    return add_fact(parts[0], fact)
+    
+    return add_fact(parts[0], fact, author)
 
 
 @command('forget', help='Forget a stored fact. Usage: <botnick> forget foo')
-@match(r'(.*?) (is|are)( <reply>)? (.*)?')  # Storing facts
+@match(r'^(.*?) (is|are)( <reply>)? (.+)$')  # Storing facts
 @match(r'^(.*)\?$')  # Showing facts
 def facts(client, channel, nick, message, *args):
     """

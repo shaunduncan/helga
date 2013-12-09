@@ -7,7 +7,8 @@ import smokesignal
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
-from helga import plugins, settings, log
+from helga import settings, log
+from helga.plugins.core import registry
 
 
 logger = log.getLogger(__name__)
@@ -112,15 +113,14 @@ class Client(irc.IRCClient):
 
         # Some things should go first
         try:
-            channel, user, message = plugins.registry.preprocess(self, channel, user, message)
+            channel, user, message = registry.preprocess(self, channel, user, message)
         except (TypeError, ValueError):
             pass
 
         # if not message.has_response:
-        responses = plugins.registry.process(self, channel, user, message)
+        responses = registry.process(self, channel, user, message)
 
         if responses:
-            # FIXME: Should have a setting to only allow a single response
             self.msg(channel, '\n'.join(responses))
 
         # Update last message

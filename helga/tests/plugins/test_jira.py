@@ -84,11 +84,11 @@ def test_remove_re_removes_ticket(db):
 
 @patch('helga.plugins.jira.settings', settings_stub)
 def test_jira_match():
-    expected = 'me might be talking about: http://example.com/foo-123'
+    expected = 'me might be talking about JIRA ticket: http://example.com/foo-123'
     assert expected == jira.jira_match(None, '#bots', 'me', 'this is about foo-123', ['foo-123'])
 
 
 @patch('helga.plugins.jira.settings', settings_stub)
 def test_jira_match_multiple():
-    expected = 'me might be talking about: http://example.com/foo-123, http://example.com/bar-456'
+    expected = 'me might be talking about JIRA ticket: http://example.com/foo-123, http://example.com/bar-456'
     assert expected == jira.jira_match(None, '#bots', 'me', 'foo-123 and bar-456', ['foo-123', 'bar-456'])

@@ -35,10 +35,10 @@ class ClientTestCase(TestCase):
         self.client.signedOn()
         signal.emit.assertCalledWith('signon')
 
-    @patch('helga.comm.plugins')
-    def test_privmsg_sends_single_string(self, plugins):
+    @patch('helga.comm.registry')
+    def test_privmsg_sends_single_string(self, registry):
         self.client.msg = Mock()
-        plugins.registry.process.return_value = ['line1', 'line2']
+        registry.process.return_value = ['line1', 'line2']
 
         self.client.privmsg('foo!~bar@baz', '#bots', 'this is the input')
 
@@ -46,11 +46,11 @@ class ClientTestCase(TestCase):
         assert args[0] == '#bots'
         assert args[1] == 'line1\nline2'
 
-    @patch('helga.comm.plugins')
-    def test_privmsg_responds_to_user_when_private(self, plugins):
+    @patch('helga.comm.registry')
+    def test_privmsg_responds_to_user_when_private(self, registry):
         self.client.nickname = 'helga'
         self.client.msg = Mock()
-        plugins.registry.process.return_value = ['line1', 'line2']
+        registry.process.return_value = ['line1', 'line2']
 
         self.client.privmsg('foo!~bar@baz', 'helga', 'this is the input')
 

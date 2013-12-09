@@ -100,7 +100,7 @@ def jira_command(client, channel, nick, message, cmd, args):
 
 def jira_match(client, channel, nick, message, matches):
     urls = ', '.join(map(lambda s: settings.JIRA_URL.format(ticket=s), matches))
-    return '{0} might be talking about: {1}'.format(nick, urls)
+    return '{0} might be talking about JIRA ticket: {1}'.format(nick, urls)
 
 
 @match(find_jira_numbers)

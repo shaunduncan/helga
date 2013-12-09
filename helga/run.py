@@ -1,5 +1,7 @@
 import sys
 
+import smokesignal
+
 from twisted.internet import reactor, ssl
 
 from helga import comm, settings
@@ -15,6 +17,8 @@ start       Start the helga bot (CTRL-C to stop)
 
 
 def start():
+    smokesignal.emit('started')
+
     factory = comm.Factory()
     if settings.SERVER.get('SSL', False):
         reactor.connectSSL(settings.SERVER['HOST'],
