@@ -33,18 +33,26 @@ TIMEZONE = 'US/Eastern'
 ENABLED_PLUGINS = [
     'dubstep',
     'facts',
-    # 'giphy',
-    # 'icanhazascii',
+    'help'
     'jira',
-    # 'loljava',
+    'loljava',
     'manager',
     'meant_to_say',
-    # 'oneliner',
+    'oneliner',
     'operator',
     'poems',
     'reviewboard',
     'stfu',
     'wiki_whois',
+
+    # Sometimes, giphy may give back a gif of questionable content
+    # 'giphy',
+
+    # These can get super annoying in public channels
+    # 'icanhazascii',
+
+    # Generally, olga isn't being used
+    # 'no_more_olga',
 ]
 
 # MISC PLUGIN SETTINGS

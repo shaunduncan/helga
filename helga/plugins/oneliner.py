@@ -9,7 +9,7 @@ def imgur(image):
     """
     Returns an imgur link with a given hash
     """
-    return 'http://i.imgur.com/%s.gif' % image
+    return 'http://i.imgur.com/{0}.gif'.format(image)
 
 
 RESPONSES = {

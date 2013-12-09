@@ -66,7 +66,7 @@ class Registry(object):
         if not (isinstance(fn_or_cls, Plugin) or
                 hasattr(fn_or_cls, 'process') or
                 hasattr(fn_or_cls, 'preprocess')):
-            raise TypeError("Plugin %s must be a subclass of Plugin, or a decorated function" % name)
+            raise TypeError("Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
 
         self.plugins[name] = fn_or_cls
 
@@ -95,10 +95,10 @@ class Registry(object):
         """
         for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
             try:
-                logger.debug('loading entry_point %s' % entry_point.name)
+                logger.debug('loading entry_point {0}'.format(entry_point.name))
                 self.register(entry_point.name, entry_point.load())
             except:
-                logger.exception("Error initializing plugin %s" % entry_point)
+                logger.exception("Error initializing plugin {0}".format(entry_point))
 
     def preprocess(self, client, channel, nick, message):
         for name in self.enabled_plugins[channel]:
@@ -113,13 +113,13 @@ class Registry(object):
 
         for name in self.enabled_plugins[channel]:
             if name not in self.plugins:
-                logger.debug('Plugin %s is enabled on %s, but not loaded' % (name, channel))
+                logger.debug('Plugin {0} is enabled on {1}, but not loaded'.format(name, channel))
                 continue
 
             try:
                 resp = self.plugins[name].process(client, channel, nick, message)
             except:
-                logger.exception("Calling process on plugin %s failed" % name)
+                logger.exception("Calling process on plugin {0} failed".format(name))
                 resp = None
 
             if resp is not None:
@@ -155,7 +155,7 @@ class Plugin(object):
 
         class MyPlugin(Plugin):
             def run(self, channel, nick, message):
-                return 'Current timestamp: %d' % time.time()
+                return 'Current timestamp: {0}'.format(time.time())
 
             def process(self, channel, nick, message):
                 if message.startswith('!time'):
@@ -299,7 +299,7 @@ class Command(Plugin):
         :returns: string of parsed command, whitespaced delimited string list of args
         """
         choices = [self.command] + list(self.aliases)
-        pat = r'%s\W*\s(%s)\s?(.*)$' % (botnick, '|'.join(choices))
+        pat = r'{0}\W*\s({1})\s?(.*)$'.format(botnick, '|'.join(choices))
 
         try:
             cmd, argstr = re.findall(pat, message)[0]
@@ -378,7 +378,7 @@ class Match(Plugin):
             pattern = r'foo-(\d+)'
 
             def run(self, channel, nick, message, matches):
-                return '%s is talking about foo thing %s' % (nick, matches[0])
+                return '{0} is talking about foo thing {0}'.format(nick, matches[0])
 
     Using the above example may produce the following results in IRC::
 
@@ -464,7 +464,7 @@ def command(command, aliases=None, help=''):
 
         @command('foo', aliases=('bar', 'baz'))
         def foo(client, channel, nick, message, command, args):
-            return '%s said %s' % (nick, command)
+            return '{0} said {1}'.format(nick, command)
 
     Using the above example may produce the following results in IRC::
 
@@ -494,7 +494,7 @@ def match(pattern=''):
 
         @match('foo')
         def foo(client, channel, nick, message, matches):
-            return '%s said foo' % nick
+            return '{0} said foo'.format(nick)
 
     Using the above example may produce the following results in IRC::
 
