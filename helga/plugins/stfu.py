@@ -1,4 +1,5 @@
 import random
+import re
 
 from helga.plugins import command, preprocessor
 
@@ -35,8 +36,12 @@ def stfu(client, channel, nick, message, *args):
 
     # Handle the message preprocesor
     if len(args) == 0:
-        if channel in silenced:
+        # Duh, don't silence the speak command
+        is_speak = bool(re.findall(r'^{0}\W*\s(speak)$'.format(client.nickname), message))
+
+        if channel in silenced and not is_speak:
             message = ''
+
         return channel, nick, message
 
     elif len(args) == 2:

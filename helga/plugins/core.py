@@ -55,7 +55,7 @@ class Registry(object):
             self.plugins = {}
 
         if not hasattr(self, 'enabled_plugins'):
-            self.enabled_plugins = defaultdict(lambda: getattr(settings, 'ENABLED_PLUGINS', set()))
+            self.enabled_plugins = defaultdict(lambda: set(getattr(settings, 'ENABLED_PLUGINS', [])))
 
         @smokesignal.on('started')
         def load_plugins():
@@ -78,14 +78,14 @@ class Registry(object):
         self.plugins[name] = fn_or_cls
 
     @property
-    def all_plugins(self, channel):
-        return self.plugins.keys()
+    def all_plugins(self):
+        return set(self.plugins.keys())
 
     def disable(self, channel, *plugins):
-        self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(plugins)
+        self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(set(plugins))
 
     def enable(self, channel, *plugins):
-        self.enabled_plugins[channel].union(plugins)
+        self.enabled_plugins[channel] = self.enabled_plugins[channel].union(set(plugins))
 
     def load(self):
         """

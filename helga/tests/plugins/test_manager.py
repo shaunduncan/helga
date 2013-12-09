@@ -4,26 +4,28 @@ from helga.plugins import manager
 
 
 @patch('helga.plugins.manager.db')
-def test_auto_enable_plugins(db):
+@patch('helga.plugins.manager.registry')
+def test_auto_enable_plugins(plugins, db):
     client = Mock()
     rec = {'plugin': 'haiku', 'channels': ['a', 'b', 'c']}
     db.auto_enabled_plugins.find.return_value = [rec]
 
     manager.auto_enable_plugins(client)
-    client.plugins.enable.assertCalledWith('a', 'haiku')
-    client.plugins.enable.assertCalledWith('b', 'haiku')
-    client.plugins.enable.assertCalledWith('c', 'haiku')
+    plugins.enable.assertCalledWith('a', 'haiku')
+    plugins.enable.assertCalledWith('b', 'haiku')
+    plugins.enable.assertCalledWith('c', 'haiku')
 
 
-def test_list_plugins():
+@patch('helga.plugins.manager.registry')
+def test_list_plugins(plugins):
     client = Mock()
-    client.plugins.plugins = {
+    plugins.plugins = {
         'plugin1': [1, 2, 3],
         'plugin2': [4, 5, 6],
         'plugin3': [7, 8, 9],
     }
-    client.plugins.all_plugins = set(client.plugins.plugins.keys())
-    client.plugins.enabled_plugins = {'foo': set(['plugin2'])}
+    plugins.all_plugins = set(plugins.plugins.keys())
+    plugins.enabled_plugins = {'foo': set(['plugin2'])}
 
     resp = manager.list_plugins(client, 'foo')
     assert 'Plugins enabled on this channel: plugin2' in resp
@@ -31,19 +33,27 @@ def test_list_plugins():
 
 
 @patch('helga.plugins.manager.db')
-def test_enable_plugins_inits_record(db):
+@patch('helga.plugins.manager.registry')
+def test_enable_plugins_inits_record(plugins, db):
     client = Mock()
-    db.auto_enabled_plugins.find.return_value = None
+
+    plugins.all_plugins = ['foobar']
+
+    db.auto_enabled_plugins.find_one.return_value = None
     manager.enable_plugins(client, '#bots', 'foobar')
 
     assert db.auto_enabled_plugins.insert.called
 
 
 @patch('helga.plugins.manager.db')
-def test_enable_plugins_updates_record(db):
+@patch('helga.plugins.manager.registry')
+def test_enable_plugins_updates_record(plugins, db):
     client = Mock()
+
+    plugins.all_plugins = ['foobar']
+
     rec = {'plugin': 'foobar', 'channels': ['#all']}
-    db.auto_enabled_plugins.find.return_value = rec
+    db.auto_enabled_plugins.find_one.return_value = rec
     manager.enable_plugins(client, '#bots', 'foobar')
 
     assert db.auto_enabled_plugins.save.called
@@ -51,10 +61,13 @@ def test_enable_plugins_updates_record(db):
 
 
 @patch('helga.plugins.manager.db')
-def test_disable_plugins(db):
+@patch('helga.plugins.manager.registry')
+def test_disable_plugins(plugins, db):
     client = Mock()
+    plugins.all_plugins = ['foobar']
+
     rec = {'plugin': 'foobar', 'channels': ['#all', '#bots']}
-    db.auto_enabled_plugins.find.return_value = rec
+    db.auto_enabled_plugins.find_one.return_value = rec
     manager.disable_plugins(client, '#bots', 'foobar')
 
     assert db.auto_enabled_plugins.save.called
