@@ -164,13 +164,11 @@ Helga uses setuptools entry points for plugin loading. Once you've written a plu
 you will need to make sure your python package's setup.py contains an entry_point under the group
 name ``helga_plugins``. For example:
 
-    ```
     entry_points = {
         'helga_plugins': [
             'plugin_name = mylib.mymodule:MyPluginClass',
         ],
     },
-    ```
 
 Note that if you are using decorated function for a plugin, you will want to specify the method name
 for your entry point, i.e. ``mylib.mymodule:myfn``.
