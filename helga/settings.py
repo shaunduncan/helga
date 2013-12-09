@@ -32,6 +32,7 @@ TIMEZONE = 'US/Eastern'
 FACTS_REQUIRE_NICKNAME = False
 JIRA_URL = 'http://localhost/{ticket}'
 REVIEWBOARD_URL = 'http://localhost/{review}'
+WIKI_URL = 'http://localhost/{user}'
 
 
 if 'HELGA_SETTINGS' in os.environ:

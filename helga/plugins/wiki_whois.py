@@ -1,19 +1,12 @@
 from helga import settings
-from helga.extensions.base import CommandExtension
-from helga.log import setup_logger
+from helga.plugins import command
 
 
-logger = setup_logger(__name__)
-
-
-class WikiWhoisExtension(CommandExtension):
+@command('showme', aliases=['whois', 'whothehellis'],
+         help="Show a URL for the user's intranet page. Usage: helga (showme|whois|whothehellis) <nick>")
+def wiki_whois(client, channel, nick, message, cmd, args):
     """
-    A simple pattern substitution for making a URL containing a user/nick
+    Show the intranet page for a user. Settings must have a WIKI_URL value with formattable
+    substring named {user}
     """
-
-    NAME = 'wiki_whois'
-
-    usage = '[BOTNICK] (showme|whois|whothehellis) <nick>'
-
-    def handle_message(self, opts, message):
-        message.response = settings.WIKI_URL % {'user': opts['<nick>']}
+    return settings.WIKI_URL.format(user=args[0])
