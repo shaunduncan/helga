@@ -1,4 +1,3 @@
-from mock import Mock
 from pretend import stub
 
 from helga.plugins import stfu
@@ -6,13 +5,15 @@ from helga.plugins import stfu
 
 def test_stfu_preprocess_does_nothing():
     stfu.silenced = set()
-    chan, nick, msg = stfu.stfu.preprocess(None, '#bots', 'me', 'foo')
+    client = stub(nickname='helga')
+    chan, nick, msg = stfu.stfu.preprocess(client, '#bots', 'me', 'foo')
     assert msg == 'foo'
 
 
 def test_stfu_preprocess_blanks_message_when_silenced():
     stfu.silenced = set(['#bots'])
-    chan, nick, msg = stfu.stfu.preprocess(None, '#bots', 'me', 'foo')
+    client = stub(nickname='helga')
+    chan, nick, msg = stfu.stfu.preprocess(client, '#bots', 'me', 'foo')
     assert msg == ''
 
 
