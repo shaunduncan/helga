@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-version = '0.0.1'
+version = '1.0'
 
 setup(name="helga",
       version=version,
       description=('IRC bot using twisted'),
-      classifiers=['Development Status :: 1 - Beta',
+      classifiers=['Development Status :: 4 - Beta',
                    'Environment :: IRC',
                    'Intended Audience :: Twisted Developers, IRC Bot Developers',
                    'License :: OSI Approved :: MIT License',
@@ -20,27 +20,24 @@ setup(name="helga",
       license='MIT',
       packages=find_packages(),
       entry_points = dict(
-          helga_handlers = [
-              'haiku = helga.extensions.haiku:HaikuExtension',
-              'dubstep = helga.extensions.dubstep:DubstepExtension',
-              'ascii_artz = helga.extensions.icanhazascii:ICanHazAsciiExtension',
-              'facts = helga.extensions.facts:FactExtension',
-              'giphy = helga.extensions.giphy:GiphyExtension',
-              'controls = helga.extensions.core:ControlExtension',
-              'ignore = helga.extensions.core:IgnoreExtension',
-              'help = helga.extensions.core:HelpExtension',
-              'jira = helga.extensions.jira:JiraExtension',
-              'loljava = helga.extensions.loljava:LOLJavaExtension',
-              'meanttosay = helga.extensions.mts:MTSExtension',
-              'no_more_olga = helga.extensions.no_more_olga:NoMoreOlgaExtension',
-              'oneliner = helga.extensions.oneliner:OneLinerExtension',
-              'oper = helga.extensions.operator:OperatorExtension',
-              'reviewboard = helga.extensions.reviewboard:ReviewboardExtension',
-              'stfu = helga.extensions.stfu:STFUExtension',
-              'tanka = helga.extensions.tanka:TankaExtension',
-              'wiki_whois = helga.extensions.wiki_whois:WikiWhoisExtension',
+          helga_plugins=[
+              'dubstep      = helga.plugins.dubstep:dubstep',
+              'facts        = helga.plugins.facts:facts',
+              'giphy        = helga.plugins.giphy:giphy',
+              'help         = helga.plugins.help:help',
+              'icanhazascii = helga.plugins.icanhazascii:icanhazascii',
+              'jira         = helga.plugins.jira:jira',
+              'loljava      = helga.plugins.loljava:make_bullshit_java_thing',
+              'manager      = helga.plugins.manager:manager',
+              'meant_to_say = helga.plugins.meant_to_say:meant_to_say',
+              'no_more_olga = helga.plugins.no_more_olga:no_more_olga',
+              'oneliner     = helga.plugins.oneliner:oneliner',
+              'poems        = helga.plugins.poems:poems',
+              'reviewboard  = helga.plugins.reviewboard:reviewboard',
+              'stfu         = helga.plugins.stfu:stfu',
+              'wiki_whois   = helga.plugins.wiki_whois:wiki_whois',
           ],
-          console_scripts = [
+          console_scripts=[
               'helga = helga.run:run',
           ],
       ),
