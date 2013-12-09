@@ -3,7 +3,7 @@ Tests for helga.plugins
 """
 from unittest import TestCase
 
-from mock import Mock
+from mock import Mock, patch
 
 from helga import plugins
 
@@ -46,6 +46,11 @@ class CommandTestCase(TestCase):
 
     def test_parse_handles_main_command(self):
         assert 'foo' == self.cmd.parse('helga', 'helga foo')[0]
+
+    @patch('helga.plugins.core.settings')
+    def test_parse_handles_char_prefix(self, settings):
+        settings.COMMAND_PREFIX_CHAR = '#'
+        assert 'foo' == self.cmd.parse('helga', '#foo')[0]
 
     def test_parse_handles_aliases(self):
         assert 'bar' == self.cmd.parse('helga', 'helga bar')[0]
