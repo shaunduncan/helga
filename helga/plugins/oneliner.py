@@ -26,7 +26,7 @@ RESPONSES = {
     r'^((sudo|ls|cd|rm)( .+)?|pwd)': "this ain't your shell",
 
     r'php': ("php is just terrible",
-             "MERGE ALL THE PULL REQUESTS"),
+             "php's motto: MERGE ALL THE PULL REQUESTS"),
 
     r'^select( .* )from(.*)': "'; DROP TABLES;",
 
@@ -41,8 +41,6 @@ RESPONSES = {
     r'\\m/': 'rock on',
 
     r'((beetle|betel)(geuse|juice)\s?){3}': "i'm the ghost with the most",
-
-    r'javascript': 'yo dawg, i heard you like functions',
 
     # lol, gifs
     r'(bravo|well done)': (imgur('wSvsV'),     # Citizen Kane slow clap

@@ -33,7 +33,7 @@ TIMEZONE = 'US/Eastern'
 ENABLED_PLUGINS = [
     'dubstep',
     'facts',
-    'help'
+    'help',
     'jira',
     'loljava',
     'manager',
@@ -54,6 +54,10 @@ ENABLED_PLUGINS = [
     # Generally, olga isn't being used
     # 'no_more_olga',
 ]
+
+# Set to True if the plugin that responds first should be the only one
+# send its response back over IRC.
+PLUGIN_FIRST_RESPONDER_ONLY = False
 
 # MISC PLUGIN SETTINGS
 FACTS_REQUIRE_NICKNAME = False

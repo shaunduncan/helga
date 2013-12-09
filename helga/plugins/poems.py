@@ -25,13 +25,14 @@ last_poem = defaultdict(list)
               "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
 def poems(client, channel, nick, message, cmd, args):
     global last_poem
-    subcmd = args[0]
 
     # Just a poem
     if not args:
         poem = make_poem(poem_type=cmd)
         last_poem[channel] = poem
         return poem
+
+    subcmd = args[0]
 
     # Other commands
     if subcmd in ('about', 'by'):
@@ -41,15 +42,20 @@ def poems(client, channel, nick, message, cmd, args):
     elif subcmd == 'blame':
         return blame(channel, requested_by=nick, default_author=client.nickname)
     else:
+        logger.info('Running subcmd: "{0}"'.format(subcmd))
         num_syllables = SYLLABLES_TO_INT[args[1]]
         input = ' '.join(args[2:])
 
         if subcmd == 'add':
             return add(num_syllables, input, nick)
         elif subcmd == 'add_use':
-            return add_use(num_syllables, input, nick)
+            poem = add_use(num_syllables, input, nick)
+            last_poem[channel] = poem
+            return poem
         elif subcmd == 'use':
-            return use(num_syllables, input)
+            poem = use(num_syllables, input)
+            last_poem[channel] = poem
+            return poem
         elif subcmd == 'remove':
             return remove(num_syllables, input)
         elif subcmd == 'claim':
