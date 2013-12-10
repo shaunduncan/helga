@@ -6,7 +6,7 @@ from helga import log, settings
 logger = log.getLogger(__name__)
 
 
-def is_properly_configured(config):
+def is_properly_configured():
     return all([
         getattr(settings, 'TWITTER_CONSUMER_KEY', None),
         getattr(settings, 'TWITTER_CONSUMER_SECRET', None),
@@ -34,7 +34,7 @@ def get_api():
 
 def tweet(message):
     if not is_properly_configured():
-        logger.warning('Twitter API requires consumer key, consumer secret, oauth token, oauth secret')
+        logger.error('Twitter API requires consumer key, consumer secret, oauth token, oauth secret')
         return
 
     message = message_140(message)
