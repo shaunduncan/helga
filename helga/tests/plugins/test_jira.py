@@ -1,6 +1,5 @@
-from mock import Mock, patch
+from mock import patch
 from pretend import stub
-from unittest import TestCase
 
 from helga.plugins import jira
 

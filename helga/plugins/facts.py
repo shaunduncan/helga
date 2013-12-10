@@ -103,7 +103,6 @@ def facts_match(client, channel, nick, message, found):
         author = nick
         fact = ' '.join(parts[:2] + parts[-1:])
 
-    
     return add_fact(parts[0], fact, author)
 
 
