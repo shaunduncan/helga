@@ -31,7 +31,7 @@ oop = ('Thread', 'Bean', 'Command', 'Prototype', 'Factory', 'Builder', 'Singleto
        )
 
 
-@match(r'(lol)?java(?!script)')
+@match(r'(lol)?java(?!script)', priority=0)
 def make_bullshit_java_thing(client, channel, nick, message, matches):
     """
     Java class naming is hilariously enterprise...

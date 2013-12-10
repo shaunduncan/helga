@@ -181,7 +181,7 @@ def find_response(message):
     return found
 
 
-@match(find_response)
+@match(find_response, priority=0)
 def oneliner(client, channel, nick, message, match):
     """
     Maybe some of these will become their own thing, but for

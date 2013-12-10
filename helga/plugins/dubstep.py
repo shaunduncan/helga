@@ -10,7 +10,7 @@ MAX_WUBS = 3
 WUB_TIMEOUT = 10
 
 
-@match('dubstep')
+@match('dubstep', priority=0)
 def dubstep(client, channel, nick, message, matches):
     """
     Dubstep can be described as a rapid succession of wub wubs, wow wows, and yep yep yep yeps

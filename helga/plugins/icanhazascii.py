@@ -109,7 +109,7 @@ def find_animal(message):
             return ascii
 
 
-@match(find_animal)
+@match(find_animal, priority=0)
 def icanhazascii(client, channel, nick, message, found):
     """
     A plugin for generating showing ascii artz
