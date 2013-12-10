@@ -165,6 +165,45 @@ def complex(client, channel, nick, message, *args):
     # len(args) == 2 for commands
 ```
 
+### Plugin Priorities
+
+You can control the priority in which a plugin is run. Note though, that preprocessors will always
+run first. A priority value should be an integer value. There are no limits or bounds for this value,
+but know that a higher value will mean a higher priority. If you are writing ``Plugin`` subclass
+style plugins, you will need to set a ``priority`` attribute of your object. This is done automatically
+if you call ``super(MyClass, self).__init__(priority=some_value)`` in your class's ``__init__``.
+
+However, if you are using the preferred decorator style for writing plugins, you can supply a ``priority``
+keyword argument to the decorator:
+
+```python
+from helga import command, match, preprocessor
+
+@preprocessor(priority=10)
+def foo_preprocess(*args):
+    pass
+
+@command('foo', priority=20)
+def foo_command(*args):
+    pass
+
+@match(r'foo', priority=30)
+def foo_match(*args):
+    pass
+```
+
+For convenience, there are constants that can be used for setting priorities:
+
+- **PRIORITY_LOW** = 25
+- **PRIORITY_NORMAL** = 50
+- **PRIORITY_HIGH** = 75
+
+Also, each decorator/plugin type has its own default value for priority:
+
+- Preprocessors have default priority of ``PRIORITY_NORMAL``
+- Commands have default priority of ``PRIORITY_NORMAL``
+- Matches have default priority of ``PRIORITY_LOW``
+
 ### Publishing plugins
 
 Helga uses setuptools entry points for plugin loading. Once you've written a plugin you wish to use,
