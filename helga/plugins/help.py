@@ -41,9 +41,9 @@ def help(client, channel, nick, message, cmd, args):
             return "Sorry {0}, I don't know about that plugin".format(nick)
         elif plugin not in helps.keys():
             return "Sorry {0}, there's no help string for plugin '{1}'".format(nick, plugin)
-        else:
-            client.msg(nick, format_help_string(plugin, *helps[plugin]))
-        return
+
+        # Single plugin, it's probably ok in the public channel
+        return format_help_string(plugin, *helps[plugin])
 
     if channel != nick:
         client.me(channel, 'whispers to {0}'.format(nick))
