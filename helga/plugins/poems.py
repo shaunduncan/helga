@@ -43,7 +43,7 @@ def poems(client, channel, nick, message, cmd, args):
         return blame(channel, requested_by=nick, default_author=client.nickname)
     elif subcmd == 'tweet':
         return tweet(channel, nick)
-    elif subcmd in ('add', 'add_use', 'remove', 'claim'):
+    else:
         logger.info('Running subcmd: "{0}"'.format(subcmd))
         num_syllables = SYLLABLES_TO_INT[args[1]]
         input = ' '.join(args[2:])
