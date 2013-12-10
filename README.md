@@ -220,6 +220,18 @@ Note that if you are using decorated function for a plugin, you will want to spe
 for your entry point, i.e. ``mylib.mymodule:myfn``.
 
 
+### Third Party Plugins
+
+Here are some plugins that have been written that you can use:
+
+| Plugin  | Description                                          | Link                                         |
+| ------- | ---------------------------------------------------- | -------------------------------------------- |
+| excuses | Generate a response from http://developerexcuses.com | https://github.com/alfredodeza/helga-excuses |
+| norris  | Generate Chuck Norris facts for users                | https://github.com/alfredodeza/helga-norris  |
+
+Written a plugin? Send a pull request to be listed in the above table!
+
+
 ## Tests
 
 All tests are written to be run via ``tox``. To run the test suite, inside your virtualenv:
