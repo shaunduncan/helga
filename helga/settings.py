@@ -55,9 +55,9 @@ ENABLED_PLUGINS = [
     # 'no_more_olga',
 ]
 
-# Set to True if the plugin that responds first should be the only one
-# send its response back over IRC.
-PLUGIN_FIRST_RESPONDER_ONLY = False
+# Set to False if all responses returned by plugins should be returned
+# over IRC. If True, the first responding plugin will send a response
+PLUGIN_FIRST_RESPONDER_ONLY = True
 
 # If set to True, a command can be run by asking directly.
 # For example `helga foo`
