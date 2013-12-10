@@ -74,9 +74,7 @@ class Registry(object):
         except TypeError:
             pass
 
-        if not (isinstance(fn_or_cls, Plugin) or
-                hasattr(fn_or_cls, 'process') or
-                hasattr(fn_or_cls, 'preprocess')):
+        if not isinstance(fn_or_cls, Plugin) or hasattr(fn_or_cls, '_plugins'):
             raise TypeError("Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
 
         logger.info('Registered plugin {0}'.format(name))
