@@ -62,7 +62,9 @@ RESPONSES = {
                 imgur('foEHo'),     # Spongebob buried in sand
                 imgur('xKYs9'),     # Puppy does not like lime
                 imgur('ST9lw3U'),   # Seinfeld I'm Out
-                imgur('c4gTe5p')),  # Cat thriller walk I'm Out
+                imgur('c4gTe5p'),   # Cat thriller walk I'm out
+                'http://i.minus.com/iUgVCKwjISSke.gif',  # The Nope Bader
+                ),
 
     r'tl;?dr': (imgur('dnMjc'),   # Lightsaber did not read
                 imgur('V2H9y')),  # Craig Robinson did not read
