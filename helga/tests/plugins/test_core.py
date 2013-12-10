@@ -4,8 +4,46 @@ Tests for helga.plugins
 from unittest import TestCase
 
 from mock import Mock, patch
+from pretend import stub
 
 from helga import plugins
+
+
+class RegistryTestCase(TestCase):
+
+    def test_prioritized(self):
+        fake_plugin = stub(name='foo', priority=50)
+        fake_decorated = stub(_plugins=[
+            stub(name='bar', priority=10),
+            stub(name='baz', priority=0),
+            stub(name='qux', priority=99),
+        ])
+        plugins.registry.plugins = {'foo': fake_plugin, 'bar': fake_decorated}
+        plugins.registry.enabled_plugins['#bots'] = set(['foo', 'bar'])
+
+        items = plugins.registry.prioritized('#bots')
+
+        assert items[0].name == 'qux'
+        assert items[1].name == 'foo'
+        assert items[2].name == 'bar'
+        assert items[3].name == 'baz'
+
+    def test_prioritized_reversed(self):
+        fake_plugin = stub(name='foo', priority=50)
+        fake_decorated = stub(_plugins=[
+            stub(name='bar', priority=10),
+            stub(name='baz', priority=0),
+            stub(name='qux', priority=99),
+        ])
+        plugins.registry.plugins = {'foo': fake_plugin, 'bar': fake_decorated}
+        plugins.registry.enabled_plugins['#bots'] = set(['foo', 'bar'])
+
+        items = plugins.registry.prioritized('#bots', high_to_low=False)
+
+        assert items[3].name == 'qux'
+        assert items[2].name == 'foo'
+        assert items[1].name == 'bar'
+        assert items[0].name == 'baz'
 
 
 class PluginTestCase(TestCase):
@@ -22,9 +60,10 @@ class PluginTestCase(TestCase):
         expected = ('foo', 'bar', 'baz')
         args = (self.client, '#bots', 'me', 'foobar')
 
-        assert hasattr(foo, 'preprocess')
+        assert hasattr(foo, '_plugins')
+        assert len(foo._plugins) == 1
         assert expected == foo(*args)
-        assert expected == foo.preprocess(*args)
+        assert expected == foo._plugins[0].preprocess(*args)
 
 
 class CommandTestCase(TestCase):
@@ -85,29 +124,23 @@ class CommandTestCase(TestCase):
         def foobar(*args):
             return args[-2]
 
-        #assert [None, 'foo'] == foobar.process(self.client, '#bots', 'me', 'helga foo')
-        assert ['bar', None] == foobar.process(self.client, '#bots', 'me', 'helga bar')
-
-    def test_decorator_sets_process_attr(self):
-        @plugins.command('foo')
-        def foo(client, chan, nick, msg, cmd, args):
-            return 'bar'
-
-        assert hasattr(foo, 'process')
+        assert len(foobar._plugins) == 2
+        assert 'bar' == foobar._plugins[0](self.client, '#bots', 'me', 'helga bar')
+        assert 'foo' == foobar._plugins[1](self.client, '#bots', 'me', 'helga foo')
 
     def test_decorator_using_command(self):
         @plugins.command('foo')
         def foo(client, chan, nick, msg, cmd, args):
             return 'bar'
 
-        assert 'bar' == foo.process(self.client, '#bots', 'me', 'helga foo')
+        assert 'bar' == foo._plugins[0](self.client, '#bots', 'me', 'helga foo')
 
     def test_decorator_using_alias(self):
         @plugins.command('foo', aliases=['baz'])
         def foo(client, chan, nick, msg, cmd, args):
             return 'bar'
 
-        assert 'bar' == foo.process(self.client, '#bots', 'me', 'helga baz')
+        assert 'bar' == foo._plugins[0](self.client, '#bots', 'me', 'helga baz')
 
 
 class MatchTestCase(TestCase):
@@ -135,24 +168,17 @@ class MatchTestCase(TestCase):
         self.match.pattern = Mock(side_effect=TypeError)
         assert self.match.match('this is a foo message') is None
 
-    def test_decorator_sets_process_attr(self):
-        @plugins.match('foo-(\d+)')
-        def foo(client, chan, nick, msg, matches):
-            return matches[0]
-
-        assert hasattr(foo, 'process')
-
     def test_simple_decorator(self):
         @plugins.match('foo-(\d+)')
         def foo(client, chan, nick, msg, matches):
             return matches[0]
 
-        assert '123' == foo.process(self.client, '#bots', 'me', 'this is about foo-123')
+        assert '123' == foo._plugins[0](self.client, '#bots', 'me', 'this is about foo-123')
 
     def test_callable_decorator(self):
         @plugins.match(lambda x: x.startswith('foo'))
         def foo(client, chan, nick, msg, matches):
             return 'bar'
 
-        assert 'bar' == foo.process(self.client, '#bots', 'me', 'foo at the start')
-        assert foo.process(self.client, '#bots', 'me', 'not at the start foo') is None
+        assert 'bar' == foo._plugins[0](self.client, '#bots', 'me', 'foo at the start')
+        assert foo._plugins[0](self.client, '#bots', 'me', 'not at the start foo') is None

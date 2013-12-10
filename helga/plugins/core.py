@@ -27,6 +27,11 @@ ACKS = [
 ]
 
 
+PRIORITY_LOW = 25
+PRIORITY_NORMAL = 50
+PRIORITY_HIGH = 75
+
+
 def random_ack():
     return random.choice(ACKS)
 
@@ -107,40 +112,56 @@ class Registry(object):
             except:
                 logger.exception("Error initializing plugin {0}".format(entry_point))
 
-    def preprocess(self, client, channel, nick, message):
-        for name in self.enabled_plugins[channel]:
-            try:
-                channel, nick, message = self.plugins[name].preprocess(client, channel, nick, message)
-            except (TypeError, ValueError, AttributeError):
-                continue
-        return channel, nick, message
-
-    def process(self, client, channel, nick, message):
-        responses = []
-
+    def prioritized(self, channel, high_to_low=True):
+        """
+        Gets a list of plugins in order according to their priority
+        """
+        plugins = []
         for name in self.enabled_plugins[channel]:
             if name not in self.plugins:
                 logger.debug('Plugin {0} is enabled on {1}, but not loaded'.format(name, channel))
                 continue
 
+            # Decorated functions will have this
+            if hasattr(self.plugins[name], '_plugins'):
+                plugins.extend(self.plugins[name]._plugins)
+            else:
+                plugins.append(self.plugins[name])
+
+        return sorted(plugins, key=lambda p: getattr(p, 'priority', PRIORITY_NORMAL), reverse=high_to_low)
+
+    def preprocess(self, client, channel, nick, message):
+        for plugin in self.prioritized(channel):
             try:
-                resp = self.plugins[name].process(client, channel, nick, message)
+                channel, nick, message = plugin.preprocess(client, channel, nick, message)
             except:
-                logger.exception("Calling process on plugin {0} failed".format(name))
+                logger.exception("Calling preprocess on plugin {0} failed".format(plugin))
+                continue
+
+        return channel, nick, message
+
+    def process(self, client, channel, nick, message):
+        responses = []
+
+        for plugin in self.prioritized(channel):
+            try:
+                resp = plugin.process(client, channel, nick, message)
+            except:
+                logger.exception("Calling process on plugin {0} failed".format(plugin))
                 resp = None
 
-            if resp is not None:
-                # Chained decorator style plugins return a list of strings
-                if isinstance(resp, (tuple, list)):
-                    # Be sure to filter Nones, then strip
-                    responses.extend(map(lambda s: s.strip(), filter(bool, resp)))
-                else:
-                    responses.append(resp.strip())
+            if not resp:
+                continue
 
-            responses = filter(bool, responses)
+            # Chained decorator style plugins return a list of strings
+            if isinstance(resp, (tuple, list)):
+                # Be sure to filter Nones, then strip
+                responses.extend(map(lambda s: s.strip(), filter(bool, resp)))
+            else:
+                responses.append(resp.strip())
 
             if responses and getattr(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', False):
-                break
+                return filter(bool, responses)
 
         return filter(bool, responses)
 
@@ -173,6 +194,11 @@ class Plugin(object):
                 if message.startswith('!time'):
                     return self.run(channel, nick, message)
     """
+    priority = PRIORITY_NORMAL
+
+    def __init__(self, priority=PRIORITY_NORMAL):
+        self.priority = priority
+
     def run(self, client, channel, nick, message, *args, **kwargs):
         """
         Runs the plugin to generate a response. At a minimum this should accept
@@ -219,7 +245,7 @@ class Plugin(object):
         """
         return self.run(client, channel, nick, message)
 
-    def decorate(self, fn):
+    def decorate(self, fn, preprocessor=False):
         """
         A helper used for establishing decorators for plugin classes. This does nothing
         more than monkey patch the ``run`` method of the instance with whatever function
@@ -228,17 +254,15 @@ class Plugin(object):
         are kept in a list attribute of the decorated function. This allows chainable decorators
         that function as intended, providing improved plugin functionality.
         """
-        self.run = fn
+        if preprocessor:
+            self.preprocess = fn
+        else:
+            self.run = fn
 
         try:
             fn._plugins.append(self)
         except AttributeError:
             fn._plugins = [self]
-
-        if hasattr(fn, 'process') or len(fn._plugins) > 1:
-            fn.process = lambda *a, **kw: [p.process(*a, **kw) for p in fn._plugins]
-        else:
-            fn.process = self
 
         return fn
 
@@ -294,7 +318,8 @@ class Command(Plugin):
     aliases = []
     help = ''
 
-    def __init__(self, command='', aliases=None, help=''):
+    def __init__(self, command='', aliases=None, help='', priority=PRIORITY_NORMAL):
+        super(Command, self).__init__(priority)
         self.command = command or self.command
         self.aliases = aliases or self.aliases
         self.help = help or self.help
@@ -409,7 +434,8 @@ class Match(Plugin):
     """
     pattern = ''
 
-    def __init__(self, pattern=''):
+    def __init__(self, pattern='', priority=PRIORITY_LOW):
+        super(Match, self).__init__(priority)
         self.pattern = pattern or self.pattern
 
     def run(self, client, channel, nick, message, matches):
@@ -468,7 +494,7 @@ class Match(Plugin):
         return self.run(client, channel, nick, message, matches)
 
 
-def command(command, aliases=None, help=''):
+def command(command, aliases=None, help='', priority=PRIORITY_NORMAL):
     """
     A decorator for creating simple commands where subclassing the ``Command``
     plugin type may be overkill. This is generally the easiest way to create helga
@@ -494,11 +520,17 @@ def command(command, aliases=None, help=''):
         <helga> sduncan said foo
         <sduncan> helga bar
         <helga> sduncan said bar
+
+    :param command: string acting as the primary command name
+    :param aliases: list of additional command names
+    :param help: a simple help/usage string
+    :param priority: priority weight to give this plugin. Must be an integer value, a higher value
+                     meaning a higher priority (default 50)
     """
-    return Command(command, aliases=aliases, help=help).decorate
+    return Command(command, aliases=aliases, help=help, priority=priority).decorate
 
 
-def match(pattern=''):
+def match(pattern='', priority=PRIORITY_LOW):
     """
     A decorator for creating simple regex matches where subclassing the ``Match``
     plugin type may be overkill. This is generally the easiest way to create helga
@@ -522,11 +554,16 @@ def match(pattern=''):
 
         <sduncan> i am talking about foo here
         <helga> sduncan said foo
+
+    :param pattern: regex string or callable that accepts a single argument and returns a value
+                    that can be evaluated for truthiness
+    :param priority: priority weight to give this plugin. Must be an integer value, a higher value
+                     meaning a higher priority (default 0, matches take lower priority than commands)
     """
-    return Match(pattern).decorate
+    return Match(pattern, priority=priority).decorate
 
 
-def preprocessor(fn):
+def preprocessor(priority=PRIORITY_NORMAL):
     """
     A decorator for creating a simple preprocessor type plugin. Decorated functions must
     accept four arguments:
@@ -542,5 +579,8 @@ def preprocessor(fn):
     - **nick**: the current nick of the message sender
     - **message**: the message string itself
     """
-    fn.preprocess = fn
-    return fn
+    # This happens if not using a priority argument, but just decorating
+    if callable(priority):
+        return Plugin(priority=PRIORITY_NORMAL).decorate(priority, preprocessor=True)
+    else:
+        return functools.partial(Plugin(priority=priority).decorate, preprocessor=True)
