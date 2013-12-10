@@ -324,7 +324,7 @@ class Command(Plugin):
         pat = r'^{0}({1})\s?(.*)$'.format(prefix, '|'.join(choices))
 
         try:
-            _, cmd, argstr = re.findall(pat, message)[0]
+            _, cmd, argstr = re.findall(pat, message, re.IGNORECASE)[0]
         except (IndexError, ValueError):
             # FIXME: Log here?
             return u'', []
