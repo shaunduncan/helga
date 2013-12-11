@@ -34,7 +34,7 @@ silenced = set()
 def auto_unsilence(client, channel, length):
     global silenced
     silenced.discard(channel)
-    client.msg(channel, "Speaking again after waiting {0} minutes".format(length))
+    client.msg(channel, "Speaking again after waiting {0} minutes".format(length//60))
 
 
 @preprocessor
@@ -60,8 +60,8 @@ def stfu(client, channel, nick, message, *args):
             resp = random.choice(snarks)
         elif args[0] == 'stfu':
             silenced.add(channel)
-            resp = random.choice(silence_acks)
             cmdargs = args[1]
+            resp = random.choice(silence_acks)
 
             if len(cmdargs) > 0 and cmdargs[0] == 'for':
                 try:
@@ -70,6 +70,7 @@ def stfu(client, channel, nick, message, *args):
                     pass
                 else:
                     reactor.callLater(length, auto_unsilence, client, channel, length)
+                    resp = "OK {0}, I'll be back in {1} minute".format(nick, cmdargs[1])
         elif args[0] == 'speak':
             silenced.discard(channel)
             resp = random.choice(unsilence_acks)
