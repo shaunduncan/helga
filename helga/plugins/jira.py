@@ -6,6 +6,7 @@ import smokesignal
 
 from BeautifulSoup import BeautifulSoup
 from requests.auth import HTTPBasicAuth
+from twisted.internet import reactor
 
 from helga import log, settings
 from helga.db import db
@@ -102,12 +103,10 @@ def jira_command(client, channel, nick, message, cmd, args):
     return None
 
 
-def jira_match(client, channel, nick, message, matches):
-    full_urls = dict(map(lambda s: (s, settings.JIRA_URL.format(ticket=s)), matches))
-
-    if not getattr(settings, 'JIRA_SHOW_FULL_DESCRIPTION', True):
-        return '{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
-
+def jira_full_descriptions(client, channel, urls):
+    """
+    Meant to be run asynchronously because it uses the network
+    """
     descriptions = []
 
     user_pass = getattr(settings, 'JIRA_AUTH', ('', ''))
@@ -116,7 +115,7 @@ def jira_match(client, channel, nick, message, matches):
     else:
         auth = None
 
-    for ticket, url in full_urls.iteritems():
+    for ticket, url in urls.iteritems():
         resp = requests.get(url, auth=auth)
         try:
             resp.raise_for_status()
@@ -127,9 +126,20 @@ def jira_match(client, channel, nick, message, matches):
         soup = BeautifulSoup(resp.content)
         title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
 
-        descriptions.append('[{0}] {1} ({2})'.format(ticket, title, url))
+        descriptions.append('[{0}] {1} ({2})'.format(ticket.upper(), title, url))
 
-    return descriptions
+    if descriptions:
+        client.msg(channel, '\n'.join(descriptions))
+
+
+def jira_match(client, channel, nick, message, matches):
+    full_urls = dict(map(lambda s: (s, settings.JIRA_URL.format(ticket=s)), matches))
+
+    if not getattr(settings, 'JIRA_SHOW_FULL_DESCRIPTION', True):
+        return '{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
+
+    # Otherwise, do the fetching with a deferred
+    reactor.callLater(0, jira_full_descriptions, client, channel, full_urls)
 
 
 @match(find_jira_numbers)
