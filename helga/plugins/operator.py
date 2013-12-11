@@ -69,3 +69,7 @@ def operator(client, channel, nick, message, cmd, args):
             return add_autojoin(channel)
         elif op == 'remove':
             return remove_autojoin(channel)
+
+    elif subcmd == 'nsa':
+        # Never document this
+        return client.msg(args[1], ' '.join(args[2:]))
