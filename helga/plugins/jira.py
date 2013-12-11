@@ -117,16 +117,19 @@ def jira_full_descriptions(client, channel, urls):
 
     for ticket, url in urls.iteritems():
         resp = requests.get(url, auth=auth)
+
         try:
             resp.raise_for_status()
         except:
             logger.error("Error getting JIRA ticket {0}. Status {1}".format(url, resp.status_code))
             continue
 
-        soup = BeautifulSoup(resp.content)
-        title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
-
-        descriptions.append('[{0}] {1} ({2})'.format(ticket.upper(), title, url))
+        try:
+            soup = BeautifulSoup(resp.content)
+            title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
+            descriptions.append('[{0}] {1} ({2})'.format(ticket.upper(), title, url))
+        except:
+            descriptions.append('[{0}] {1}'.format(ticket.upper(), url))
 
     if descriptions:
         client.msg(channel, '\n'.join(descriptions))
