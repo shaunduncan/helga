@@ -4,7 +4,8 @@ from pretend import stub
 from helga.plugins import jira
 
 
-settings_stub = stub(JIRA_URL='http://example.com/{ticket}')
+settings_stub = stub(JIRA_URL='http://example.com/{ticket}',
+                     JIRA_SHOW_FULL_DESCRIPTION=False)
 
 
 @patch('helga.plugins.jira.settings', settings_stub)
@@ -89,5 +90,6 @@ def test_jira_match():
 
 @patch('helga.plugins.jira.settings', settings_stub)
 def test_jira_match_multiple():
-    expected = 'me might be talking about JIRA ticket: http://example.com/foo-123, http://example.com/bar-456'
-    assert expected == jira.jira_match(None, '#bots', 'me', 'foo-123 and bar-456', ['foo-123', 'bar-456'])
+    resp = jira.jira_match(None, '#bots', 'me', 'foo-123 and bar-456', ['foo-123', 'bar-456'])
+    assert 'http://example.com/foo-123' in resp
+    assert 'http://example.com/bar-456' in resp
