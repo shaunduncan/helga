@@ -1,7 +1,11 @@
 import random
 import re
 
+import requests
 import smokesignal
+
+from BeautifulSoup import BeautifulSoup
+from requests.auth import HTTPBasicAuth
 
 from helga import log, settings
 from helga.db import db
@@ -99,8 +103,33 @@ def jira_command(client, channel, nick, message, cmd, args):
 
 
 def jira_match(client, channel, nick, message, matches):
-    urls = ', '.join(map(lambda s: settings.JIRA_URL.format(ticket=s), matches))
-    return '{0} might be talking about JIRA ticket: {1}'.format(nick, urls)
+    full_urls = dict(map(lambda s: (s, settings.JIRA_URL.format(ticket=s)), matches))
+
+    if not getattr(settings, 'JIRA_SHOW_FULL_DESCRIPTION', True):
+        return '{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
+
+    descriptions = []
+
+    user_pass = getattr(settings, 'JIRA_AUTH', ('', ''))
+    if all(user_pass):
+        auth = HTTPBasicAuth(*user_pass)
+    else:
+        auth = None
+
+    for ticket, url in full_urls.iteritems():
+        resp = requests.get(url, auth=auth)
+        try:
+            resp.raise_for_status()
+        except:
+            logger.error("Error getting JIRA ticket {0}. Status {1}".format(url, resp.status_code))
+            continue
+
+        soup = BeautifulSoup(resp.content)
+        title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
+
+        descriptions.append('[{0}] {1} ({2})'.format(ticket, title, url))
+
+    return descriptions
 
 
 @match(find_jira_numbers)
