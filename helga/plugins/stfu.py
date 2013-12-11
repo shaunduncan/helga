@@ -1,6 +1,8 @@
 import random
 import re
 
+from twisted.internet import reactor
+
 from helga.plugins import command, preprocessor
 
 
@@ -29,8 +31,15 @@ snarks = (
 silenced = set()
 
 
+def auto_unsilence(client, channel, length):
+    global silenced
+    silenced.discard(channel)
+    client.msg(channel, "Speaking again after waiting {0} minutes".format(length))
+
+
 @preprocessor
-@command('stfu', aliases=['speak'], help="Tell the bot to be quiet or not. Usage: helga (speak|stfu)")
+@command('stfu', aliases=['speak'],
+         help="Tell the bot to be quiet or not. Usage: helga (speak|stfu [for <time_in_minutes>])")
 def stfu(client, channel, nick, message, *args):
     global silenced
 
@@ -52,6 +61,15 @@ def stfu(client, channel, nick, message, *args):
         elif args[0] == 'stfu':
             silenced.add(channel)
             resp = random.choice(silence_acks)
+            cmdargs = args[1]
+
+            if len(cmdargs) > 0 and cmdargs[0] == 'for':
+                try:
+                    length = int(cmdargs[1]) * 60
+                except (TypeError, ValueError, IndexError):
+                    pass
+                else:
+                    reactor.callLater(length, auto_unsilence, client, channel, length)
         elif args[0] == 'speak':
             silenced.discard(channel)
             resp = random.choice(unsilence_acks)
