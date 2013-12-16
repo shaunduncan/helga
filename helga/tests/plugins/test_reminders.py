@@ -73,7 +73,7 @@ class InReminderTestCase(TestCase):
         db.reminders.insert.return_value = 1
 
         with freeze_time(self.now):
-            reminders.in_reminder(self.client, '#bots', ['12m', 'this', 'is', 'the', 'message'])
+            reminders.in_reminder(self.client, '#bots', 'me', ['12m', 'this', 'is', 'the', 'message'])
 
         inserted = db.reminders.insert.call_args[0][0]
 
@@ -87,7 +87,7 @@ class InReminderTestCase(TestCase):
         db.reminders.insert.return_value = 1
 
         with freeze_time(self.now):
-            reminders.in_reminder(self.client, '#bots', ['12h', 'this', 'is', 'the', 'message'])
+            reminders.in_reminder(self.client, '#bots', 'me', ['12h', 'this', 'is', 'the', 'message'])
 
         inserted = db.reminders.insert.call_args[0][0]
 
@@ -101,7 +101,7 @@ class InReminderTestCase(TestCase):
         db.reminders.insert.return_value = 1
 
         with freeze_time(self.now):
-            reminders.in_reminder(self.client, '#bots', ['12d', 'this', 'is', 'the', 'message'])
+            reminders.in_reminder(self.client, '#bots', 'me', ['12d', 'this', 'is', 'the', 'message'])
 
         inserted = db.reminders.insert.call_args[0][0]
 
@@ -130,7 +130,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=5)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=1)
@@ -152,7 +152,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=5)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=18)
@@ -174,7 +174,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=6)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=1)
@@ -196,7 +196,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=6)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=18)
@@ -218,7 +218,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=6)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=1)
@@ -240,7 +240,7 @@ class AtReminderTestCase(TestCase):
 
         # Account for UTC difference
         with freeze_time(self.now + datetime.timedelta(hours=6)):
-            reminders.at_reminder(self.client, '#bots', args)
+            reminders.at_reminder(self.client, '#bots', 'me', args)
 
         rec = db.reminders.insert.call_args[0][0]
         expect = self.now + datetime.timedelta(hours=42)  # We expect it to be on Friday now
@@ -259,13 +259,13 @@ class AtReminderTestCase(TestCase):
     def test_invalid_days_returns_warning(self, reactor, db):
         # Invalid chars
         args = ['6:00', 'US/Central', 'this is a message', 'repeat', 'XYZ']
-        assert "I didn't understand" in reminders.at_reminder(self.client, '#bots', args)
+        assert "I didn't understand" in reminders.at_reminder(self.client, '#bots', 'me', args)
         assert not db.reminders.insert.called
         assert not reactor.callLater.called
 
         # No chars
         args = ['6:00', 'US/Central', 'this is a message', 'repeat', '']
-        assert "I didn't understand" in reminders.at_reminder(self.client, '#bots', args)
+        assert "I didn't understand" in reminders.at_reminder(self.client, '#bots', 'me', args)
         assert not db.reminders.insert.called
         assert not reactor.callLater.called
 
@@ -309,12 +309,12 @@ class ListRemindersTestCase(TestCase):
     @patch('helga.plugins.reminders.db')
     def test_simple(self, db):
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
+        ret = reminders.list_reminders('#bots', 'me')[0]
         assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'"
 
     @patch('helga.plugins.reminders.db')
     def test_with_repeats(self, db):
         self.rec['repeat'] = [0, 2, 4]
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
+        ret = reminders.list_reminders('#bots', 'me')[0]
         assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)"

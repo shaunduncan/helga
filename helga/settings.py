@@ -41,6 +41,7 @@ ENABLED_PLUGINS = [
     'oneliner',
     'operator',
     'poems',
+    'reminders',
     'reviewboard',
     'stfu',
     'wiki_whois',
