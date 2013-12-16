@@ -76,6 +76,7 @@ FACTS_REQUIRE_NICKNAME = False
 # ticket will be shown. Otherwise, the ticket title will be pulled and shown.
 # JIRA_USERNAME and JIRA_PASSWORD are optional if authentication is required
 JIRA_URL = 'http://localhost/{ticket}'
+JIRA_REST_API = ''
 JIRA_SHOW_FULL_DESCRIPTION = True
 JIRA_AUTH = ('', '')
 
