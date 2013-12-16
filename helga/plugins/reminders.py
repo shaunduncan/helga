@@ -115,7 +115,7 @@ def _do_reminder(reminder_id, client):
         db.reminders.remove(reminder_id)
 
 
-def in_reminder(client, channel, args):
+def in_reminder(client, channel, nick, args):
     """
     Create a one-time reminder to occur at some amount of minutes, hours, or days
     in the future. This is used like:
@@ -140,6 +140,7 @@ def in_reminder(client, channel, args):
         'when': utcnow + delta,
         'message': message,
         'channel': channel,
+        'creator': nick,
     })
 
     _scheduled.add(id)
@@ -147,7 +148,7 @@ def in_reminder(client, channel, args):
     return 'Reminder set for {0} from now'.format(readable_time_delta(seconds))
 
 
-def at_reminder(client, channel, args):
+def at_reminder(client, channel, nick, args):
     """
     Schedule a reminder to occur at a specific time. The given time can optionally
     be specified to occur at a specific timezone, but will default to the value
@@ -198,6 +199,7 @@ def at_reminder(client, channel, args):
         'when': local_next.astimezone(pytz.UTC),
         'channel': channel,
         'message': ' '.join(args),
+        'creator': nick,
     }
 
     # Check for 'repeat' arg
@@ -231,10 +233,13 @@ def at_reminder(client, channel, args):
     return 'Reminder set for {0} from now'.format(readable_time_delta(delay))
 
 
-def list_reminders(channel):
+def list_reminders(channel, nick):
     reminders = []
+    q = {'channel': channel, 'creator': nick}
+    if nick in settings.OPERATORS:
+        del q['creator']
 
-    for reminder in db.reminders.find({'channel': channel}):
+    for reminder in db.reminders.find(q):
         about = "[{0}] At {1}: '{2}'"
 
         hash = reminder['_id'][:6]
@@ -263,14 +268,14 @@ def delete_reminder(channel, hash):
 
 @command('in', aliases=['at', 'list', 'delete'],
          help="Schedule reminders. Usage: helga (in ##(m|h|d) <message>|at <HH>:<MM> [<timezone>] "
-              "<message> [repeat <days_of_week]). Ex: 'helga in 12h take out the trash' or "
-              "'helga at 13:00 EST standup time repeat MTuWThF'")
-def reminder(client, channel, nick, message, cmd, args):
+              "<message> [repeat <days_of_week]|list|delete <hash>). Ex: 'helga in 12h take out the "
+              "trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
+def reminders(client, channel, nick, message, cmd, args):
     if cmd == 'in':
-        return in_reminder(args)
+        return in_reminder(client, channel, nick, args)
     elif cmd == 'at':
-        return at_reminder(args)
+        return at_reminder(client, channel, nick, args)
     elif cmd == 'list':
         return list_reminders(channel)
     elif cmd == 'delete':
-        return delete_reminder(channel)
+        return delete_reminder(nick, channel)
