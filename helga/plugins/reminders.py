@@ -266,7 +266,7 @@ def delete_reminder(channel, hash):
         return "No reminder found with hash '{0}'".format(hash)
 
 
-@command('in', aliases=['at', 'list', 'delete'],
+@command('reminders', aliases=['in', 'at'],
          help="Schedule reminders. Usage: helga (in ##(m|h|d) <message>|at <HH>:<MM> [<timezone>] "
               "<message> [repeat <days_of_week]|list|delete <hash>). Ex: 'helga in 12h take out the "
               "trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
@@ -275,7 +275,8 @@ def reminders(client, channel, nick, message, cmd, args):
         return in_reminder(client, channel, nick, args)
     elif cmd == 'at':
         return at_reminder(client, channel, nick, args)
-    elif cmd == 'list':
-        return list_reminders(channel)
-    elif cmd == 'delete':
-        return delete_reminder(nick, channel)
+    elif cmd == 'reminders':
+        if args[0] == 'list':
+            return list_reminders(channel)
+        elif args[0] == 'delete':
+            return delete_reminder(nick, channel)
