@@ -1,5 +1,4 @@
 import datetime
-import re
 
 from itertools import ifilter, imap
 
@@ -45,16 +44,44 @@ def init_reminders(client):
     logger.info("Initializing any scheduled reminders")
 
     for reminder in db.reminders.find():
+        # Update the record to ensure a hash
+        if 'hash' not in reminder or reminder['hash'] != str(reminder['_id'])[:6]:
+            db.reminders.update({'_id': reminder['_id']}, {'$set': {'hash': str(reminder['_id'])[:6]}})
+
         if reminder['_id'] in _scheduled:
             continue
 
-        _scheduled.add(reminder['_id'])
+        if reminder['when'].tzinfo is not None:
+            now = now.replace(tzinfo=pytz.UTC).astimezone(reminder['when'].tzinfo)
+
         diff = reminder['when'] - now
         delay = (diff.days * 24 * 3600) + diff.seconds
+
+        if delay < 0:
+            logger.warning("Event has already happened :(")
+            if 'repeat' in reminder:
+                reminder['when'], _ = next_occurrence(reminder)
+                db.reminders.save(reminder)
+
+                diff = reminder['when'] - now
+                delay = (diff.days * 24 * 3600) + diff.seconds
+                logger.info("Reminder delayed until next occurrence: {0} seconds from now".format(delay))
+            elif delay >= -60:  # if it's only 1 minute late
+                logger.info("Reminder is only a little late. Go now!")
+                delay = 0
+            else:
+                logger.info("Removing stale, non-repeating reminder")
+                db.reminders.remove(reminder)
+                continue
+
+        _scheduled.add(reminder['_id'])
         reactor.callLater(delay, _do_reminder, reminder['_id'], client)
 
 
 def readable_time_delta(seconds):
+    """
+    Convert a number of seconds into readable days, hours, and minutes
+    """
     days = seconds // 86400
     seconds -= days * 86400
     hours = seconds // 3600
@@ -76,36 +103,44 @@ def readable_time_delta(seconds):
     return retval
 
 
+def next_occurrence(reminder):
+    """
+    Calculate the next occurrence of a repeatable reminder
+    """
+    now = datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)
+    now_dow = now.weekday()
+
+    # Modded range from tomorrow until 1 week from now
+    dow_iter = imap(lambda x: x % 7, xrange(now_dow + 1, now_dow + 8))
+
+    # Filter out any days that aren't in the schedule
+    dow_iter = ifilter(lambda x: x in reminder['repeat'], dow_iter)
+
+    # Get the first one. That's the next day of week
+    try:
+        next_dow = next(dow_iter)
+    except StopIteration:  # How?
+        logger.exception("Somehow, we didn't get a next day of week?")
+        _scheduled.discard(reminder_id)
+        return
+
+    # Get the real day delta
+    day_delta = (next_dow if next_dow > now_dow else next_dow + 7) - now_dow
+
+    # Update the record
+    return reminder['when'] + datetime.timedelta(days=day_delta), day_delta
+
+
 def _do_reminder(reminder_id, client):
     global _scheduled
 
     reminder = db.reminders.find_one(reminder_id)
-    client.msg(reminder['channel'], reminder['message'])
+    client.msg(str(reminder['channel']), str(reminder['message']))
 
     # If this repeats, figure out the next time
     if 'repeat' in reminder:
-        now = datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)
-        now_dow = now.weekday()
-
-        # Modded range from tomorrow until 1 week from now
-        dow_iter = imap(lambda x: x % 7, xrange(now_dow + 1, now_dow + 8))
-
-        # Filter out any days that aren't in the schedule
-        dow_iter = ifilter(lambda x: x in reminder['repeat'], dow_iter)
-
-        # Get the first one. That's the next day of week
-        try:
-            next_dow = next(dow_iter)
-        except StopIteration:  # How?
-            logger.exception("Somehow, we didn't get a next day of week?")
-            _scheduled.discard(reminder_id)
-            return
-
-        # Get the real day delta
-        day_delta = (next_dow if next_dow > now_dow else next_dow + 7) - now_dow
-
         # Update the record
-        reminder['when'] += datetime.timedelta(days=day_delta)
+        reminder['when'], day_delta = next_occurrence(reminder)
         db.reminders.save(reminder)
 
         _scheduled.add(reminder_id)
@@ -142,6 +177,9 @@ def in_reminder(client, channel, nick, args):
         'channel': channel,
         'creator': nick,
     })
+
+    # Update the record to ensure a hash
+    db.reminders.update({'_id': id}, {'$set': {'hash': str(id)[:6]}})
 
     _scheduled.add(id)
     reactor.callLater(seconds, _do_reminder, id, client)
@@ -225,6 +263,10 @@ def at_reminder(client, channel, nick, args):
             reminder['when'] += datetime.timedelta(days=1)
 
     id = db.reminders.insert(reminder)
+
+    # Update the record to ensure a hash
+    db.reminders.update({'_id': id}, {'$set': {'hash': str(id)[:6]}})
+
     diff = reminder['when'] - now
     delay = (diff.days * 24 * 3600) + diff.seconds
 
@@ -233,17 +275,14 @@ def at_reminder(client, channel, nick, args):
     return 'Reminder set for {0} from now'.format(readable_time_delta(delay))
 
 
-def list_reminders(channel, nick):
+def list_reminders(channel):
     reminders = []
-    q = {'channel': channel, 'creator': nick}
-    if nick in settings.OPERATORS:
-        del q['creator']
 
-    for reminder in db.reminders.find(q):
+    for reminder in db.reminders.find({'channel': channel}):
         about = "[{0}] At {1}: '{2}'"
 
-        hash = reminder['_id'][:6]
-        when = reminder['when'].strftime('%m/%d/%y %H:%M %Z').strip()
+        hash = str(reminder['_id'])[:6]
+        when = reminder['when'].strftime('%m/%d/%y %H:%M UTC')
 
         about = about.format(hash, when, reminder['message'])
 
@@ -257,7 +296,7 @@ def list_reminders(channel, nick):
 
 
 def delete_reminder(channel, hash):
-    rec = db.reminders.find_one({'_id': re.compile(r'^{0}'.format(hash))})
+    rec = db.reminders.find_one({'hash': hash})
 
     if rec is not None:
         db.reminders.remove(rec)
@@ -279,4 +318,4 @@ def reminders(client, channel, nick, message, cmd, args):
         if args[0] == 'list':
             return list_reminders(channel)
         elif args[0] == 'delete':
-            return delete_reminder(nick, channel)
+            return delete_reminder(channel, args[1])
