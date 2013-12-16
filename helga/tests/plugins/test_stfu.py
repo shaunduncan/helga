@@ -1,3 +1,4 @@
+from mock import patch
 from pretend import stub
 
 from helga.plugins import stfu
@@ -28,6 +29,13 @@ def test_stfu_silences_channel():
     resp = stfu.stfu(stub(nickname='helga'), '#bots', 'me', 'helga stfu', 'stfu', [])
     assert resp in map(lambda x: x.format(nick='me'), stfu.silence_acks)
     assert '#bots' in stfu.silenced
+
+
+@patch('helga.plugins.stfu.reactor')
+def test_stfu_for_some_time(reactor):
+    client = stub(nickname='helga')
+    stfu.stfu(client, '#bots', 'me', 'helga stfu for 30', 'stfu', ['for', '30'])
+    reactor.callLater.assertCalledWith(30*60, stfu.auto_unsilence, client, '#bots', 30*60)
 
 
 def test_stfu_unsilences_channel():
