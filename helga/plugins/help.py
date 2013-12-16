@@ -13,7 +13,10 @@ def format_help_string(name, *helps):
 def help(client, channel, nick, message, cmd, args):
     helps = defaultdict(list)
     for plugin_name in registry.enabled_plugins[channel]:
-        plugin = registry.plugins[plugin_name]
+        try:
+            plugin = registry.plugins[plugin_name]
+        except KeyError:
+            helps[plugin_name].append("Unable to load plugin '{0}'".format(plugin_name))
 
         # A simple object
         if hasattr(plugin, 'help') and plugin.help:

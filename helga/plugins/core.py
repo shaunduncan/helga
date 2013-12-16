@@ -117,7 +117,9 @@ class Registry(object):
         plugins = []
         for name in self.enabled_plugins[channel]:
             if name not in self.plugins:
-                logger.debug('Plugin {0} is enabled on {1}, but not loaded'.format(name, channel))
+                logger.debug(
+                    'Plugin {0} may not be installed or have incorrect entry_point information'.format(name)
+                )
                 continue
 
             # Decorated functions will have this
