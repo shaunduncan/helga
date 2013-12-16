@@ -309,12 +309,12 @@ class ListRemindersTestCase(TestCase):
     @patch('helga.plugins.reminders.db')
     def test_simple(self, db):
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots', 'me')[0]
+        ret = reminders.list_reminders('#bots')[0]
         assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'"
 
     @patch('helga.plugins.reminders.db')
     def test_with_repeats(self, db):
         self.rec['repeat'] = [0, 2, 4]
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots', 'me')[0]
+        ret = reminders.list_reminders('#bots')[0]
         assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)"
