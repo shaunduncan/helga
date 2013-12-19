@@ -3,9 +3,11 @@ import re
 
 from collections import defaultdict
 
+from twisted.internet import reactor
+
 from helga import log
 from helga.db import db
-from helga.plugins import command, random_ack
+from helga.plugins import command, random_ack, ResponseNotReady
 from helga.util.twitter import tweet as send_tweet
 
 
@@ -42,7 +44,8 @@ def poems(client, channel, nick, message, cmd, args):
     elif subcmd == 'blame':
         return blame(channel, requested_by=nick, default_author=client.nickname)
     elif subcmd == 'tweet':
-        return tweet(channel, nick)
+        reactor.callLater(0, tweet, client, channel, nick)
+        raise ResponseNotReady
     else:
         logger.info('Running subcmd: "{0}"'.format(subcmd))
         num_syllables = SYLLABLES_TO_INT[args[1]]
@@ -212,22 +215,24 @@ def claim(syllables, input, author=None):
         return "Sorry, I don't know that line."
 
 
-def tweet(channel, requested_by):
+def tweet(client, channel, requested_by):
     global last_poem
     last = last_poem[channel]
 
     if not last:
-        return "{0}, why don't you try making one first".format(requested_by)
+        msg = "{0}, why don't you try making one first".format(requested_by)
+        client.msg(channel, msg)
 
     resp = send_tweet('\n'.join(last))
 
     if not resp:
-        return "{0}, that probably did not work :(".format(requested_by)
+        msg = "{0}, that probably did not work :(".format(requested_by)
+        client.msg(channel, msg)
     else:
         # This will keep it from over tweeting
         del last_poem[channel]
 
-    return resp
+    client.msg(channel, resp)
 
 
 def blame(channel, requested_by, default_author=''):

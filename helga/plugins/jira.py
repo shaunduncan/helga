@@ -10,7 +10,7 @@ from twisted.internet import reactor
 
 from helga import log, settings
 from helga.db import db
-from helga.plugins import command, match, ACKS
+from helga.plugins import command, match, ACKS, ResponseNotReady
 
 
 logger = log.getLogger(__name__)
@@ -165,6 +165,7 @@ def jira_match(client, channel, nick, message, matches):
 
     # Otherwise, do the fetching with a deferred
     reactor.callLater(0, jira_full_descriptions, client, channel, full_urls)
+    raise ResponseNotReady
 
 
 @match(find_jira_numbers)
