@@ -4,7 +4,7 @@ import smokesignal
 
 from helga import log
 from helga.db import db
-from helga.plugins import command, ACKS
+from helga.plugins import command, registry, random_ack
 
 
 logger = log.getLogger(__name__)
@@ -34,7 +34,7 @@ def add_autojoin(channel):
 
     if db.autojoin.find(db_opts).count() == 0:
         db.autojoin.insert(db_opts)
-        return random.choice(ACKS)
+        return random_ack()
     else:
         return "I'm already doing that"
 
@@ -42,7 +42,17 @@ def add_autojoin(channel):
 def remove_autojoin(channel):
     logger.info('Removing Autojoin {0}'.format(channel))
     db.autojoin.remove({'channel': channel})
-    return random.choice(ACKS)
+    return random_ack()
+
+
+def reload_plugin(plugin):
+    """
+    Hooks into the registry and reloads a plugin without restarting
+    """
+    if registry.reload(plugin):
+        return "Succesfully reloaded plugin '{0}'".format(plugin)
+    else:
+        return "Failed to reload plugin '{0}'".format(plugin)
 
 
 @command('operator', aliases=['oper', 'op'],
@@ -73,3 +83,7 @@ def operator(client, channel, nick, message, cmd, args):
     elif subcmd == 'nsa':
         # Never document this
         return client.msg(args[1], ' '.join(args[2:]))
+
+    # Reload a plugin without restarting
+    elif subcmd == 'reload':
+        return reload_plugin(args[1])

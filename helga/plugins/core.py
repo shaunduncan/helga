@@ -2,6 +2,7 @@ import functools
 import pkg_resources
 import random
 import re
+import sys
 
 from collections import defaultdict
 
@@ -109,6 +110,22 @@ class Registry(object):
                 self.register(entry_point.name, entry_point.load())
             except:
                 logger.exception("Error initializing plugin {0}".format(entry_point))
+
+    def reload(self, name):
+        if name not in self.plugins:
+            return "Unknown plugin '{0}'. Is it installed?".format(name)
+
+        for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
+            if entry_point.name != name:
+                continue
+
+            try:
+                reload(sys.modules[entry_point.module_name])
+                self.register(entry_point.name, entry_point.load())
+                return True
+            except:
+                logger.exception('Failed to reload plugin {0}'.format(entry_point))
+                return False
 
     def prioritized(self, channel, high_to_low=True):
         """
