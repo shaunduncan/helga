@@ -45,6 +45,17 @@ class RegistryTestCase(TestCase):
         assert items[1].name == 'bar'
         assert items[0].name == 'baz'
 
+    def test_process_stops_when_async(self):
+        things = [Mock(), Mock(), Mock()]
+
+        # Make the middle one raise
+        things[0].process.return_value = None
+        things[1].process.side_effect = plugins.ResponseNotReady
+        things[2].process.return_value = None
+
+        assert [] == plugins.registry.process(None, '#bots', 'me', 'foobar')
+        assert not things[2].process.called
+
 
 class PluginTestCase(TestCase):
 

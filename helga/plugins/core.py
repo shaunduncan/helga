@@ -37,6 +37,15 @@ def random_ack():
     return random.choice(ACKS)
 
 
+class ResponseNotReady(Exception):
+    """
+    Exception raised by plugins that perform some async operation using
+    twisted deferreds. If the bot is configured to only allow the first plugin
+    response (by default), then any plugin raising this will prevent further
+    plugin execution
+    """
+
+
 class Registry(object):
     """
     Simple plugin registry that handles dispatching messages to registered plugins.
@@ -159,10 +168,14 @@ class Registry(object):
 
     def process(self, client, channel, nick, message):
         responses = []
+        first_responder = getattr(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', False)
 
         for plugin in self.prioritized(channel):
             try:
                 resp = plugin.process(client, channel, nick, message)
+            except ResponseNotReady:
+                if first_responder:
+                    return filter(bool, responses)
             except:
                 logger.exception("Calling process on plugin {0} failed".format(plugin))
                 resp = None
@@ -177,7 +190,7 @@ class Registry(object):
             else:
                 responses.append(resp.strip())
 
-            if responses and getattr(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', False):
+            if responses and first_responder:
                 return filter(bool, responses)
 
         return filter(bool, responses)
