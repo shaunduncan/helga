@@ -18,7 +18,7 @@ def term_regex(term):
     """
     Returns a case-insensitive regex for searching terms
     """
-    return re.compile('^{0}$'.format(term), re.IGNORECASE)
+    return re.compile('^{0}$'.format(re.escape(term)), re.IGNORECASE)
 
 
 def show_fact(term):
