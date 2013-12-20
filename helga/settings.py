@@ -31,6 +31,7 @@ TIMEZONE = 'US/Eastern'
 # The default set of plugins enabled on any channel.
 # By default, potentially noisy plugins are disabled
 ENABLED_PLUGINS = [
+    'announcements',
     'dubstep',
     'facts',
     'help',
@@ -82,6 +83,9 @@ JIRA_AUTH = ('', '')
 
 REVIEWBOARD_URL = 'http://localhost/{review}'
 WIKI_URL = 'http://localhost/{user}'
+
+ANNOUNCEMENT_PORT = 8080
+ANNOUNCEMENT_ACCESS_KEY = 'MySuperSecretKey'
 
 
 if 'HELGA_SETTINGS' in os.environ:

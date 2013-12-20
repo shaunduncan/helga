@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2
+
+- Added a very simple announcement HTTP service
+
 ## 1.1
 
 - Included ability for operators to reload installed plugins without restarting
