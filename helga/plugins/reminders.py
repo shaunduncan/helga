@@ -275,7 +275,7 @@ def at_reminder(client, channel, nick, args):
     return 'Reminder set for {0} from now'.format(readable_time_delta(delay))
 
 
-def list_reminders(channel):
+def list_reminders(client, nick, channel):
     reminders = []
 
     for reminder in db.reminders.find({'channel': channel}):
@@ -292,7 +292,11 @@ def list_reminders(channel):
 
         reminders.append(about)
 
-    return reminders
+    if not reminders:
+        client.msg(nick, 'There are no reminders for channel: {0}'.format(channel))
+    else:
+        reminders.insert(0,  '{0}, here are the reminders for channel: {1}'.format(nick, channel))
+        client.msg(nick, '\n'.join(reminders))
 
 
 def delete_reminder(channel, hash):
@@ -307,8 +311,8 @@ def delete_reminder(channel, hash):
 
 @command('reminders', aliases=['in', 'at'],
          help="Schedule reminders. Usage: helga (in ##(m|h|d) <message>|at <HH>:<MM> [<timezone>] "
-              "<message> [repeat <days_of_week]|list|delete <hash>). Ex: 'helga in 12h take out the "
-              "trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
+              "<message> [repeat <days_of_week]|list [channel]|delete <hash>). "
+              "Ex: 'helga in 12h take out the trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
 def reminders(client, channel, nick, message, cmd, args):
     if cmd == 'in':
         return in_reminder(client, channel, nick, args)
@@ -316,6 +320,8 @@ def reminders(client, channel, nick, message, cmd, args):
         return at_reminder(client, channel, nick, args)
     elif cmd == 'reminders':
         if args[0] == 'list':
-            return list_reminders(channel)
+            client.me(channel, 'whispers to {0}'.format(nick))
+            list_reminders(client, nick, (args[1] if len(args) >= 2 else channel))
+            return None
         elif args[0] == 'delete':
             return delete_reminder(channel, args[1])
