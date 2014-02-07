@@ -306,15 +306,54 @@ class ListRemindersTestCase(TestCase):
             'message': 'Standup Time!',
         }
 
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reponds_via_privmsg(self, list_reminders):
+        client = Mock()
+
+        assert reminders.reminders(client, '#all', 'sduncan', 'reminders list', 'reminders', ['list']) is None
+        client.me.assert_called_with('#all', 'whispers to sduncan')
+        list_reminders.assert_called_with(client, 'sduncan', '#all')
+
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reponds_via_privmsg_for_specific_chan(self, list_reminders):
+        client = Mock()
+
+        assert reminders.reminders(client, '#all', 'sduncan', 'reminders list #bots',
+                                   'reminders', ['list', '#bots']) is None
+        client.me.assert_called_with('#all', 'whispers to sduncan')
+        list_reminders.assert_called_with(client, 'sduncan', '#bots')
+
+    @patch('helga.plugins.reminders.db')
+    def test_list_no_results(self, db):
+        client = Mock()
+        db.reminders.find.return_value = []
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        client.msg.assert_called_with('sduncan', "There are no reminders for channel: #bots")
+
     @patch('helga.plugins.reminders.db')
     def test_simple(self, db):
+        client = Mock()
+        client.msg = client
+
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
-        assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'"
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        print client.msg.calls
+        client.msg.assert_called_with('sduncan',
+                                      "sduncan, here are the reminders for channel: #bots\n"
+                                      "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'")
 
     @patch('helga.plugins.reminders.db')
     def test_with_repeats(self, db):
+        client = Mock()
+        client.msg = client
+
         self.rec['repeat'] = [0, 2, 4]
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
-        assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)"
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        print client.msg.calls
+        client.msg.assert_called_with('sduncan',
+                                      "sduncan, here are the reminders for channel: #bots\n"
+                                      "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)")
