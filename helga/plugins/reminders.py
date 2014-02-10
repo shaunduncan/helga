@@ -121,7 +121,7 @@ def next_occurrence(reminder):
         next_dow = next(dow_iter)
     except StopIteration:  # How?
         logger.exception("Somehow, we didn't get a next day of week?")
-        _scheduled.discard(reminder_id)
+        _scheduled.discard(reminder['_id'])
         return
 
     # Get the real day delta
@@ -157,12 +157,32 @@ def in_reminder(client, channel, nick, args):
 
         <sduncan> helga in 12h submit timesheet
 
-    This will create a reminder 12 hours from now with the message "submit timesheet"
+    This will create a reminder 12 hours from now with the message "submit timesheet".
+
+    Optionally, a specific channel can be specified to receive the reminder message. This
+    is useful if creating several reminders via a private message. To use this, specify
+    "on <channel>" between the time amount and the message:
+
+        <sduncan> helga in 12h on #bots submit timesheet
+        <sduncan> helga in 12h on bots submit timesheet
+
+    Note that the '#' char for specifying the channel is entirely optional.
     """
     global _scheduled
 
     amount, quantity = int(args[0][:-1]), args[0][-1]
-    message = ' '.join(args[1:])
+
+    # Handle ability to specify the channel
+    if args[1] == 'on':
+        target_channel = args[2]
+        message = ' '.join(args[3:])
+
+        # Make sure channel is formatted correctly
+        if not target_channel.startswith('#'):
+            target_channel = '#{0}'.format(target_channel)
+    else:
+        target_channel = channel
+        message = ' '.join(args[1:])
 
     if quantity not in in_seconds_map:
         return "Sorry I didn't understand '{0}'. You must specify m,h,d. Ex: 12m".format(args[0])
@@ -174,7 +194,7 @@ def in_reminder(client, channel, nick, args):
     id = db.reminders.insert({
         'when': utcnow + delta,
         'message': message,
-        'channel': channel,
+        'channel': target_channel,
         'creator': nick,
     })
 
@@ -202,6 +222,15 @@ def at_reminder(client, channel, nick, args):
         <sduncan> helga at 13:00 EST standup time repeat MTuWThF
 
     This will create a reminder "standup time" to occur at 1:00PM Eastern every weekday.
+
+    Optionally, a specific channel can be specified to receive the reminder message. This
+    is useful if creating several reminders via a private message. To use this, specify
+    "on <channel>" between the time amount and the message:
+
+        <sduncan> helga at 13:00 EST on #bots standup time repeat MTuWThF
+        <sduncan> helga at 13:00 EST on bots standup time repeat MTuWThF
+
+    Note that the '#' char for specifying the channel is entirely optional.
     """
     global _scheduled
 
@@ -226,6 +255,18 @@ def at_reminder(client, channel, nick, args):
         # If so, remove it from args
         args = args[1:]
 
+    # Handle ability to specify the channel
+    if args[0] == 'on':
+        target_channel = args[1]
+        message = ' '.join(args[2:])
+
+        # Make sure channel is formatted correctly
+        if not target_channel.startswith('#'):
+            target_channel = '#{0}'.format(target_channel)
+    else:
+        target_channel = channel
+        message = ' '.join(args)
+
     # Now is already UTC current, so just adjust. Next is set without a timezone
     local_now = now.astimezone(timezone)
     local_next = next.replace(tzinfo=timezone)
@@ -235,8 +276,8 @@ def at_reminder(client, channel, nick, args):
 
     reminder = {
         'when': local_next.astimezone(pytz.UTC),
-        'channel': channel,
-        'message': ' '.join(args),
+        'channel': target_channel,
+        'message': message,
         'creator': nick,
     }
 
@@ -310,8 +351,11 @@ def delete_reminder(channel, hash):
 
 
 @command('reminders', aliases=['in', 'at'],
-         help="Schedule reminders. Usage: helga (in ##(m|h|d) <message>|at <HH>:<MM> [<timezone>] "
-              "<message> [repeat <days_of_week]|list [channel]|delete <hash>). "
+         help="Schedule reminders. Usage: helga ("
+              "in ##(m|h|d) [on <channel>] <message>|"
+              "at <HH>:<MM> [<timezone>] [on <channel>] <message> [repeat <days_of_week]|"
+              "list [channel]|"
+              "delete <hash>). "
               "Ex: 'helga in 12h take out the trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
 def reminders(client, channel, nick, message, cmd, args):
     if cmd == 'in':

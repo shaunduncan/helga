@@ -69,6 +69,30 @@ class InReminderTestCase(TestCase):
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
+    def test_in_reminder_for_different_channel(self, reactor, db):
+        db.reminders.insert.return_value = 1
+
+        with freeze_time(self.now):
+            reminders.in_reminder(self.client, '#bots', 'me',
+                                  ['12m', 'on', '#foo', 'this', 'is', 'the', 'message'])
+
+        inserted = db.reminders.insert.call_args[0][0]
+        assert inserted['channel'] == '#foo'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_in_reminder_for_different_channel_adds_chan_hash(self, reactor, db):
+        db.reminders.insert.return_value = 1
+
+        with freeze_time(self.now):
+            reminders.in_reminder(self.client, '#bots', 'me',
+                                  ['12m', 'on', 'foo', 'this', 'is', 'the', 'message'])
+
+        inserted = db.reminders.insert.call_args[0][0]
+        assert inserted['channel'] == '#foo'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
     def test_in_reminder_for_minutes(self, reactor, db):
         db.reminders.insert.return_value = 1
 
@@ -121,6 +145,45 @@ class AtReminderTestCase(TestCase):
         self.tz = pytz.timezone('US/Eastern')
 
         reminders._scheduled.clear()
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel(self, reactor, db):
+        args = ['13:00', 'on', '#foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_when_timezone_present(self, reactor, db):
+        args = ['13:00', 'EST', 'on', '#foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_adds_chan_hash(self, reactor, db):
+        args = ['13:00', 'on', 'foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
