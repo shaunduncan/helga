@@ -255,18 +255,6 @@ def at_reminder(client, channel, nick, args):
         # If so, remove it from args
         args = args[1:]
 
-    # Handle ability to specify the channel
-    if args[0] == 'on':
-        target_channel = args[1]
-        message = ' '.join(args[2:])
-
-        # Make sure channel is formatted correctly
-        if not target_channel.startswith('#'):
-            target_channel = '#{0}'.format(target_channel)
-    else:
-        target_channel = channel
-        message = ' '.join(args)
-
     # Now is already UTC current, so just adjust. Next is set without a timezone
     local_now = now.astimezone(timezone)
     local_next = next.replace(tzinfo=timezone)
@@ -276,8 +264,8 @@ def at_reminder(client, channel, nick, args):
 
     reminder = {
         'when': local_next.astimezone(pytz.UTC),
-        'channel': target_channel,
-        'message': message,
+        'channel': channel,
+        'message': ' '.join(args),
         'creator': nick,
     }
 
@@ -302,6 +290,17 @@ def at_reminder(client, channel, nick, args):
             if reminder['when'].weekday() in repeat_days:
                 break
             reminder['when'] += datetime.timedelta(days=1)
+
+    # Handle ability to specify the channel
+    if reminder['message'].startswith('on'):
+        parts = reminder['message'].split(' ')
+        chan = parts[1]
+        reminder['message'] = ' '.join(parts[2:])
+
+        # Make sure channel is formatted correctly
+        if not chan.startswith('#'):
+            chan = '#{0}'.format(chan)
+        reminder['channel'] = chan
 
     id = db.reminders.insert(reminder)
 
