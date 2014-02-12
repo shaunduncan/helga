@@ -78,6 +78,7 @@ class InReminderTestCase(TestCase):
 
         inserted = db.reminders.insert.call_args[0][0]
         assert inserted['channel'] == '#foo'
+        assert inserted['message'] == 'this is the message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
@@ -90,6 +91,7 @@ class InReminderTestCase(TestCase):
 
         inserted = db.reminders.insert.call_args[0][0]
         assert inserted['channel'] == '#foo'
+        assert inserted['message'] == 'this is the message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
@@ -148,6 +150,20 @@ class AtReminderTestCase(TestCase):
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_and_with_repeat(self, reactor, db):
+        args = ['13:00', 'on', '#foo', 'test', 'message', 'repeat', 'MWF']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+        assert rec['message'] == 'test message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
     def test_using_different_channel(self, reactor, db):
         args = ['13:00', 'on', '#foo', 'this is a message']
         db.reminders.insert.return_value = 1
@@ -158,6 +174,7 @@ class AtReminderTestCase(TestCase):
 
         rec = db.reminders.insert.call_args[0][0]
         assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
@@ -171,6 +188,7 @@ class AtReminderTestCase(TestCase):
 
         rec = db.reminders.insert.call_args[0][0]
         assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
@@ -184,6 +202,7 @@ class AtReminderTestCase(TestCase):
 
         rec = db.reminders.insert.call_args[0][0]
         assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
