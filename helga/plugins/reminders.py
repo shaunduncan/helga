@@ -135,6 +135,10 @@ def _do_reminder(reminder_id, client):
     global _scheduled
 
     reminder = db.reminders.find_one(reminder_id)
+    if not reminder:
+        logger.error("Tried to locate reminder {0}, but it returned None".format(reminder_id))
+        _scheduled.discard(reminder_id)
+
     client.msg(str(reminder['channel']), str(reminder['message']))
 
     # If this repeats, figure out the next time
