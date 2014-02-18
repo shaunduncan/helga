@@ -8,7 +8,7 @@ BeautifulSoup==3.2.1
 
 # Because it handles optional arguments better
 -e git://github.com/shaunduncan/smokesignal.git@e66cf26576#egg=smokesignal
--e git://github.com/shaunduncan/giphypop.git@v0.1#egg=giphypop
+-e git://github.com/shaunduncan/giphypop.git@4f548fd#egg=giphypop
 
 # System Requirements:
 # openssl
