@@ -71,7 +71,7 @@ def init_reminders(client):
                 delay = 0
             else:
                 logger.info("Removing stale, non-repeating reminder")
-                db.reminders.remove(reminder)
+                db.reminders.remove(reminder['_id'])
                 continue
 
         _scheduled.add(reminder['_id'])
@@ -347,7 +347,7 @@ def delete_reminder(channel, hash):
     rec = db.reminders.find_one({'hash': hash})
 
     if rec is not None:
-        db.reminders.remove(rec)
+        db.reminders.remove(rec['_id'])
         return random_ack()
     else:
         return "No reminder found with hash '{0}'".format(hash)
