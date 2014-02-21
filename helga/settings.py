@@ -3,7 +3,7 @@ import sys
 import warnings
 
 SERVER = {
-    'HOST': '192.168.55.101',
+    'HOST': 'localhost',
     'PORT': 6667,
 }
 
