@@ -11,7 +11,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Forward keys from SSH agent rather than copypasta
   config.ssh.forward_agent = true
 
-  # FIXME: Maybe this is enough
+  # FIXME: Might not even need this much
   config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", "1024"]
   end
