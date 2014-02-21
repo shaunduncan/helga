@@ -146,6 +146,8 @@ RESPONSES = {
 
     r'f(f{6}|7)u(u{11}|12)': 'http://i.minus.com/ibnfJRQi1h4z30.gif',  # Workaholics: FUUUUUUUUUUUUUU
 
+    r'wtf': imgur('bpW6Xkd'),  # WTF supercut
+
 
     # Various modern unicode emoticons
     r'(why|y) (u|you) no':                      u'ლ(ಠ益ಠლ)',
