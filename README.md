@@ -44,6 +44,13 @@ with your custom settings file, set an environment variable ``HELGA_SETTINGS`` t
 
 This will preserve any defaults in ``helga.settings``, but you can override at will.
 
+### Local Development
+
+The included Vagrantfile will let you spin up a VM to run both MongoDB and an IRC server
+for local development. Once you've followed the previous instructions for installing helga,
+simply ``vagrant up``. This will forward host ports 6667 (irc) and 27017 (mongo) to the guest.
+At this point, simply runing ``helga`` from the command line will connect to this VM.
+
 
 ## Plugins
 

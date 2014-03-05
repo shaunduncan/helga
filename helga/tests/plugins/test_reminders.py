@@ -69,6 +69,32 @@ class InReminderTestCase(TestCase):
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
+    def test_in_reminder_for_different_channel(self, reactor, db):
+        db.reminders.insert.return_value = 1
+
+        with freeze_time(self.now):
+            reminders.in_reminder(self.client, '#bots', 'me',
+                                  ['12m', 'on', '#foo', 'this', 'is', 'the', 'message'])
+
+        inserted = db.reminders.insert.call_args[0][0]
+        assert inserted['channel'] == '#foo'
+        assert inserted['message'] == 'this is the message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_in_reminder_for_different_channel_adds_chan_hash(self, reactor, db):
+        db.reminders.insert.return_value = 1
+
+        with freeze_time(self.now):
+            reminders.in_reminder(self.client, '#bots', 'me',
+                                  ['12m', 'on', 'foo', 'this', 'is', 'the', 'message'])
+
+        inserted = db.reminders.insert.call_args[0][0]
+        assert inserted['channel'] == '#foo'
+        assert inserted['message'] == 'this is the message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
     def test_in_reminder_for_minutes(self, reactor, db):
         db.reminders.insert.return_value = 1
 
@@ -121,6 +147,62 @@ class AtReminderTestCase(TestCase):
         self.tz = pytz.timezone('US/Eastern')
 
         reminders._scheduled.clear()
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_and_with_repeat(self, reactor, db):
+        args = ['13:00', 'on', '#foo', 'test', 'message', 'repeat', 'MWF']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+        assert rec['message'] == 'test message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel(self, reactor, db):
+        args = ['13:00', 'on', '#foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_when_timezone_present(self, reactor, db):
+        args = ['13:00', 'EST', 'on', '#foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
+
+    @patch('helga.plugins.reminders.db')
+    @patch('helga.plugins.reminders.reactor')
+    def test_using_different_channel_adds_chan_hash(self, reactor, db):
+        args = ['13:00', 'on', 'foo', 'this is a message']
+        db.reminders.insert.return_value = 1
+
+        # Account for UTC difference
+        with freeze_time(self.now + datetime.timedelta(hours=5)):
+            reminders.at_reminder(self.client, '#bots', 'me', args)
+
+        rec = db.reminders.insert.call_args[0][0]
+        assert rec['channel'] == '#foo'
+        assert rec['message'] == 'this is a message'
 
     @patch('helga.plugins.reminders.db')
     @patch('helga.plugins.reminders.reactor')
@@ -306,15 +388,54 @@ class ListRemindersTestCase(TestCase):
             'message': 'Standup Time!',
         }
 
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reponds_via_privmsg(self, list_reminders):
+        client = Mock()
+
+        assert reminders.reminders(client, '#all', 'sduncan', 'reminders list', 'reminders', ['list']) is None
+        client.me.assert_called_with('#all', 'whispers to sduncan')
+        list_reminders.assert_called_with(client, 'sduncan', '#all')
+
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reponds_via_privmsg_for_specific_chan(self, list_reminders):
+        client = Mock()
+
+        assert reminders.reminders(client, '#all', 'sduncan', 'reminders list #bots',
+                                   'reminders', ['list', '#bots']) is None
+        client.me.assert_called_with('#all', 'whispers to sduncan')
+        list_reminders.assert_called_with(client, 'sduncan', '#bots')
+
+    @patch('helga.plugins.reminders.db')
+    def test_list_no_results(self, db):
+        client = Mock()
+        db.reminders.find.return_value = []
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        client.msg.assert_called_with('sduncan', "There are no reminders for channel: #bots")
+
     @patch('helga.plugins.reminders.db')
     def test_simple(self, db):
+        client = Mock()
+        client.msg = client
+
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
-        assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'"
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        print client.msg.calls
+        client.msg.assert_called_with('sduncan',
+                                      "sduncan, here are the reminders for channel: #bots\n"
+                                      "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'")
 
     @patch('helga.plugins.reminders.db')
     def test_with_repeats(self, db):
+        client = Mock()
+        client.msg = client
+
         self.rec['repeat'] = [0, 2, 4]
         db.reminders.find.return_value = [self.rec]
-        ret = reminders.list_reminders('#bots')[0]
-        assert ret == "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)"
+        reminders.list_reminders(client, 'sduncan', '#bots')
+
+        print client.msg.calls
+        client.msg.assert_called_with('sduncan',
+                                      "sduncan, here are the reminders for channel: #bots\n"
+                                      "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)")

@@ -32,3 +32,4 @@ nosetests.xml
 
 # Local settings
 my_settings.py
+.vagrant
