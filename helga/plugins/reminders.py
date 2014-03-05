@@ -71,7 +71,7 @@ def init_reminders(client):
                 delay = 0
             else:
                 logger.info("Removing stale, non-repeating reminder")
-                db.reminders.remove(reminder)
+                db.reminders.remove(reminder['_id'])
                 continue
 
         _scheduled.add(reminder['_id'])
@@ -121,7 +121,7 @@ def next_occurrence(reminder):
         next_dow = next(dow_iter)
     except StopIteration:  # How?
         logger.exception("Somehow, we didn't get a next day of week?")
-        _scheduled.discard(reminder_id)
+        _scheduled.discard(reminder['_id'])
         return
 
     # Get the real day delta
@@ -135,6 +135,10 @@ def _do_reminder(reminder_id, client):
     global _scheduled
 
     reminder = db.reminders.find_one(reminder_id)
+    if not reminder:
+        logger.error("Tried to locate reminder {0}, but it returned None".format(reminder_id))
+        _scheduled.discard(reminder_id)
+
     client.msg(str(reminder['channel']), str(reminder['message']))
 
     # If this repeats, figure out the next time
@@ -157,12 +161,32 @@ def in_reminder(client, channel, nick, args):
 
         <sduncan> helga in 12h submit timesheet
 
-    This will create a reminder 12 hours from now with the message "submit timesheet"
+    This will create a reminder 12 hours from now with the message "submit timesheet".
+
+    Optionally, a specific channel can be specified to receive the reminder message. This
+    is useful if creating several reminders via a private message. To use this, specify
+    "on <channel>" between the time amount and the message:
+
+        <sduncan> helga in 12h on #bots submit timesheet
+        <sduncan> helga in 12h on bots submit timesheet
+
+    Note that the '#' char for specifying the channel is entirely optional.
     """
     global _scheduled
 
     amount, quantity = int(args[0][:-1]), args[0][-1]
-    message = ' '.join(args[1:])
+
+    # Handle ability to specify the channel
+    if args[1] == 'on':
+        target_channel = args[2]
+        message = ' '.join(args[3:])
+
+        # Make sure channel is formatted correctly
+        if not target_channel.startswith('#'):
+            target_channel = '#{0}'.format(target_channel)
+    else:
+        target_channel = channel
+        message = ' '.join(args[1:])
 
     if quantity not in in_seconds_map:
         return "Sorry I didn't understand '{0}'. You must specify m,h,d. Ex: 12m".format(args[0])
@@ -174,7 +198,7 @@ def in_reminder(client, channel, nick, args):
     id = db.reminders.insert({
         'when': utcnow + delta,
         'message': message,
-        'channel': channel,
+        'channel': target_channel,
         'creator': nick,
     })
 
@@ -202,6 +226,15 @@ def at_reminder(client, channel, nick, args):
         <sduncan> helga at 13:00 EST standup time repeat MTuWThF
 
     This will create a reminder "standup time" to occur at 1:00PM Eastern every weekday.
+
+    Optionally, a specific channel can be specified to receive the reminder message. This
+    is useful if creating several reminders via a private message. To use this, specify
+    "on <channel>" between the time amount and the message:
+
+        <sduncan> helga at 13:00 EST on #bots standup time repeat MTuWThF
+        <sduncan> helga at 13:00 EST on bots standup time repeat MTuWThF
+
+    Note that the '#' char for specifying the channel is entirely optional.
     """
     global _scheduled
 
@@ -262,6 +295,17 @@ def at_reminder(client, channel, nick, args):
                 break
             reminder['when'] += datetime.timedelta(days=1)
 
+    # Handle ability to specify the channel
+    if reminder['message'].startswith('on'):
+        parts = reminder['message'].split(' ')
+        chan = parts[1]
+        reminder['message'] = ' '.join(parts[2:])
+
+        # Make sure channel is formatted correctly
+        if not chan.startswith('#'):
+            chan = '#{0}'.format(chan)
+        reminder['channel'] = chan
+
     id = db.reminders.insert(reminder)
 
     # Update the record to ensure a hash
@@ -275,7 +319,7 @@ def at_reminder(client, channel, nick, args):
     return 'Reminder set for {0} from now'.format(readable_time_delta(delay))
 
 
-def list_reminders(channel):
+def list_reminders(client, nick, channel):
     reminders = []
 
     for reminder in db.reminders.find({'channel': channel}):
@@ -292,23 +336,30 @@ def list_reminders(channel):
 
         reminders.append(about)
 
-    return reminders
+    if not reminders:
+        client.msg(nick, 'There are no reminders for channel: {0}'.format(channel))
+    else:
+        reminders.insert(0,  '{0}, here are the reminders for channel: {1}'.format(nick, channel))
+        client.msg(nick, '\n'.join(reminders))
 
 
 def delete_reminder(channel, hash):
     rec = db.reminders.find_one({'hash': hash})
 
     if rec is not None:
-        db.reminders.remove(rec)
+        db.reminders.remove(rec['_id'])
         return random_ack()
     else:
         return "No reminder found with hash '{0}'".format(hash)
 
 
 @command('reminders', aliases=['in', 'at'],
-         help="Schedule reminders. Usage: helga (in ##(m|h|d) <message>|at <HH>:<MM> [<timezone>] "
-              "<message> [repeat <days_of_week]|list|delete <hash>). Ex: 'helga in 12h take out the "
-              "trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
+         help="Schedule reminders. Usage: helga ("
+              "in ##(m|h|d) [on <channel>] <message>|"
+              "at <HH>:<MM> [<timezone>] [on <channel>] <message> [repeat <days_of_week]|"
+              "list [channel]|"
+              "delete <hash>). "
+              "Ex: 'helga in 12h take out the trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
 def reminders(client, channel, nick, message, cmd, args):
     if cmd == 'in':
         return in_reminder(client, channel, nick, args)
@@ -316,6 +367,8 @@ def reminders(client, channel, nick, message, cmd, args):
         return at_reminder(client, channel, nick, args)
     elif cmd == 'reminders':
         if args[0] == 'list':
-            return list_reminders(channel)
+            client.me(channel, 'whispers to {0}'.format(nick))
+            list_reminders(client, nick, (args[1] if len(args) >= 2 else channel))
+            return None
         elif args[0] == 'delete':
             return delete_reminder(channel, args[1])
