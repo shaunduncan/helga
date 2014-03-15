@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.3
+
+- Refactored simple announcement service into an extensible webhook plugin system
+
 ## 1.2
 
 - Added a very simple announcement HTTP service
