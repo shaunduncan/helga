@@ -31,7 +31,6 @@ TIMEZONE = 'US/Eastern'
 # The default set of plugins enabled on any channel.
 # By default, potentially noisy plugins are disabled
 ENABLED_PLUGINS = [
-    'announcements',
     'dubstep',
     'facts',
     'help',
@@ -45,6 +44,7 @@ ENABLED_PLUGINS = [
     'reminders',
     'reviewboard',
     'stfu',
+    'webhooks',
     'wiki_whois',
 
     # Sometimes, giphy may give back a gif of questionable content
@@ -87,9 +87,6 @@ WIKI_URL = 'http://localhost/{user}'
 # WEBHOOKS SETTINGS
 WEBHOOKS_PORT = 8080
 WEBHOOKS_CREDENTIALS = []  # Tuples of (user, pass)
-
-ANNOUNCEMENT_PORT = 8080
-ANNOUNCEMENT_ACCESS_KEY = 'MySuperSecretKey'
 
 
 if 'HELGA_SETTINGS' in os.environ:

@@ -222,6 +222,7 @@ def tweet(client, channel, requested_by):
     if not last:
         msg = "{0}, why don't you try making one first".format(requested_by)
         client.msg(channel, msg)
+        return
 
     resp = send_tweet('\n'.join(last))
 
