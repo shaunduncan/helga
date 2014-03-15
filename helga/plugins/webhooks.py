@@ -1,9 +1,11 @@
 import functools
+import pkg_resources
 import re
-import smokesignal
 
 from twisted.internet import reactor
 from twisted.web import server, resource
+
+import smokesignal
 
 from helga import log, settings
 from helga.plugins import Command, registry
@@ -40,7 +42,7 @@ class WebhookPlugin(Command):
     """
     command = 'webhooks'
     help = ('HTTP service for interacting with helga. Command options usage: '
-            'helga webhooks (start|stop|restart|routes). Note: start/stop/restart '
+            'helga webhooks (start|stop|routes). Note: start/stop'
             'can be run only by helga operators')
 
     def __init__(self, *args, **kwargs):
@@ -50,13 +52,24 @@ class WebhookPlugin(Command):
         self.site = None
         self.port = getattr(settings, 'WEBHOOKS_PORT', 8080)
 
-        smokesignal.on('signon')(lambda client: self._setup(client))
+        @smokesignal.on('signon')
+        def setup(client):
+            self._start(client)
+            self._init_routes()
 
-    def _start(self, client):
+    def _init_routes(self):
+        for entry_point in pkg_resources.iter_entry_points(group='helga_webhooks'):
+            try:
+                logger.debug('Loading webhook {0}'.format(entry_point.name))
+                entry_point.load()
+            except:
+                logger.exception("Error loading webhook {0}".format(entry_point))
+
+    def _start(self, client=None):
         logger.info("Starting webhooks service on port {}".format(self.port))
 
         if self.root is None:
-            self.root = WebhooksRoot(client)
+            self.root = WebhookRoot(client)
 
         if self.site is None:
             self.site = server.Site(self.root)
@@ -65,6 +78,7 @@ class WebhookPlugin(Command):
 
     def _stop(self):
         logger.info("Stopping webhooks service on port {}".format(self.port))
+        self.tcp.stopListening()
         self.tcp.loseConnection()
         self.tcp = None
 
@@ -79,14 +93,14 @@ class WebhookPlugin(Command):
         Messages a user with all webhook routes and their supported HTTP methods
         """
         client.msg(nick, '{}, here are the routes I know about'.format(nick))
-        for pat, route in self.root.routes:
+        for pat, route in self.root.routes.iteritems():
             client.msg(nick, '[{}] {}'.format(','.join(route[0]), pat))
 
     def control(self, action):
         """
-        Operator-level control over stop/start/restart of the running TCP listener
+        Operator-level control over stop/start of the running TCP listener
         """
-        running = self.tcp is None
+        running = self.tcp is not None
 
         if action == 'stop':
             if running:
@@ -100,24 +114,23 @@ class WebhookPlugin(Command):
                 return "Webhooks service started"
             return "Webhooks service already running"
 
-        if action == 'restart':
-            self._stop()
-            self._start()
-            return "Webhooks service restarted"
+    def run(self, client, channel, nick, msg, cmd, args):
+        try:
+            subcmd = args[0]
+        except IndexError:
+            subcmd = 'routes'
 
-    def run(self, client, channel, nick, cmd, args):
-        subcmd = args[0]
-
-        if subcmd == 'list':
+        if subcmd == 'routes':
             client.me(channel, 'whispers to {}'.format(nick))
             self.list_routes(client, nick)
-        elif subcmd in ('start', 'stop', 'restart'):
+        elif subcmd in ('start', 'stop'):
             if nick not in client.operators:
                 return "Sorry {}, Only an operator can do that".format(nick)
             return self.control(subcmd)
 
 
-class WebhooksRoot(resource.Resource):
+class WebhookRoot(resource.Resource):
+    isLeaf = True
 
     def __init__(self, irc_client, *args, **kwargs):
         self.irc_client = irc_client
@@ -135,12 +148,14 @@ class WebhooksRoot(resource.Resource):
         """
         Handle finding and dispatching the route matching the incoming request path
         """
+        request.setHeader('Server', 'helga')
         for pat, route in self.routes.iteritems():
             match = re.match(pat, request.path)
             if match:
                 break
         else:
-            raise SystemExit
+            request.setResponseCode(404)
+            return '404 Not Found'
 
         # Ensure that this route handles the request method
         methods, fn = route
@@ -197,7 +212,7 @@ def route(path, methods=None):
     Note that route callables (shown above) must accept as the first two
     positional arguments a request object, and the current irc client.
     """
-    plugin = registry['webhooks']
+    plugin = registry.get_plugin('webhooks')
     if methods is None:
         methods = ['GET']
 

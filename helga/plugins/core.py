@@ -75,6 +75,7 @@ class Registry(object):
         @smokesignal.on('started')
         def load_plugins():
             self.load()
+            smokesignal.emit('plugins_loaded')
 
     def register(self, name, fn_or_cls):
         # Make sure we're working with an instance
