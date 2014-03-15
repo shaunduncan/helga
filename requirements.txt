@@ -5,6 +5,7 @@ pytz==2013b
 pyOpenSSL==0.13
 requests==1.2.3
 BeautifulSoup==3.2.1
+helga-karma==0.1.3
 
 # Because it handles optional arguments better
 -e git://github.com/shaunduncan/smokesignal.git@e66cf26576#egg=smokesignal

@@ -46,6 +46,7 @@ ENABLED_PLUGINS = [
     'reviewboard',
     'stfu',
     'wiki_whois',
+    'karma',
 
     # Sometimes, giphy may give back a gif of questionable content
     # 'giphy',
