@@ -227,6 +227,54 @@ Note that if you are using decorated function for a plugin, you will want to spe
 for your entry point, i.e. ``mylib.mymodule:myfn``.
 
 
+### Webhooks
+
+As of helga version 1.3, there is an included plugin for exposing an HTTP server to support webhooks.
+This might be useful if you need to have a public facing HTTP service that you would like to use to
+perform some sort of announcement on a particular channel. This is also very extensible and should allow
+you to create new webhooks in a very similar way plugins are created. This plugin is enabled by default
+and requires two settings: ``WEBHOOKS_PORT`` and ``WEBHOOKS_CREDENTIALS``. The former is of course the
+port on which to run this service. The latter should be a list of tuples in the form of (username, password).
+These are used to perform HTTP basic authentication on any webhook that requires it.
+
+Webhook plugins work by declaring routes. This will not only feel similar to helga's decorator style
+plugins, but it will also feel very similar to anyone who has used something like Flask. There are two
+primary decorators you will need to get started: ``route``, which declares a function as a route endpoint,
+and ``authenticated``, which ensures that the route function cannot be called without proper HTTP basic
+authentication. Both of these can be imported from ``helga.plugins.webhooks``. For example:
+
+```python
+from helga.plugins.webhooks import authenticated, route
+
+@authenticated
+@route(r'/foo/(?P<id>[0-9]+)')
+def foo(request, irc_client, id):
+    # This will require auth
+    pass
+
+@route('/bar', methods=['POST'])
+def bar(request, irc_client):
+    # This will not require auth, and will only accept POST
+    pass
+```
+
+The route decorator accepts two arguments: 1) a path regular expression and 2) an optional list of
+HTTP methods to accept. If you do not specify a list of HTTP methods, only GET requests will be served.
+All regex paths must be named groups and they will be passed as keyword arguments.
+
+To register a new webhook plugin, you must declare an entry_point much in the same way normal plugins
+are done. However, the entry_point group name is ``helga_webhooks``. For example:
+
+    entry_points = {
+        'helga_webhooks': [
+            'name = mylib.mymodule:myhook',
+        ],
+    },
+
+The webhook plugin itself has some commands for IRC interaction: start/stop to control the running HTTP
+listener, and routes, which will show all the route paths and the HTTP methods they accept.
+
+
 ### Third Party Plugins
 
 Here are some plugins that have been written that you can use:
