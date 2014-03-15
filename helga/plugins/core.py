@@ -94,6 +94,9 @@ class Registry(object):
     def all_plugins(self):
         return set(self.plugins.keys())
 
+    def get_plugin(self, name):
+        return self.plugins[name]
+
     def disable(self, channel, *plugins):
         self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(set(plugins))
 
