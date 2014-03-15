@@ -84,6 +84,10 @@ JIRA_AUTH = ('', '')
 REVIEWBOARD_URL = 'http://localhost/{review}'
 WIKI_URL = 'http://localhost/{user}'
 
+# WEBHOOKS SETTINGS
+WEBHOOKS_PORT = 8080
+WEBHOOKS_CREDENTIALS = []  # Tuples of (user, pass)
+
 ANNOUNCEMENT_PORT = 8080
 ANNOUNCEMENT_ACCESS_KEY = 'MySuperSecretKey'
 
