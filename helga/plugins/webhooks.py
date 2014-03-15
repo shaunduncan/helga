@@ -151,10 +151,19 @@ class WebhooksRoot(resource.Resource):
         return fn(request, self.irc_client, **match.groupdict())
 
 
-def basic_auth(fn):
+def authenticated(fn):
     """
     A wrapper for a webhook route that ensures value HTTP basic auth
-    credentials are supplied
+    credentials are supplied. Example::
+
+        @authenticated
+        @route('/foo/bar')
+        def my_endpoint(request, irc_client):
+            pass
+
+    Any valid credentials in the setting WEBHOOKS_CREDENTIALS, which should
+    be a list of tuples (username, password) will be allowed. If no valid
+    credentials are supplied, an HTTP 401 is returned
     """
     @functools.wraps(fn)
     def ensure_authenticated(request, *args, **kwargs):
