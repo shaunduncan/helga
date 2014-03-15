@@ -42,7 +42,10 @@ def show_fact(term):
 
     # Otherwise, do normal formatting
     tz = getattr(settings, 'TIMEZONE', 'US/Eastern')
-    timestamp = datetime.fromtimestamp(record['set_date'], tz=pytz.timezone(tz))
+    try:
+        timestamp = datetime.fromtimestamp(record['set_date'], tz=pytz.timezone(tz))
+    except TypeError:
+        timestamp = record['set_date'].replace(tzinfo=pytz.timezone(tz))
     record['fmt_dt'] = datetime.strftime(timestamp, '%m/%d/%Y %I:%M%p')
 
     return '{fact} ({set_by} on {fmt_dt})'.format(**record)
