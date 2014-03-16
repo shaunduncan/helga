@@ -246,8 +246,8 @@ authentication. Both of these can be imported from ``helga.plugins.webhooks``. F
 ```python
 from helga.plugins.webhooks import authenticated, route
 
-@authenticated
 @route(r'/foo/(?P<id>[0-9]+)')
+@authenticated
 def foo(request, irc_client, id):
     # This will require auth
     pass
@@ -257,6 +257,9 @@ def bar(request, irc_client):
     # This will not require auth, and will only accept POST
     pass
 ```
+
+NOTE: For authenticated routes, you MUST specify ``@authenticated`` as the first decorator. This may be
+changed in the future.
 
 The route decorator accepts two arguments: 1) a path regular expression and 2) an optional list of
 HTTP methods to accept. If you do not specify a list of HTTP methods, only GET requests will be served.
