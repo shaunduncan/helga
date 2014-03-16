@@ -1,8 +1,8 @@
 from helga.plugins.webhooks import authenticated, route
 
 
-@authenticated
 @route('/announce/(?P<channel>[\w]+)', methods=['POST'])
+@authenticated
 def announce(request, irc_client, channel):
     """
     An endpoint for announcing a message on a channel. POST only, must
