@@ -1,7 +1,11 @@
+from helga import log
 from helga.plugins.webhooks import authenticated, route
 
 
-@route('/announce/(?P<channel>[\w]+)', methods=['POST'])
+logger = log.getLogger(__name__)
+
+
+@route('/announce/(?P<channel>[\w\-_]+)', methods=['POST'])
 @authenticated
 def announce(request, irc_client, channel):
     """
@@ -16,6 +20,7 @@ def announce(request, irc_client, channel):
         request.setResponseCode(400)
         return 'Param message is required'
 
+    logger.info('Sending message to {}: "{}"'.format(channel, message))
     irc_client.msg(channel, message)
 
     # Return accepted
