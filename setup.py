@@ -1,22 +1,20 @@
-import os.path
 from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
+import subprocess
+
+from pip.req import parse_requirements
 
 version = '1.2'
 
 
-requirements = []
-with open(
-    os.path.join(
-        os.path.dirname(__file__),
-        'requirements.txt',
-    ),
-    'r'
-) as in_:
-    for line in in_.readlines():
-        if not line.strip() or line.startswith('#') or line.startswith('-e'):
-            # Unfortunately, -e requirements can't be listed
-            continue
-        requirements.append(line.strip())
+class PyTest(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        return subprocess.call('tox')
 
 
 setup(name="helga",
@@ -38,15 +36,17 @@ setup(name="helga",
       url='https://github.com/shaunduncan/helga',
       license='MIT',
       packages=find_packages(),
-      install_requires=requirements,
+      install_requires=[
+          str(req.req) for req in parse_requirements('requirements.txt')
+      ],
       tests_require=[
           'freezegun',
           'mock',
           'pretend',
           'tox',
-          'nose'
+          'pytest',
       ],
-      test_suite='nose.collector',  # I'm not sure how to wire-up tox here :-/
+      cmdclass = {'test': PyTest},
       entry_points = dict(
           helga_plugins=[
               'announcements = helga.plugins.announcements:AnnouncementPlugin',
