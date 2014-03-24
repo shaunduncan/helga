@@ -1,24 +1,52 @@
 from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
+import subprocess
+
+from pip.req import parse_requirements
 
 version = '1.3'
+
+
+class PyTest(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        return subprocess.call('tox')
+
 
 setup(name="helga",
       version=version,
       description=('IRC bot using twisted'),
-      classifiers=['Development Status :: 4 - Beta',
-                   'Environment :: IRC',
-                   'Intended Audience :: Twisted Developers, IRC Bot Developers',
-                   'License :: OSI Approved :: MIT License',
-                   'Operating System :: OS Independent',
-                   'Programming Language :: Python',
-                   'Topic :: Software Development :: Libraries :: Python Modules',
-                   'Topic :: IRC Bots'],
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Topic :: Communications :: Chat :: Internet Relay Chat'
+          'Framework :: Twisted',
+          'License :: OSI Approved :: MIT License',
+          'Operating System :: OS Independent',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Topic :: Software Development :: Libraries :: Python Modules',
+      ],
       keywords='irc bot',
       author='Shaun Duncan',
       author_email='shaun.duncan@gmail.com',
       url='https://github.com/shaunduncan/helga',
       license='MIT',
       packages=find_packages(),
+      install_requires=[
+          str(req.req) for req in parse_requirements('requirements.txt')
+      ],
+      tests_require=[
+          'freezegun',
+          'mock',
+          'pretend',
+          'tox',
+          'pytest',
+      ],
+      cmdclass = {'test': PyTest},
       entry_points = dict(
           helga_plugins=[
               'dubstep      = helga.plugins.dubstep:dubstep',
