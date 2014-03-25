@@ -19,7 +19,7 @@ class PyTest(TestCommand):
 
 setup(name="helga",
       version=version,
-      description=('IRC bot using twisted'),
+      description=('IRC bot using twisted that supports plugins'),
       classifiers=[
           'Development Status :: 4 - Beta',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
