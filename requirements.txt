@@ -1,15 +1,12 @@
+# System Requirements:
+# openssl
+# mongodb
+
 Twisted==13.1.0
 pymongo==2.5.2
 tweepy==2.1
 pytz==2013b
 pyOpenSSL==0.13
-requests==1.2.3
+requests==2.2.1
 BeautifulSoup==3.2.1
-
-# At some point these should go to PyPI
--e git://github.com/shaunduncan/smokesignal.git@e66cf26576#egg=smokesignal
--e git://github.com/shaunduncan/giphypop.git@4f548fd#egg=giphypop
-
-# System Requirements:
-# openssl
-# mongodb
+smokesignal==0.4
