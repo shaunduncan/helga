@@ -146,8 +146,8 @@ def make_poem(about=None, by=None, poem_type='haiku'):
         fixrep_kw['by'] = by
 
     poem = fix_repitition(poem, **fixrep_kw)
-    
-    if random.choice((0,1)) == 1:
+
+    if random.choice((0, 1)) == 1:
         # Reverse so that if only one 5-line matches an about/by,
         # haiku will sometimes end with that line.
         poem.reverse()
