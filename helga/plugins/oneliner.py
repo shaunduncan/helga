@@ -97,6 +97,7 @@ RESPONSES = {
                       imgur('KdldmZk'),  # Polar bear jumping out of water
                       imgur('49UtI5N'),  # The Fresh Prince of DEAL WITH IT
                       imgur('1pkNeOy'),  # Skyler
+                      imgur('KzEXQDq'),  # Tom & Jerry
                       u'(⌐■_■)',
 
                       # Multiline
