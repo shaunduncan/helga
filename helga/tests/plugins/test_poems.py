@@ -111,11 +111,21 @@ def test_use_sevens_tanka(make_poem, add):
 def test_make_poem(get_random_line):
     get_random_line.side_effect = ['one', 'two', 'three', 'four', 'five']
     poem = poems.make_poem()
-    assert poem == ['one', 'two', 'three']
+
+    # Poems have a random ordering
+    assert poem in (
+        ['one', 'two', 'three'],
+        ['three', 'two', 'one'],
+    )
 
 
 @patch('helga.plugins.poems.get_random_line')
 def test_make_poem_tanka(get_random_line):
     get_random_line.side_effect = ['one', 'two', 'three', 'four', 'five']
     poem = poems.make_poem(poem_type='tanka')
-    assert poem == ['one', 'two', 'three', 'four', 'five']
+
+    # Poems have a random ordering
+    assert poem in (
+        ['one', 'two', 'three', 'four', 'five'],
+        ['three', 'two', 'one', 'four', 'five'],
+    )
