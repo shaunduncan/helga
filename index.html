@@ -1,0 +1,417 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Helga by shaunduncan</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Helga</h1>
+        <p>One IRC bot to rule them all</p>
+
+        <p class="view"><a href="https://github.com/shaunduncan/helga">View the Project on GitHub <small>shaunduncan/helga</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/shaunduncan/helga/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/shaunduncan/helga/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/shaunduncan/helga">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="helga" class="anchor" href="#helga"><span class="octicon octicon-link"></span></a>helga</h1>
+
+<p><a href="https://travis-ci.org/shaunduncan/helga"><img src="https://travis-ci.org/shaunduncan/helga.png" alt="Build Status"></a></p>
+
+<h2>
+<a name="about" class="anchor" href="#about"><span class="octicon octicon-link"></span></a>About</h2>
+
+<p>An python-based IRC bot using Twisted. Original inspiration came from <a href="https://github.com/thepeopleseason/olga">thepeopleseason/olga</a>.
+Why re-implement another bot? Because olga is written in perl, and I wanted something a bit more sane to look at.</p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p>All requirements for helga are listed in <code>requirements.txt</code>. However, there is a single
+external requirement, and that is MongoDB. You don't need it, per se, but many of the included
+plugins use MongoDB for storing consistent state between restarts.</p>
+
+<h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<p>Start by creating a virtualenv where helga will reside:</p>
+
+<pre><code>$ virtualenv helga
+$ cd helga
+$ source bin/activate
+</code></pre>
+
+<p>Then grab the latest copy and install requirements:</p>
+
+<pre><code>$ git clone https://github.com/shaunduncan/helga src/helga
+$ cd src/helga
+$ python setup.py develop
+$ pip install -r requirements.txt
+</code></pre>
+
+<p>Once you have performed the above steps, there will be a <code>helga</code> executable
+placed in the <code>bin</code> dir of your virtualenv. Run helga by calling this:</p>
+
+<pre><code>$ /path/to/venv/bin/helga
+</code></pre>
+
+<p>Note that this uses the default settings file, <code>helga.settings</code> to start. You can, and should, use
+your own custom setttings. This file must a be an importable python file on $PYTHONPATH. To run helga
+with your custom settings file, set an environment variable <code>HELGA_SETTINGS</code> to be a python import path:</p>
+
+<pre><code>$ export HELGA_SETTINGS=path.to.mysettings
+</code></pre>
+
+<p>This will preserve any defaults in <code>helga.settings</code>, but you can override at will.</p>
+
+<h3>
+<a name="local-development" class="anchor" href="#local-development"><span class="octicon octicon-link"></span></a>Local Development</h3>
+
+<p>The included Vagrantfile will let you spin up a VM to run both MongoDB and an IRC server
+for local development. Once you've followed the previous instructions for installing helga,
+simply <code>vagrant up</code>. This will forward host ports 6667 (irc) and 27017 (mongo) to the guest.
+At this point, simply runing <code>helga</code> from the command line will connect to this VM.</p>
+
+<h2>
+<a name="plugins" class="anchor" href="#plugins"><span class="octicon octicon-link"></span></a>Plugins</h2>
+
+<h3>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h3>
+
+<p>Helga supports plugins outside of the core source code. Plugins have a minimal API, but there
+are some basic rules that should be followed. All core plugin implementations can be found
+in <code>helga.plugins.core</code>. The basic requirement for plugins is that they have a <code>process</code>
+attribute that is a callable and determines if the plugin should handle a message, and
+a <code>run</code> method that actually performs the legwork of what the plugin should do. By convention,
+the <code>process</code> method should accept four arguments:</p>
+
+<ul>
+<li>
+<strong>client</strong>: an instance of <code>helga.comm.Client</code>
+</li>
+<li>
+<strong>channel</strong>: the channel on which the message was received</li>
+<li>
+<strong>nick</strong>: the current nick of the message sender</li>
+<li>
+<strong>message</strong>: the message string itself</li>
+</ul><p>The <code>run</code> is a bit different as it is up to the plugin implementation itself to decide what
+arguments are necessary to generate a response. This method should be called by <code>process</code> and
+should return one of:</p>
+
+<ul>
+<li>None or empty string, if no response is to be sent over IRC</li>
+<li>Non-empty string for a single line response</li>
+<li>List of strings for multiline responses</li>
+</ul><p>Really, as long as you follow the above conventions, you can write plugins however you wish.
+However, you should try to keep plugins simple and use the included decorators <code>command</code>,
+<code>match</code>, and <code>preprocessor</code> (explained later). However, if you prefer writing a plugin
+as a class, you can subclass the included <code>Plugin</code> base class, provided you have followed
+the above rules. Here is a simple example:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">helga.plugins.core</span> <span class="kn">import</span> <span class="n">Plugin</span>
+
+<span class="k">class</span> <span class="nc">MyPlugin</span><span class="p">(</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">'Current timestamp: {0}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">'!time'</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+</pre></div>
+
+<p><strong>NOTE</strong> the previous example is not the preferred way. You should use the included
+decorators instead (shown below).</p>
+
+<h3>
+<a name="plugin-types" class="anchor" href="#plugin-types"><span class="octicon octicon-link"></span></a>Plugin Types</h3>
+
+<p>For the most part, there are two main types of plugins: commands and matches. Commands are plugins
+that require a user to specifically ask for helga to perform some action. For example,
+<code>helga haiku</code> or <code>helga google something to search</code>. Matches are on the other hand are
+intended to be autoresponders that give some extra meaning or context to what a user has said.
+For example, if helga matches for a string "foo":</p>
+
+<pre><code>&lt;sduncan&gt; i'm talking about foo in this message
+&lt;helga&gt; sduncan is talking about foo
+</code></pre>
+
+<p>For the sake of simplicity, there are two convenient decorators for authoring these types
+of plugins (which is usually the case). For example:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">helga.plugins</span> <span class="kn">import</span> <span class="n">command</span><span class="p">,</span> <span class="n">match</span>
+
+<span class="nd">@command</span><span class="p">(</span><span class="s">'foo'</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s">'foobar'</span><span class="p">],</span> <span class="n">help</span><span class="o">=</span><span class="s">"The foo command"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="c"># This is run on "helga foo" or "helga foobar"</span>
+    <span class="k">return</span> <span class="s">"Running the foo command"</span>
+
+<span class="nd">@match</span><span class="p">(</span><span class="s">r'bar'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">matches</span><span class="p">):</span>
+    <span class="c"># This will run whenever a user mentions the word 'bar'</span>
+    <span class="k">return</span> <span class="s">"{0} said bar!"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nick</span><span class="p">)</span>
+</pre></div>
+
+<p>You may notice in the above example that each decorated function accepts different arguments.
+For commands, there are two additional arguments <code>cmd</code> and <code>args</code>. The former is the parsed
+command that was used to run the method (which could be "foo" in the above case, or the alias
+"foobar"). The latter is a list of whitespace delimited strings that follow the parsed commend.
+For example <code>helga foo a b c</code> would mean the args param would be <code>['a', 'b', 'c']</code>.</p>
+
+<p>For the match plugin, the single additional argument is <code>matches</code> which is for the most part,
+the result of <code>re.findall</code>. However, the <code>@match</code> decorator accepts a callable in place of
+a regex string. This callable should accept one argument: the message being processed. It should
+return a value that can be evaluated for truthiness and will be passed to the decorated function
+as the <code>matches</code> parameter.</p>
+
+<h3>
+<a name="preprocessors" class="anchor" href="#preprocessors"><span class="octicon octicon-link"></span></a>Preprocessors</h3>
+
+<p>Plugins can also be message preprocessors. These are callables that may perform some modification
+on an incoming message prior to that message being delivered to any plugins. Preprocessors should
+accept arguments (in order) for <code>client</code>, <code>channel</code>, <code>nick</code>, and <code>message</code> and should
+return a three-tuple consisting of (in order) <code>channel</code>, <code>nick</code>, and <code>message</code>. To declare
+a function as a preprocessor, a convenient decorator can be used:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">helga.plugins</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="nd">@preprocessor</span>
+<span class="k">def</span> <span class="nf">blank_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="s">''</span>
+</pre></div>
+
+<h3>
+<a name="complex-plugins" class="anchor" href="#complex-plugins"><span class="octicon octicon-link"></span></a>Complex plugins</h3>
+
+<p>Some plugins do both matching and act as a command. For this reason, plugin decorators are chainable.
+However, remember that different plugin types expect decorated functions to accept different arguments.
+It is best to accept <code>*args</code> for these:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">helga.plugins</span> <span class="kn">import</span> <span class="n">command</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">preprocessor</span>
+
+<span class="nd">@preprocessor</span>
+<span class="nd">@match</span><span class="p">(</span><span class="s">r'bar'</span><span class="p">)</span>
+<span class="nd">@command</span><span class="p">(</span><span class="s">'foo'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">complex</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">nick</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="c"># len(args) == 0 for preprocessors</span>
+    <span class="c"># len(args) == 1 for matches</span>
+    <span class="c"># len(args) == 2 for commands</span>
+</pre></div>
+
+<h3>
+<a name="plugin-priorities" class="anchor" href="#plugin-priorities"><span class="octicon octicon-link"></span></a>Plugin Priorities</h3>
+
+<p>You can control the priority in which a plugin is run. Note though, that preprocessors will always
+run first. A priority value should be an integer value. There are no limits or bounds for this value,
+but know that a higher value will mean a higher priority. If you are writing <code>Plugin</code> subclass
+style plugins, you will need to set a <code>priority</code> attribute of your object. This is done automatically
+if you call <code>super(MyClass, self).__init__(priority=some_value)</code> in your class's <code>__init__</code>.</p>
+
+<p>However, if you are using the preferred decorator style for writing plugins, you can supply a <code>priority</code>
+keyword argument to the decorator:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">helga</span> <span class="kn">import</span> <span class="n">command</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">preprocessor</span>
+
+<span class="nd">@preprocessor</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">foo_preprocess</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="nd">@command</span><span class="p">(</span><span class="s">'foo'</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">foo_command</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="nd">@match</span><span class="p">(</span><span class="s">r'foo'</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">foo_match</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+<p>For convenience, there are constants that can be used for setting priorities:</p>
+
+<ul>
+<li>
+<strong>PRIORITY_LOW</strong> = 25</li>
+<li>
+<strong>PRIORITY_NORMAL</strong> = 50</li>
+<li>
+<strong>PRIORITY_HIGH</strong> = 75</li>
+</ul><p>Also, each decorator/plugin type has its own default value for priority:</p>
+
+<ul>
+<li>Preprocessors have default priority of <code>PRIORITY_NORMAL</code>
+</li>
+<li>Commands have default priority of <code>PRIORITY_NORMAL</code>
+</li>
+<li>Matches have default priority of <code>PRIORITY_LOW</code>
+</li>
+</ul><h3>
+<a name="publishing-plugins" class="anchor" href="#publishing-plugins"><span class="octicon octicon-link"></span></a>Publishing plugins</h3>
+
+<p>Helga uses setuptools entry points for plugin loading. Once you've written a plugin you wish to use,
+you will need to make sure your python package's setup.py contains an entry_point under the group
+name <code>helga_plugins</code>. For example:</p>
+
+<pre><code>entry_points = {
+    'helga_plugins': [
+        'plugin_name = mylib.mymodule:MyPluginClass',
+    ],
+},
+</code></pre>
+
+<p>Note that if you are using decorated function for a plugin, you will want to specify the method name
+for your entry point, i.e. <code>mylib.mymodule:myfn</code>.</p>
+
+<h3>
+<a name="webhooks" class="anchor" href="#webhooks"><span class="octicon octicon-link"></span></a>Webhooks</h3>
+
+<p>As of helga version 1.3, there is an included plugin for exposing an HTTP server to support webhooks.
+This might be useful if you need to have a public facing HTTP service that you would like to use to
+perform some sort of announcement on a particular channel. This is also very extensible and should allow
+you to create new webhooks in a very similar way plugins are created. This plugin is enabled by default
+and requires two settings: <code>WEBHOOKS_PORT</code> and <code>WEBHOOKS_CREDENTIALS</code>. The former is of course the
+port on which to run this service. The latter should be a list of tuples in the form of (username, password).
+These are used to perform HTTP basic authentication on any webhook that requires it.</p>
+
+<p>Webhook plugins work by declaring routes. This will not only feel similar to helga's decorator style
+plugins, but it will also feel very similar to anyone who has used something like Flask. There are two
+primary decorators you will need to get started: <code>route</code>, which declares a function as a route endpoint,
+and <code>authenticated</code>, which ensures that the route function cannot be called without proper HTTP basic
+authentication. Both of these can be imported from <code>helga.plugins.webhooks</code>. For example:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">helga.plugins.webhooks</span> <span class="kn">import</span> <span class="n">authenticated</span><span class="p">,</span> <span class="n">route</span>
+
+<span class="nd">@route</span><span class="p">(</span><span class="s">r'/foo/(?P&lt;id&gt;[0-9]+)'</span><span class="p">)</span>
+<span class="nd">@authenticated</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">irc_client</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+    <span class="c"># This will require auth</span>
+    <span class="k">pass</span>
+
+<span class="nd">@route</span><span class="p">(</span><span class="s">'/bar'</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'POST'</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">irc_client</span><span class="p">):</span>
+    <span class="c"># This will not require auth, and will only accept POST</span>
+    <span class="k">pass</span>
+</pre></div>
+
+<p>NOTE: For authenticated routes, you MUST specify <code>@authenticated</code> as the first decorator. This may be
+changed in the future.</p>
+
+<p>The route decorator accepts two arguments: 1) a path regular expression and 2) an optional list of
+HTTP methods to accept. If you do not specify a list of HTTP methods, only GET requests will be served.
+All regex paths must be named groups and they will be passed as keyword arguments.</p>
+
+<p>To register a new webhook plugin, you must declare an entry_point much in the same way normal plugins
+are done. However, the entry_point group name is <code>helga_webhooks</code>. For example:</p>
+
+<pre><code>entry_points = {
+    'helga_webhooks': [
+        'name = mylib.mymodule:myhook',
+    ],
+},
+</code></pre>
+
+<p>The webhook plugin itself has some commands for IRC interaction: start/stop to control the running HTTP
+listener, and routes, which will show all the route paths and the HTTP methods they accept.</p>
+
+<h3>
+<a name="third-party-plugins" class="anchor" href="#third-party-plugins"><span class="octicon octicon-link"></span></a>Third Party Plugins</h3>
+
+<p>Here are some plugins that have been written that you can use:</p>
+
+<table>
+<thead><tr>
+<th>Plugin</th>
+<th>Description</th>
+<th>Link</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>karma</td>
+<td>Dish out karma points to other people</td>
+<td><a href="https://github.com/coddingtonbear/helga-karma">https://github.com/coddingtonbear/helga-karma</a></td>
+</tr>
+<tr>
+<td>excuses</td>
+<td>Generate a response from <a href="http://developerexcuses.com">http://developerexcuses.com</a>
+</td>
+<td><a href="https://github.com/alfredodeza/helga-excuses">https://github.com/alfredodeza/helga-excuses</a></td>
+</tr>
+<tr>
+<td>norris</td>
+<td>Generate Chuck Norris facts for users</td>
+<td><a href="https://github.com/alfredodeza/helga-norris">https://github.com/alfredodeza/helga-norris</a></td>
+</tr>
+</tbody>
+</table><p>Written a plugin? Send a pull request to be listed in the above table!</p>
+
+<h2>
+<a name="tests" class="anchor" href="#tests"><span class="octicon octicon-link"></span></a>Tests</h2>
+
+<p>All tests are written to be run via <code>tox</code>. To run the test suite, inside your virtualenv:</p>
+
+<pre><code>$ cd src/helga
+$ tox
+</code></pre>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>Contributions are welcomed, as well as any bug reports! Please note that any pull request will be denied
+if tests run via tox do not pass</p>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright (c) 2013 Shaun Duncan</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/shaunduncan">shaunduncan</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-49520582-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
