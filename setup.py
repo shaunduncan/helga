@@ -4,7 +4,7 @@ import subprocess
 
 from pip.req import parse_requirements
 
-version = '1.3'
+version = '1.4.0'
 
 
 class PyTest(TestCommand):
@@ -24,6 +24,7 @@ setup(name="helga",
           'Development Status :: 4 - Beta',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
           'Framework :: Twisted',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
           'License :: OSI Approved :: MIT License',
           'Operating System :: OS Independent',
           'Programming Language :: Python',
