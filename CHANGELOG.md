@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.0
+
+- Merged pull requests #59 and #62
+- Changed license from MIT to dual MIT/GPLv3
+- Switched to semantic versioning
+
 ## 1.3
 
 - Refactored simple announcement service into an extensible webhook plugin system
