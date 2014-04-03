@@ -371,6 +371,10 @@ class Command(Plugin):
         """
         choices = [self.command] + list(self.aliases)
 
+        # Sort choices from longest to shortest. This will ease a quirk where
+        # short alias versions will trump the more verbose ones
+        choices = sorted(choices, key=len, reverse=True)
+
         # Handle multiple ways to parse this command
         if getattr(settings, 'COMMAND_PREFIX_BOTNICK', True):
             nick_prefix = '{0}\W*\s'.format(botnick)

@@ -117,6 +117,13 @@ class CommandTestCase(TestCase):
     def test_parse_returns_args(self):
         assert ['1', '2', '3'] == self.cmd.parse('helga', 'helga foo 1 2 3')[1]
 
+    def test_parse_handles_longest_command_first(self):
+        with patch.object(self.cmd, 'aliases', ['b', 'bar']):
+            for check in ('b', 'bar'):
+                cmd, args = self.cmd.parse('helga', 'helga %s baz' % check)
+                assert cmd == check
+                assert args == ['baz']
+
     def test_process_for_different_command_returns_none(self):
         assert self.cmd.process(self.client, '#bots', 'me', 'helga qux') is None
 
