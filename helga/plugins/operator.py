@@ -57,7 +57,8 @@ def reload_plugin(plugin):
 
 @command('operator', aliases=['oper', 'op'],
          help="Admin like control over helga. Must be an operator to use. "
-              "Usage: helga (operator|oper|op) ((join|leave|autojoin (add|remove)) <channel>)")
+              "Usage: helga (operator|oper|op) (reload <plugin>|"
+              "(join|leave|autojoin (add|remove)) <channel>)")
 def operator(client, channel, nick, message, cmd, args):
     """
     Admin like control over helga. Can join/leave or add/remove autojoin channels. User asking
