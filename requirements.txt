@@ -8,6 +8,5 @@ tweepy==2.1
 pytz==2013b
 pyOpenSSL==0.13
 requests==2.2.1
-BeautifulSoup==3.2.1
 smokesignal==0.4
 giphypop==0.2

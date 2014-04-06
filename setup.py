@@ -4,7 +4,7 @@ import subprocess
 
 from pip.req import parse_requirements
 
-version = '1.4.2'
+version = '1.5.0'
 
 
 class PyTest(TestCommand):
@@ -37,7 +37,7 @@ setup(name="helga",
       author='Shaun Duncan',
       author_email='shaun.duncan@gmail.com',
       url='https://github.com/shaunduncan/helga',
-      license='MIT',
+      license='Dual MIT/GPLv3',
       packages=find_packages(),
       install_requires=[
           str(req.req) for req in parse_requirements('requirements.txt')

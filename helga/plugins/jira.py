@@ -4,7 +4,6 @@ import re
 import requests
 import smokesignal
 
-from BeautifulSoup import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 from twisted.internet import reactor
 
@@ -103,24 +102,10 @@ def jira_command(client, channel, nick, message, cmd, args):
     return None
 
 
-def _soup_desc(ticket, url, auth=None):
-    resp = requests.get(url, auth=auth)
-
-    try:
-        resp.raise_for_status()
-    except:
-        logger.error("Error getting JIRA ticket {0}. Status {1}".format(url, resp.status_code))
-        return
-
-    try:
-        soup = BeautifulSoup(resp.content)
-        title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
-        return '[{0}] {1} ({2})'.format(ticket.upper(), title, url)
-    except:
-        return '[{0}] {1}'.format(ticket.upper(), url)
-
-
-def _rest_desc(ticket, url, auth=None):
+def _ticket_description(ticket, url, auth=None):
+    """
+    Get a ticket's description using the API
+    """
     resp = requests.get(settings.JIRA_REST_API.format(ticket=ticket), auth=auth)
 
     try:
@@ -140,7 +125,6 @@ def jira_full_descriptions(client, channel, urls):
     Meant to be run asynchronously because it uses the network
     """
     descriptions = []
-    fn = _soup_desc if getattr(settings, 'JIRA_REST_API', '') == '' else _rest_desc
 
     user_pass = getattr(settings, 'JIRA_AUTH', ('', ''))
     if all(user_pass):
@@ -149,7 +133,7 @@ def jira_full_descriptions(client, channel, urls):
         auth = None
 
     for ticket, url in urls.iteritems():
-        desc = fn(ticket, url, auth)
+        desc = _ticket_description(ticket, url, auth)
         if desc is not None:
             descriptions.append(desc)
 
