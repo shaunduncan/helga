@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.4.2
+
+- Fix a quirk in command alias ordering where shorter commands would override
+  the longer variants (i.e. 't' vs 'thanks')
+
+## 1.4.1
+
+- Minor adjustment to operator plugin docstring
+
 ## 1.4.0
 
 - Merged pull requests #59 and #62
