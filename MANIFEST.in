@@ -1,6 +1,7 @@
 include requirements.txt
 include tox.ini
 include *.md
+include *.rst
 include .travis.yml
 include LICENSE
 include LICENSE-MIT

@@ -1,30 +1,49 @@
-# helga
+helga
+=====
 
-[![Build Status](https://travis-ci.org/shaunduncan/helga.png)](https://travis-ci.org/shaunduncan/helga)
+.. image:: https://travis-ci.org/shaunduncan/helga.png
+    :target: https://travis-ci.org/shaunduncan/helga
 
+.. image:: https://badge.fury.io/py/helga.png
+    :target: http://badge.fury.io/py/helga
 
-## About
-
-An python-based IRC bot using Twisted. Original inspiration came from [thepeopleseason/olga](https://github.com/thepeopleseason/olga).
-Why re-implement another bot? Because olga is written in perl, and I wanted something a bit more sane to look at.
-
-
-## Requirements
-
-All requirements for helga are listed in ``requirements.txt``. However, there is a single
-external requirement, and that is MongoDB. You don't need it, per se, but many of the included
-plugins use MongoDB for storing consistent state between restarts.
+.. image:: https://pypip.in/d/helga/badge.png
+    :target: https://pypi.python.org/pypi/helga
 
 
-## Getting Started
+About
+-----
+
+A python-based IRC bot using Twisted. Original inspiration came
+from `olga`_. Why re-implement another bot? Because olga is written
+in perl, and I wanted something a bit more sane to look at.
+
+.. _`olga`: https://github.com/thepeopleseason/olga
+
+
+Requirements
+------------
+
+All requirements for helga are listed in ``requirements.txt``.
+However, there is a single external requirement, and that is MongoDB.
+You don't need it, per se, but many of the included plugins use MongoDB
+for storing consistent state between restarts.
+
+
+Getting Started
+---------------
 
 Start by creating a virtualenv where helga will reside:
+
+.. code-block:: bash
 
     $ virtualenv helga
     $ cd helga
     $ source bin/activate
 
 Then grab the latest copy and install requirements:
+
+.. code-block:: bash
 
     $ git clone https://github.com/shaunduncan/helga src/helga
     $ cd src/helga
@@ -34,17 +53,23 @@ Then grab the latest copy and install requirements:
 Once you have performed the above steps, there will be a ``helga`` executable
 placed in the ``bin`` dir of your virtualenv. Run helga by calling this:
 
+.. code-block:: bash
+
     $ /path/to/venv/bin/helga
 
-Note that this uses the default settings file, ``helga.settings`` to start. You can, and should, use
-your own custom setttings. This file must a be an importable python file on $PYTHONPATH. To run helga
-with your custom settings file, set an environment variable ``HELGA_SETTINGS`` to be a python import path:
+Note that this uses the default settings file, ``helga.settings`` to start.
+You can, and should, use your own custom setttings. This file must a be an
+importable python file on $PYTHONPATH. To run helga with your custom settings
+file, set an environment variable ``HELGA_SETTINGS`` to be a python import path:
+
+.. code-block:: bash
 
     $ export HELGA_SETTINGS=path.to.mysettings
 
 This will preserve any defaults in ``helga.settings``, but you can override at will.
 
-### Local Development
+Local Development
++++++++++++++++++
 
 The included Vagrantfile will let you spin up a VM to run both MongoDB and an IRC server
 for local development. Once you've followed the previous instructions for installing helga,
@@ -52,9 +77,11 @@ simply ``vagrant up``. This will forward host ports 6667 (irc) and 27017 (mongo)
 At this point, simply runing ``helga`` from the command line will connect to this VM.
 
 
-## Plugins
+Plugins
+-------
 
-### Overview
+Overview
+++++++++
 
 Helga supports plugins outside of the core source code. Plugins have a minimal API, but there
 are some basic rules that should be followed. All core plugin implementations can be found
@@ -82,23 +109,24 @@ However, you should try to keep plugins simple and use the included decorators `
 as a class, you can subclass the included ``Plugin`` base class, provided you have followed
 the above rules. Here is a simple example:
 
-```python
-import time
-from helga.plugins.core import Plugin
+.. code-block:: python
 
-class MyPlugin(Plugin):
-    def run(self, channel, nick, message):
-        return 'Current timestamp: {0}'.format(time.time())
+    import time
+    from helga.plugins.core import Plugin
 
-    def process(self, channel, nick, message):
-        if message.startswith('!time'):
-            return self.run(channel, nick, message)
-```
+    class MyPlugin(Plugin):
+        def run(self, channel, nick, message):
+            return 'Current timestamp: {0}'.format(time.time())
+
+        def process(self, channel, nick, message):
+            if message.startswith('!time'):
+                return self.run(channel, nick, message)
 
 **NOTE** the previous example is not the preferred way. You should use the included
 decorators instead (shown below).
 
-### Plugin Types
+Plugin Types
+++++++++++++
 
 For the most part, there are two main types of plugins: commands and matches. Commands are plugins
 that require a user to specifically ask for helga to perform some action. For example,
@@ -112,19 +140,19 @@ For example, if helga matches for a string "foo":
 For the sake of simplicity, there are two convenient decorators for authoring these types
 of plugins (which is usually the case). For example:
 
-```python
-from helga.plugins import command, match
+.. code-block:: python
 
-@command('foo', aliases=['foobar'], help="The foo command")
-def foo(client, channel, nick, message, cmd, args):
-    # This is run on "helga foo" or "helga foobar"
-    return "Running the foo command"
+    from helga.plugins import command, match
 
-@match(r'bar')
-def bar(client, channel, nick, message, matches):
-    # This will run whenever a user mentions the word 'bar'
-    return "{0} said bar!".format(nick)
-```
+    @command('foo', aliases=['foobar'], help="The foo command")
+    def foo(client, channel, nick, message, cmd, args):
+        # This is run on "helga foo" or "helga foobar"
+        return "Running the foo command"
+
+    @match(r'bar')
+    def bar(client, channel, nick, message, matches):
+        # This will run whenever a user mentions the word 'bar'
+        return "{0} said bar!".format(nick)
 
 You may notice in the above example that each decorated function accepts different arguments.
 For commands, there are two additional arguments ``cmd`` and ``args``. The former is the parsed
@@ -138,7 +166,8 @@ a regex string. This callable should accept one argument: the message being proc
 return a value that can be evaluated for truthiness and will be passed to the decorated function
 as the ``matches`` parameter.
 
-### Preprocessors
+Preprocessors
++++++++++++++
 
 Plugins can also be message preprocessors. These are callables that may perform some modification
 on an incoming message prior to that message being delivered to any plugins. Preprocessors should
@@ -146,33 +175,35 @@ accept arguments (in order) for ``client``, ``channel``, ``nick``, and ``message
 return a three-tuple consisting of (in order) ``channel``, ``nick``, and ``message``. To declare
 a function as a preprocessor, a convenient decorator can be used:
 
-```python
-from helga.plugins import preprocessor
+.. code-block:: python
 
-@preprocessor
-def blank_message(client, channel, nick, message):
-    return channel, nick, ''
-```
+    from helga.plugins import preprocessor
 
-### Complex plugins
+    @preprocessor
+    def blank_message(client, channel, nick, message):
+        return channel, nick, ''
+
+Complex plugins
++++++++++++++++
 
 Some plugins do both matching and act as a command. For this reason, plugin decorators are chainable.
 However, remember that different plugin types expect decorated functions to accept different arguments.
 It is best to accept ``*args`` for these:
 
-```python
-from helga.plugins import command, match, preprocessor
+.. code-block:: python
 
-@preprocessor
-@match(r'bar')
-@command('foo')
-def complex(client, channel, nick, message, *args):
-    # len(args) == 0 for preprocessors
-    # len(args) == 1 for matches
-    # len(args) == 2 for commands
-```
+    from helga.plugins import command, match, preprocessor
 
-### Plugin Priorities
+    @preprocessor
+    @match(r'bar')
+    @command('foo')
+    def complex(client, channel, nick, message, *args):
+        # len(args) == 0 for preprocessors
+        # len(args) == 1 for matches
+        # len(args) == 2 for commands
+
+Plugin Priorities
++++++++++++++++++
 
 You can control the priority in which a plugin is run. Note though, that preprocessors will always
 run first. A priority value should be an integer value. There are no limits or bounds for this value,
@@ -183,21 +214,21 @@ if you call ``super(MyClass, self).__init__(priority=some_value)`` in your class
 However, if you are using the preferred decorator style for writing plugins, you can supply a ``priority``
 keyword argument to the decorator:
 
-```python
-from helga import command, match, preprocessor
+.. code-block:: python
 
-@preprocessor(priority=10)
-def foo_preprocess(*args):
-    pass
+    from helga import command, match, preprocessor
 
-@command('foo', priority=20)
-def foo_command(*args):
-    pass
+    @preprocessor(priority=10)
+    def foo_preprocess(*args):
+        pass
 
-@match(r'foo', priority=30)
-def foo_match(*args):
-    pass
-```
+    @command('foo', priority=20)
+    def foo_command(*args):
+        pass
+
+    @match(r'foo', priority=30)
+    def foo_match(*args):
+        pass
 
 For convenience, there are constants that can be used for setting priorities:
 
@@ -211,11 +242,14 @@ Also, each decorator/plugin type has its own default value for priority:
 - Commands have default priority of ``PRIORITY_NORMAL``
 - Matches have default priority of ``PRIORITY_LOW``
 
-### Publishing plugins
+Publishing plugins
+++++++++++++++++++
 
 Helga uses setuptools entry points for plugin loading. Once you've written a plugin you wish to use,
 you will need to make sure your python package's setup.py contains an entry_point under the group
 name ``helga_plugins``. For example:
+
+.. code-block:: python
 
     entry_points = {
         'helga_plugins': [
@@ -227,7 +261,8 @@ Note that if you are using decorated function for a plugin, you will want to spe
 for your entry point, i.e. ``mylib.mymodule:myfn``.
 
 
-### Webhooks
+Webhooks
+++++++++
 
 As of helga version 1.3, there is an included plugin for exposing an HTTP server to support webhooks.
 This might be useful if you need to have a public facing HTTP service that you would like to use to
@@ -243,20 +278,20 @@ primary decorators you will need to get started: ``route``, which declares a fun
 and ``authenticated``, which ensures that the route function cannot be called without proper HTTP basic
 authentication. Both of these can be imported from ``helga.plugins.webhooks``. For example:
 
-```python
-from helga.plugins.webhooks import authenticated, route
+.. code-block:: python
 
-@route(r'/foo/(?P<id>[0-9]+)')
-@authenticated
-def foo(request, irc_client, id):
-    # This will require auth
-    pass
+    from helga.plugins.webhooks import authenticated, route
 
-@route('/bar', methods=['POST'])
-def bar(request, irc_client):
-    # This will not require auth, and will only accept POST
-    pass
-```
+    @route(r'/foo/(?P<id>[0-9]+)')
+    @authenticated
+    def foo(request, irc_client, id):
+        # This will require auth
+        pass
+
+    @route('/bar', methods=['POST'])
+    def bar(request, irc_client):
+        # This will not require auth, and will only accept POST
+        pass
 
 NOTE: For authenticated routes, you MUST specify ``@authenticated`` as the first decorator. This may be
 changed in the future.
@@ -268,6 +303,8 @@ All regex paths must be named groups and they will be passed as keyword argument
 To register a new webhook plugin, you must declare an entry_point much in the same way normal plugins
 are done. However, the entry_point group name is ``helga_webhooks``. For example:
 
+.. code-block:: python
+
     entry_points = {
         'helga_webhooks': [
             'name = mylib.mymodule:myhook',
@@ -278,37 +315,52 @@ The webhook plugin itself has some commands for IRC interaction: start/stop to c
 listener, and routes, which will show all the route paths and the HTTP methods they accept.
 
 
-### Third Party Plugins
+Third Party Plugins
++++++++++++++++++++
 
 Here are some plugins that have been written that you can use:
 
++---------+------------------------------------------------------+-------------------------------------------------+
 | Plugin  | Description                                          | Link                                            |
-| ------- | ---------------------------------------------------- | ----------------------------------------------- |
++=========+======================================================+=================================================+
 | excuses | Generate a response from http://developerexcuses.com | https://github.com/alfredodeza/helga-excuses    |
++---------+------------------------------------------------------+-------------------------------------------------+
 | isup    | Check downforeveryoneorjustme.com                    | https://github.com/shaunduncan/helga-isup       |
++---------+------------------------------------------------------+-------------------------------------------------+
 | karma   | Dish out karma points to other people                | https://github.com/coddingtonbear/helga-karma   |
++---------+------------------------------------------------------+-------------------------------------------------+
 | norris  | Generate Chuck Norris facts for users                | https://github.com/alfredodeza/helga-norris     |
++---------+------------------------------------------------------+-------------------------------------------------+
 | updates | List and record IRC channel updates.                 | https://github.com/cobbdb/helga-contrib-updates |
++---------+------------------------------------------------------+-------------------------------------------------+
 | zen     | The Zen of Python                                    | https://github.com/shaunduncan/helga-zen        |
++---------+------------------------------------------------------+-------------------------------------------------+
 
 Written a plugin? Send a pull request to be listed in the above table!
 
 
-## Tests
+Tests
+-----
 
 All tests are written to be run via ``tox``. To run the test suite, inside your virtualenv:
+
+.. code-block:: bash
 
     $ cd src/helga
     $ tox
 
-## Contributing
+Contributing
+------------
 
 Contributions are welcomed, as well as any bug reports! Please note that any pull request will be denied
 if tests run via tox do not pass
 
-## License
+License
+-------
 
 Copyright (c) 2013 Shaun Duncan
 
-Dual licensed under the [MIT](https://github.com/shaunduncan/helga/blob/master/LICENSE-MIT)
-and [GPL](https://github.com/shaunduncan/helga/blob/master/LICENSE-GPL) licenses.
+Dual licensed under the `MIT`_ and `GPL`_ licenses.
+
+.. _`GPL`: https://github.com/shaunduncan/helga/blob/master/LICENSE-GPL
+.. _`MIT`: https://github.com/shaunduncan/helga/blob/master/LICENSE-MIT
