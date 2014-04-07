@@ -285,6 +285,7 @@ Here are some plugins that have been written that you can use:
 | Plugin  | Description                                          | Link                                            |
 | ------- | ---------------------------------------------------- | ----------------------------------------------- |
 | excuses | Generate a response from http://developerexcuses.com | https://github.com/alfredodeza/helga-excuses    |
+| isup    | Check downforeveryoneorjustme.com                    | https://github.com/shaunduncan/helga-isup       |
 | karma   | Dish out karma points to other people                | https://github.com/coddingtonbear/helga-karma   |
 | norris  | Generate Chuck Norris facts for users                | https://github.com/alfredodeza/helga-norris     |
 | updates | List and record IRC channel updates.                 | https://github.com/cobbdb/helga-contrib-updates |
