@@ -111,12 +111,6 @@ class Client(irc.IRCClient):
         # respond to the user that is talking to us
         channel = channel if self.is_public_channel(channel) else user
 
-        # Some things should go first
-        try:
-            channel, user, message = registry.preprocess(self, channel, user, message)
-        except (TypeError, ValueError):
-            pass
-
         # if not message.has_response:
         responses = registry.process(self, channel, user, message)
 

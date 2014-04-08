@@ -76,6 +76,19 @@ class PluginTestCase(TestCase):
         assert expected == foo(*args)
         assert expected == foo._plugins[0].preprocess(*args)
 
+    def test_postprocessor_decorator(self):
+        @plugins.postprocessor
+        def foo(client, channel, nick, message):
+            return 'foo', 'bar', 'baz'
+
+        expected = ('foo', 'bar', 'baz')
+        args = (self.client, '#bots', 'me', 'foobar')
+
+        assert hasattr(foo, '_plugins')
+        assert len(foo._plugins) == 1
+        assert expected == foo(*args)
+        assert expected == foo._plugins[0].postprocess(*args)
+
 
 class CommandTestCase(TestCase):
 

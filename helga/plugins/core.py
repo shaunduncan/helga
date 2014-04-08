@@ -161,6 +161,9 @@ class Registry(object):
         return sorted(plugins, key=lambda p: getattr(p, 'priority', PRIORITY_NORMAL), reverse=high_to_low)
 
     def preprocess(self, client, channel, nick, message):
+        """
+        Execute preprocess for all prioritized, enabled plugins on a channel
+        """
         for plugin in self.prioritized(channel):
             try:
                 channel, nick, message = plugin.preprocess(client, channel, nick, message)
@@ -170,16 +173,39 @@ class Registry(object):
 
         return channel, nick, message
 
+    def postprocess(self, client, channel, nick, message, responses):
+        """
+        Execute postprocess for all prioritized, enabled plugins on a channel
+        """
+        for plugin in self.prioritized(channel):
+            try:
+                responses = plugin.postprocess(client, channel, nick, message, responses)
+            except:
+                logger.exception("Calling postprocess on plugin {0} failed".format(plugin))
+                continue
+
+        return responses
+
     def process(self, client, channel, nick, message):
+        """
+        Process a message for all prioritized, enabled plugins on a channel. This will
+        perform all preprocess and postprocess work
+        """
         responses = []
         first_responder = getattr(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', False)
+
+        # Execute preprocessors
+        try:
+            channel, user, message = self.preprocess(client, channel, nick, message)
+        except (TypeError, ValueError):
+            pass
 
         for plugin in self.prioritized(channel):
             try:
                 resp = plugin.process(client, channel, nick, message)
             except ResponseNotReady:
                 if first_responder:
-                    return filter(bool, responses)
+                    break
             except:
                 logger.exception("Calling process on plugin {0} failed".format(plugin))
                 resp = None
@@ -195,9 +221,12 @@ class Registry(object):
                 responses.append(resp.strip())
 
             if responses and first_responder:
-                return filter(bool, responses)
+                break
 
-        return filter(bool, responses)
+        responses = filter(bool, responses)
+
+        # Return postprocessing
+        return self.postprocess(client, channel, nick, message, responses)
 
 
 registry = Registry()
@@ -263,6 +292,20 @@ class Plugin(object):
         """
         return channel, nick, message
 
+    def postprocess(self, client, channel, nick, message, responses):
+        """
+        A postprocessing filter for plugins. This allows a plugin to modify any
+        responses after the plugin's ``process`` method has generated them.
+        Implementations of this method must return None, string, or list of strings.
+
+        :param client: an instance of :class:`helga.comm.Client`
+        :param channel: the channel on which the message was received
+        :param nick: the current nick of the message sender
+        :param message: the original message string
+        :param responses: a list of non-empty responses
+        """
+        return responses
+
     def process(self, client, channel, nick, message):
         """
         This is the global entry point for plugins according to helga's plugin registry.
@@ -279,7 +322,7 @@ class Plugin(object):
         """
         return self.run(client, channel, nick, message)
 
-    def decorate(self, fn, preprocessor=False):
+    def decorate(self, fn, preprocessor=False, postprocessor=False):
         """
         A helper used for establishing decorators for plugin classes. This does nothing
         more than monkey patch the ``run`` method of the instance with whatever function
@@ -290,6 +333,8 @@ class Plugin(object):
         """
         if preprocessor:
             self.preprocess = fn
+        elif postprocessor:
+            self.postprocess = fn
         else:
             self.run = fn
 
@@ -622,3 +667,19 @@ def preprocessor(priority=PRIORITY_NORMAL):
         return Plugin(priority=PRIORITY_NORMAL).decorate(priority, preprocessor=True)
     else:
         return functools.partial(Plugin(priority=priority).decorate, preprocessor=True)
+
+
+def postprocessor(priority=PRIORITY_NORMAL):
+    """
+    A decorator for creating a simple postprocessor type plugin. Decorated functions must
+    accept a single argument:
+
+    - **responses**: a list of response strings
+
+    They must return a single value: None, a string, or list of strings
+    """
+    # This happens if not using a priority argument, but just decorating
+    if callable(priority):
+        return Plugin(priority=PRIORITY_NORMAL).decorate(priority, postprocessor=True)
+    else:
+        return functools.partial(Plugin(priority=priority).decorate, postprocessor=True)
