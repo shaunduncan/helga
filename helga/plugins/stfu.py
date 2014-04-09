@@ -1,9 +1,12 @@
 import random
-import re
 
 from twisted.internet import reactor
 
-from helga.plugins import command, preprocessor
+from helga import log
+from helga.plugins import command, postprocessor
+
+
+logger = log.getLogger(__name__)
 
 
 silence_acks = (
@@ -39,21 +42,20 @@ def auto_unsilence(client, channel, length):
         client.msg(channel, "Speaking again after waiting {0} minutes".format(length//60))
 
 
-@preprocessor
+@postprocessor
 @command('stfu', aliases=['speak'],
          help="Tell the bot to be quiet or not. Usage: helga (speak|stfu [for <time_in_minutes>])")
 def stfu(client, channel, nick, message, *args):
     global silenced
 
-    # Handle the message preprocesor
-    if len(args) == 0:
-        # Duh, don't silence the speak command
-        is_speak = bool(re.findall(r'^{0}\W*\s(speak)$'.format(client.nickname), message))
+    # Handle the message postprocesor. NOTE: This won't/can't silence
+    # messages that are explicitly sent via client.msg or client.me
+    if len(args) == 1:
+        if channel in silenced:
+            logger.debug('Suppressing silenced channel %s: %s' % (channel, args[0]))
+            return None
 
-        if channel in silenced and not is_speak:
-            message = ''
-
-        return channel, nick, message
+        return args[0]
 
     elif len(args) == 2:
         resp = ''
@@ -77,4 +79,5 @@ def stfu(client, channel, nick, message, *args):
             silenced.discard(channel)
             resp = random.choice(unsilence_acks)
 
-        return resp.format(nick=nick)
+        # Once silenced, any response will be suppressed. So we need to msg
+        client.msg(channel, resp.format(nick=nick))
