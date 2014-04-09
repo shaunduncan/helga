@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+1.4.4
+-----
+
+- Signals are now sent when a user joins or leaves a channel. Sending args
+  (client, nick, channel)
+
+
 1.4.3
 -----
 
