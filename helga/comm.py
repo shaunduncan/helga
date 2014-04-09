@@ -167,3 +167,17 @@ class Client(irc.IRCClient):
         A proxy for the WTF-named method `describe`. Basically the same as doing `/me waves`
         """
         irc.IRCClient.describe(self, channel, message)
+
+    def userJoined(self, user, channel):
+        """
+        Send a signal when a user has joined a channel
+        """
+        nick = self.parse_nick(user)
+        smokesignal.emit('user_joined', self, nick, channel)
+
+    def userLeft(self, user, channel):
+        """
+        Send a signal when a user has left a channel
+        """
+        nick = self.parse_nick(user)
+        smokesignal.emit('user_left', self, nick, channel)
