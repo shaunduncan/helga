@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.5.0
+-----
+
+- Added new plugin type postprocessor
+- Update silence plugin to use postprocessor instead of preprocessor
+
 1.4.3
 -----
 
