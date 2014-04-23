@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+
+1.4.5
+-----
+
+- Fixed a bug where the WebHook root object doesn't get the current IRC client
+  on signon. (Issue #89)
+
+
 1.4.4
 -----
 
