@@ -70,6 +70,8 @@ class WebhookPlugin(Command):
 
         if self.root is None:
             self.root = WebhookRoot(client)
+        else:
+            self.root.irc_client = client
 
         if self.site is None:
             self.site = server.Site(self.root)
