@@ -86,12 +86,12 @@ class CommandTestCase(TestCase):
     def test_init_does_not_overwrite_things(self):
         class MyCommand(plugins.Command):
             command = 'dothis'
-            aliases = ('foo', 'bar', 'baz')
+            aliases = ('foo', 'bar', 'baz', 'f')
             help = 'my command'
 
         cmd = MyCommand()
         assert cmd.command == 'dothis'
-        assert cmd.aliases == ('foo', 'bar', 'baz')
+        assert cmd.aliases == ('foo', 'bar', 'baz', 'f')
         assert cmd.help == 'my command'
 
     def test_parse_handles_main_command(self):
@@ -123,6 +123,9 @@ class CommandTestCase(TestCase):
                 cmd, args = self.cmd.parse('helga', 'helga %s baz' % check)
                 assert cmd == check
                 assert args == ['baz']
+
+    def test_parse_does_not_handle_something_else(self):
+        assert ('', []) == self.cmd.parse('helga', 'helga fun')
 
     def test_process_for_different_command_returns_none(self):
         assert self.cmd.process(self.client, '#bots', 'me', 'helga qux') is None
