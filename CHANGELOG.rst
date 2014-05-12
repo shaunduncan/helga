@@ -2,6 +2,12 @@ CHANGELOG
 =========
 
 
+1.4.6
+-----
+
+- Fixed regex bug in command parsing that looks for a space after a command/alias
+
+
 1.4.5
 -----
 

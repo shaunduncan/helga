@@ -384,10 +384,10 @@ class Command(Plugin):
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
 
-        pat = r'^{0}({1})\s?(.*)$'.format(prefix, '|'.join(choices))
+        pat = r'^{0}({1})($|\s(.*)$)'.format(prefix, '|'.join(choices))
 
         try:
-            _, cmd, argstr = re.findall(pat, message, re.IGNORECASE)[0]
+            _, cmd, _, argstr = re.findall(pat, message, re.IGNORECASE)[0]
         except (IndexError, ValueError):
             # FIXME: Log here?
             return u'', []

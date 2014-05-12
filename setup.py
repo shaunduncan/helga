@@ -4,7 +4,7 @@ import subprocess
 
 from pip.req import parse_requirements
 
-version = '1.4.5'
+version = '1.4.6'
 
 
 class PyTest(TestCommand):
