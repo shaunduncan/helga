@@ -110,7 +110,7 @@ def facts_match(client, channel, nick, message, found):
 
 
 @command('forget', help='Forget a stored fact. Usage: <botnick> forget foo')
-@match(r'^(.*?) (is|are)( <reply>)? (.+)$')  # Storing facts
+@match(r'^(.*?) (is|are)( <reply>\s*)?(.+)$')  # Storing facts
 @match(r'^(.*)\?$')  # Showing facts
 def facts(client, channel, nick, message, *args):
     """
