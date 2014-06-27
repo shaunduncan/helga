@@ -325,6 +325,8 @@ Here are some plugins that have been written that you can use:
 +=========+======================================================+=================================================+
 | excuses | Generate a response from http://developerexcuses.com | https://github.com/alfredodeza/helga-excuses    |
 +---------+------------------------------------------------------+-------------------------------------------------+
+| haskell | Evaluate Haskell expressions.                        | https://github.com/carymrobbins/helga-haskell   |
++---------+------------------------------------------------------+-------------------------------------------------+
 | isup    | Check downforeveryoneorjustme.com                    | https://github.com/shaunduncan/helga-isup       |
 +---------+------------------------------------------------------+-------------------------------------------------+
 | karma   | Dish out karma points to other people                | https://github.com/coddingtonbear/helga-karma   |
