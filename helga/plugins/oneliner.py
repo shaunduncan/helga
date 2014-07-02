@@ -58,7 +58,6 @@ RESPONSES = {
     r'^nope$': (imgur('iSm1aZu'),   # Arrested development NOPE
                 imgur('2xwe756'),   # Lonley island like a boss NOPE
                 imgur('zCtbl'),     # Tracy Morgan NOPE
-                imgur('ErtgS'),     # Spok NOPE button
                 imgur('foEHo'),     # Spongebob buried in sand
                 imgur('xKYs9'),     # Puppy does not like lime
                 imgur('ST9lw3U'),   # Seinfeld I'm Out
