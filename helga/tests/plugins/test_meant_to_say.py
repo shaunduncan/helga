@@ -8,7 +8,7 @@ from helga.plugins import meant_to_say
 
 def test_meant_to_say_none_when_no_last_message():
     client = stub(last_message=defaultdict(dict))
-    assert meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar')]) is None
+    assert meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar', '')]) is None
 
 
 def test_meant_to_say_regex():
@@ -21,7 +21,7 @@ def test_meant_to_say_returns_modified():
     client = stub(last_message=defaultdict(dict))
     client.last_message['#bots']['me'] = 'this is a foo message'
 
-    resp = meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar')])
+    resp = meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar', '')])
     assert resp == 'me meant to say: this is a bar message'
 
 
@@ -29,7 +29,7 @@ def test_meant_to_say_none_when_not_modified():
     client = stub(last_message=defaultdict(dict))
     client.last_message['#bots']['me'] = 'this is a message'
 
-    assert meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar')]) is None
+    assert meant_to_say.meant_to_say(client, '#bots', 'me', 's/foo/bar', [('foo', 'bar', '')]) is None
 
 
 class TestMeantToSay(object):
