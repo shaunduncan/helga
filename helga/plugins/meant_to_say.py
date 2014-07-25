@@ -19,6 +19,7 @@ def meant_to_say(client, channel, nick, message, matches):
 
     old, new, reflags = matches[0]
     count = 1
+    flags = 0
     if re.search('g', reflags, re.I):
         count = 0
     if re.search('i', reflags, re.I):
