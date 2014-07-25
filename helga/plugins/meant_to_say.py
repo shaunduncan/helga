@@ -19,12 +19,15 @@ def meant_to_say(client, channel, nick, message, matches):
 
     old, new, reflags = matches[0]
     count = 1
-    flags = 0
+
     if re.search('g', reflags, re.I):
         count = 0
     if re.search('i', reflags, re.I):
-        flags = re.I
-    modified = re.sub(old, new, last, count, flags)
+        regex = re.compile(old, re.I)
+    else:
+        regex = re.compile(old)
+
+    modified = regex.sub(new, last, count)
 
     # Don't respond if we don't replace anything ... it's annoying
     if modified != last:
