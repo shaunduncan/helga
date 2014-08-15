@@ -16,7 +16,8 @@ RESPONSES = {
     # Direct text responses
     r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),  # Dumb and Dumber Gag
 
-    r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),),  # Ryan Stiles pulling middle finger from pocket
+    r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'), # Ryan Stiles pulling middle finger from pocket
+                                    imgur('rWhZY3k'),),  # half baked
 
     r'womp womp': ("http://www.sadtrombone.com/?play=true",
                    "http://www.youtube.com/watch?v=_-GaXa8tSBE"),
@@ -30,7 +31,7 @@ RESPONSES = {
 
     r'^select( .* )from(.*)': "'; DROP TABLES;",
 
-    r'mongo(db)?': 'http://youtu.be/b2F-DItXtZs',  # MongoDB is webscale
+    r'mongo(db)?\s': 'http://youtu.be/b2F-DItXtZs',  # MongoDB is webscale
 
     r'gem install': "ruby. not even once.",
 
@@ -53,6 +54,7 @@ RESPONSES = {
         imgur('oKydfNm'),  # Bird bouncing on hawk's head
         imgur('KowlC'),    # Gangam style 'do i look like i care'
         imgur('xYOqXJv'),  # Dog hitting cat with tail
+        imgur('1b2YNU3'),  # But wait! bubble
     ),
 
     r'^nope$': (imgur('iSm1aZu'),   # Arrested development NOPE
@@ -97,6 +99,7 @@ RESPONSES = {
                       imgur('49UtI5N'),  # The Fresh Prince of DEAL WITH IT
                       imgur('1pkNeOy'),  # Skyler
                       imgur('KzEXQDq'),  # Tom & Jerry
+                      imgur('1kxk9z6'),  # deal with it dance
                       u'(⌐■_■)',
 
                       # Multiline
@@ -140,7 +143,8 @@ RESPONSES = {
     r'fuck yea': (imgur('GZ5CD5r'),   # Data shooting dice
                   imgur('nEmrMkq')),  # Top Gun ... DANGER ZONE
 
-    r'\w+ broke prod': imgur('SuCGnum'),  # Anchorman: You ate the whole wheel of cheese?
+    r'\w+ broke prod': (imgur('SuCGnum'),  # Anchorman: You ate the whole wheel of cheese?
+                        imgur('sbQUDbF'),),  # fail boat
 
     r'^indeed$': imgur('bQcbpki'),  # Leonardo DiCaprio in Django Unchained
 
