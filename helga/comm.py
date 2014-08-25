@@ -149,8 +149,11 @@ class Client(irc.IRCClient):
         self.channels.discard(channel)
 
     def msg(self, channel, message):
-        logger.debug(u'[-->] {0} - {1}'.format(channel, message))
-        irc.IRCClient.msg(self, channel, message.encode('UTF-8'))
+        try:
+            logger.debug(u'[-->] {0} - {1}'.format(channel, message.decode('utf-8')))
+            irc.IRCClient.msg(self, channel, message.decode('utf-8').encode('utf-8'))
+        except UnicodeDecodeError:
+            logger.exception("Can't decode message properly")
 
     def on_invite(self, inviter, invitee, channel):
         nick = self.parse_nick(inviter)
