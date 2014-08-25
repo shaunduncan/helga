@@ -74,7 +74,10 @@ def stfu(client, channel, nick, message, *args):
                     reactor.callLater(length, auto_unsilence, client, channel, length)
                     resp = "OK {0}, I'll be back in {1} min".format(nick, cmdargs[1])
         elif args[0] == 'speak':
-            silenced.discard(channel)
+            if channel not in silenced:
+                return None
+
             resp = random.choice(unsilence_acks)
+            silenced.discard(channel)
 
         return resp.format(nick=nick)
