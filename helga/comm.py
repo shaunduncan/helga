@@ -105,7 +105,10 @@ class Client(irc.IRCClient):
         user = self.parse_nick(user)
         message = message.strip()
 
-        logger.debug(u'[<--] {0}/{1} - {2}'.format(channel, user, message))
+        try:
+            logger.debug(u'[<--] {0}/{1} - {2}'.format(channel, user, message.decode('utf-8')))
+        except UnicodeDecodeError:
+            logger.exception("Can't decode message properly")
 
         # When we get a priv msg, the channel is our current nick, so we need to
         # respond to the user that is talking to us
