@@ -43,3 +43,12 @@ def test_stfu_unsilences_channel():
     resp = stfu.stfu(stub(nickname='helga'), '#bots', 'me', 'helga speak', 'speak', [])
     assert resp in map(lambda x: x.format(nick='me'), stfu.unsilence_acks)
     assert '#bots' not in stfu.silenced
+
+
+def test_stfu_speak_only_speaks_once():
+    stfu.silenced = set(['#bots'])
+    resp = stfu.stfu(stub(nickname='helga'), '#bots', 'me', 'helga speak', 'speak', [])
+    assert resp in map(lambda x: x.format(nick='me'), stfu.unsilence_acks)
+
+    resp = stfu.stfu(stub(nickname='helga'), '#bots', 'me', 'helga speak', 'speak', [])
+    assert resp is None
