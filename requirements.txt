@@ -9,5 +9,5 @@ pytz==2013b
 pyOpenSSL==0.13
 requests==2.2.1
 BeautifulSoup==3.2.1
-smokesignal==0.4
+smokesignal==0.5
 giphypop==0.2
