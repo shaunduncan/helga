@@ -19,7 +19,7 @@ def auto_enable_plugins(*args):
 
     for rec in ifilter(pred, db.auto_enabled_plugins.find()):
         for channel in rec['channels']:
-            logger.info("Auto-enabling plugin {0} on channel {1}".format(rec['plugin'], channel))
+            logger.info('Auto-enabling plugin %s on channel %s', rec['plugin'], channel)
             registry.enable(channel, rec['plugin'])
 
 

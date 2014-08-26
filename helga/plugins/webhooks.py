@@ -60,13 +60,13 @@ class WebhookPlugin(Command):
     def _init_routes(self):
         for entry_point in pkg_resources.iter_entry_points(group='helga_webhooks'):
             try:
-                logger.debug('Loading webhook {0}'.format(entry_point.name))
+                logger.debug('Loading webhook %s', entry_point.name)
                 entry_point.load()
             except:
-                logger.exception("Error loading webhook {0}".format(entry_point))
+                logger.exception('Error loading webhook %s', entry_point)
 
     def _start(self, client=None):
-        logger.info("Starting webhooks service on port {}".format(self.port))
+        logger.info('Starting webhooks service on port %s', self.port)
 
         if self.root is None:
             self.root = WebhookRoot(client)
@@ -79,7 +79,7 @@ class WebhookPlugin(Command):
         self.tcp = reactor.listenTCP(self.port, self.site)
 
     def _stop(self):
-        logger.info("Stopping webhooks service on port {}".format(self.port))
+        logger.info('Stopping webhooks service on port %s', self.port)
         self.tcp.stopListening()
         self.tcp.loseConnection()
         self.tcp = None

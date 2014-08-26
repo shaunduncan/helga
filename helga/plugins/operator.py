@@ -25,11 +25,11 @@ def join_autojoined_channels(client):
             # Damn mongo unicode messin with my twisted
             client.join(str(channel['channel']))
         except:
-            logger.exception('Could not autojoin {0}'.format(channel['channel']))
+            logger.exception('Could not autojoin %s', channel['channel'])
 
 
 def add_autojoin(channel):
-    logger.info('Adding autojoin channel {0}'.format(channel))
+    logger.info('Adding autojoin channel %s', channel)
     db_opts = {'channel': channel}
 
     if db.autojoin.find(db_opts).count() == 0:
@@ -40,7 +40,7 @@ def add_autojoin(channel):
 
 
 def remove_autojoin(channel):
-    logger.info('Removing Autojoin {0}'.format(channel))
+    logger.info('Removing autojoin %s', channel)
     db.autojoin.remove({'channel': channel})
     return random_ack()
 

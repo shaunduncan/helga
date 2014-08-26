@@ -27,7 +27,7 @@ def show_fact(term):
     If a fact has an author, it will be shown. If it has a timestamp, that will
     also be shown.
     """
-    logger.info('Showing fact {0}'.format(term))
+    logger.info('Showing fact %s', term)
     record = db.facts.find_one({'term': term_regex(term)})
 
     if record is None:
@@ -55,7 +55,7 @@ def add_fact(term, fact, author=''):
     """
     Records a new fact with a given term. Optionally can set an author
     """
-    logger.info('Adding new fact {0}: {1}'.format(term, fact))
+    logger.info('Adding new fact %s: %s', term, fact)
 
     if not db.facts.find({'term': term_regex(term)}).count():
         db.facts.insert({
@@ -71,7 +71,7 @@ def forget_fact(term):
     """
     Forgets a fact by removing it from the database
     """
-    logger.info('Removing fact {0}'.format(term))
+    logger.info('Removing fact %s', term)
     db.facts.remove({'term': term_regex(term)})
     return random.choice(ACKS)
 
@@ -93,7 +93,7 @@ def facts_match(client, channel, nick, message, found):
         try:
             nonick = re.findall(r'^{0}\W*\s(.*)$'.format(client.nickname), parts[0])[0]
         except IndexError:
-            logger.debug('Facts require the current bot nick. Ignoring: {0}'.format(parts[0]))
+            logger.debug('Facts require the current bot nick. Ignoring: %s', parts[0])
             return None
         else:
             parts = [nonick] + list(parts[1:])
