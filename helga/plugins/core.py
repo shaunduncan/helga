@@ -5,10 +5,12 @@ import re
 import sys
 
 from collections import defaultdict
+from itertools import ifilter, imap
 
 import smokesignal
 
 from helga import log, settings
+from helga.util.encodings import to_unicode
 
 
 logger = log.getLogger(__name__)
@@ -70,12 +72,10 @@ class Registry(object):
             self.plugins = {}
 
         if not hasattr(self, 'enabled_plugins'):
+            # Enabled plugins is a dict: channel -> set()
             self.enabled_plugins = defaultdict(lambda: set(getattr(settings, 'ENABLED_PLUGINS', [])))
 
-        @smokesignal.on('started')
-        def load_plugins():
-            self.load()
-            smokesignal.emit('plugins_loaded')
+        smokesignal.on('started', self.load)
 
     def register(self, name, fn_or_cls):
         # Make sure we're working with an instance
@@ -86,7 +86,7 @@ class Registry(object):
             pass
 
         if not (isinstance(fn_or_cls, Plugin) or hasattr(fn_or_cls, '_plugins')):
-            raise TypeError("Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
+            raise TypeError(u"Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
 
         logger.info('Registered plugin %s', name)
         self.plugins[name] = fn_or_cls
@@ -123,10 +123,11 @@ class Registry(object):
                 self.register(entry_point.name, entry_point.load())
             except:
                 logger.exception('Error initializing plugin %s', entry_point)
+        smokesignal.emit('plugins_loaded')
 
     def reload(self, name):
         if name not in self.plugins:
-            return "Unknown plugin '{0}'. Is it installed?".format(name)
+            return u"Unknown plugin '{0}'. Is it installed?".format(name)
 
         for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
             if entry_point.name != name:
@@ -176,8 +177,7 @@ class Registry(object):
             try:
                 resp = plugin.process(client, channel, nick, message)
             except ResponseNotReady:
-                if first_responder:
-                    return filter(bool, responses)
+                break
             except:
                 logger.exception('Calling process on plugin %s failed', plugin)
                 resp = None
@@ -188,14 +188,16 @@ class Registry(object):
             # Chained decorator style plugins return a list of strings
             if isinstance(resp, (tuple, list)):
                 # Be sure to filter Nones, then strip
-                responses.extend(map(lambda s: s.strip(), filter(bool, resp)))
+                responses.extend(imap(lambda s: (s or '').strip(), resp))
             else:
                 responses.append(resp.strip())
 
             if responses and first_responder:
-                return filter(bool, responses)
+                break
 
-        return filter(bool, responses)
+        # FIXME: Explicit conversion to unicode might not make sense. Perpahs
+        # a warning should be sent to the user? Or do we even care?
+        return map(to_unicode, ifilter(bool, responses))
 
 
 registry = Registry()
@@ -382,7 +384,7 @@ class Command(Plugin):
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
 
-        pat = r'^{0}({1})($|\s(.*)$)'.format(prefix, '|'.join(choices))
+        pat = ur'^{0}({1})($|\s(.*)$)'.format(prefix, '|'.join(choices))
 
         try:
             _, cmd, _, argstr = re.findall(pat, message, re.IGNORECASE)[0]
