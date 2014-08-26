@@ -17,7 +17,7 @@ def is_properly_configured():
 
 def message_max(message, max):
     if len(message) > max:
-        logger.warning('Message exceeds {0} characters. Truncating'.format(max))
+        logger.warning('Message exceeds %s characters. Truncating', max)
         message = message[:max]
     return message
 
@@ -40,11 +40,11 @@ def tweet(message):
     message = message_140(message)
 
     try:
-        logger.info('Tweeting: {0}'.format(message))
+        logger.info('Tweeting: %s', message)
         status = get_api().update_status(message)
     except:
         logger.exception('Could not post status')
     else:
         tweet_url = 'http://twitter.com/{0}/status/{1}'.format(settings.TWITTER_USERNAME, status.id)
-        logger.info('Tweeted: {0}'.format(tweet_url))
+        logger.info('Tweeted: %s', tweet_url)
         return tweet_url
