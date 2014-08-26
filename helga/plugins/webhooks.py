@@ -219,7 +219,8 @@ def route(path, methods=None):
         methods = ['GET']
 
     def wrapper(fn):
-        plugin.add_route(fn, path, methods)
+        if plugin is not None:
+            plugin.add_route(fn, path, methods)
         return fn
 
     return wrapper
