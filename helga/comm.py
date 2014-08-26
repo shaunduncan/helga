@@ -9,6 +9,7 @@ from twisted.words.protocols import irc
 
 from helga import settings, log
 from helga.plugins.core import registry
+from helga.util import encodings
 
 
 logger = log.getLogger(__name__)
@@ -26,7 +27,7 @@ class Factory(protocol.ClientFactory):
         return Client(factory=self)
 
     def clientConnectionLost(self, connector, reason):
-        logger.info('Connection to server lost: {0}'.format(reason))
+        logger.info('Connection to server lost: %s', reason)
 
         # FIXME: Max retries
         if getattr(settings, 'AUTO_RECONNECT', True):
@@ -35,7 +36,7 @@ class Factory(protocol.ClientFactory):
             raise reason
 
     def clientConnectionFailed(self, connector, reason):
-        logger.warning('Connection to server failed: {0}'.format(reason))
+        logger.warning('Connection to server failed: %s', reason)
         reactor.stop()
 
 
@@ -54,7 +55,7 @@ class Client(irc.IRCClient):
     # Other confg
     lineRate = getattr(settings, 'RATE_LIMIT', None)
     sourceURL = 'http://github.com/shaunduncan/helga'
-    encode = 'UTF-8'
+    encoding = 'UTF-8'
 
     def __init__(self, factory=None):
         self.factory = factory
@@ -67,11 +68,11 @@ class Client(irc.IRCClient):
         self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
 
     def connectionMade(self):
-        logger.info('Connection made to {0}'.format(settings.SERVER['HOST']))
+        logger.info('Connection made to %s', settings.SERVER['HOST'])
         irc.IRCClient.connectionMade(self)
 
     def connectionLost(self, reason):
-        logger.info('Connection to {0} lost'.format(settings.SERVER['HOST']))
+        logger.info('Connection to %s lost: %s', settings.SERVER['HOST'], reason)
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
@@ -83,12 +84,12 @@ class Client(irc.IRCClient):
         smokesignal.emit('signon', self)
 
     def joined(self, channel):
-        logger.info('Joined {0}'.format(channel))
+        logger.info('Joined %s', channel)
         self.channels.add(channel)
         smokesignal.emit('join', self, channel)
 
     def left(self, channel):
-        logger.info('Joined {0}'.format(channel))
+        logger.info('Left %s', channel)
         self.channels.discard(channel)
         smokesignal.emit('left', self, channel)
 
@@ -101,14 +102,12 @@ class Client(irc.IRCClient):
     def is_public_channel(self, channel):
         return self.nickname != channel
 
+    @encodings.to_unicode_args
     def privmsg(self, user, channel, message):
         user = self.parse_nick(user)
         message = message.strip()
 
-        try:
-            logger.debug(u'[<--] {0}/{1} - {2}'.format(channel, user, message.decode('utf-8')))
-        except UnicodeDecodeError:
-            logger.exception("Can't decode message properly")
+        logger.debug('[<--] %s/%s - %s', channel, user, message)
 
         # When we get a priv msg, the channel is our current nick, so we need to
         # respond to the user that is talking to us
@@ -133,7 +132,7 @@ class Client(irc.IRCClient):
         """
         Returns timestamp appended nick
         """
-        logger.info('Nick {0} already taken'.format(nickname))
+        logger.info('Nick %s already taken', nickname)
 
         parts = nickname.split('_')
         if len(parts) > 1:
@@ -145,20 +144,18 @@ class Client(irc.IRCClient):
         return self.nickname
 
     def kickedFrom(self, channel, kicker, message):
-        logger.warning('{0} kicked bot from {1}: {2}'.format(kicker, channel, message))
+        logger.warning('%s kicked bot from %s: %s', kicker, channel, message)
         self.channels.discard(channel)
 
+    @encodings.from_unicode_args
     def msg(self, channel, message):
-        try:
-            logger.debug(u'[-->] {0} - {1}'.format(channel, message.decode('utf-8')))
-            irc.IRCClient.msg(self, channel, message.decode('utf-8').encode('utf-8'))
-        except UnicodeDecodeError:
-            logger.exception("Can't decode message properly")
+        logger.debug('[-->] %s - %s', channel, message)
+        irc.IRCClient.msg(self, channel, message)
 
     def on_invite(self, inviter, invitee, channel):
         nick = self.parse_nick(inviter)
         if invitee == self.nickname:
-            logger.info('{0} invited {1} to {2}'.format(nick, invitee, channel))
+            logger.info('%s invited %s to %s', nick, invitee, channel)
             self.join(channel)
 
     def irc_unknown(self, prefix, command, params):
@@ -168,6 +165,7 @@ class Client(irc.IRCClient):
         if command.lower() == 'invite':
             self.on_invite(prefix, params[0], params[1])
 
+    @encodings.from_unicode_args
     def me(self, channel, message):
         """
         A proxy for the WTF-named method `describe`. Basically the same as doing `/me waves`
