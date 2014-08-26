@@ -47,7 +47,7 @@ def poems(client, channel, nick, message, cmd, args):
         reactor.callLater(0, tweet, client, channel, nick)
         raise ResponseNotReady
     else:
-        logger.info('Running subcmd: "{0}"'.format(subcmd))
+        logger.info('Running poem subcmd: "%s"', subcmd)
         num_syllables = SYLLABLES_TO_INT[args[1]]
         input = ' '.join(args[2:])
 
@@ -165,7 +165,7 @@ def make_poem(about=None, by=None, poem_type='haiku'):
 
 
 def add(syllables, input, author=None):
-    logger.info('Adding {0} syllable line: {1}'.format(syllables, input))
+    logger.info('Adding %s syllable line: %s', syllables, input)
     db.haiku.insert({
         'syllables': syllables,
         'message': input,
@@ -206,7 +206,7 @@ def use(syllables, input, poem_type='haiku'):
 
 
 def remove(syllables, input):
-    logger.info('Removing {0} syllable line: {1}'.format(syllables, input))
+    logger.info('Removing %s syllable line: %s', syllables, input)
     db.haiku.remove({'syllables': syllables, 'message': input})
     return random_ack()
 
@@ -214,7 +214,7 @@ def remove(syllables, input):
 def claim(syllables, input, author=None):
     try:
         db.haiku.update({'message': input}, {'$set': {'author': author}})
-        logger.info('{0} has claimed the line: {1}'.format(author, input))
+        logger.info('%s has claimed the line: %s', author, input)
         return "{0} has claimed the line: {1}".format(author, input)
     except:
         return "Sorry, I don't know that line."

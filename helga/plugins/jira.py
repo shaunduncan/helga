@@ -59,7 +59,7 @@ def add_re(pattern):
     global JIRA_PATTERNS
 
     if pattern not in JIRA_PATTERNS:
-        logger.info('Adding new JIRA ticket RE: {0}'.format(pattern))
+        logger.info('Adding new JIRA ticket RE: %s', pattern)
         JIRA_PATTERNS.add(pattern)
         re_doc = {'re': pattern}
 
@@ -67,7 +67,7 @@ def add_re(pattern):
         if not db.jira.find(re_doc).count():
             db.jira.insert(re_doc)
     else:
-        logger.info('JIRA ticket RE already exists: {0}'.format(pattern))
+        logger.info('JIRA ticket RE already exists: %s', pattern)
 
     return random.choice(ACKS)
 
@@ -78,7 +78,7 @@ def remove_re(pattern):
     """
     global JIRA_PATTERNS
 
-    logger.info('Removing JIRA ticket RE: {0}'.format(pattern))
+    logger.info('Removing JIRA ticket RE: %s', pattern)
     JIRA_PATTERNS.discard(pattern)
     db.jira.remove({'re': pattern})
 
@@ -109,7 +109,7 @@ def _soup_desc(ticket, url, auth=None):
     try:
         resp.raise_for_status()
     except:
-        logger.error("Error getting JIRA ticket {0}. Status {1}".format(url, resp.status_code))
+        logger.error('Error getting JIRA ticket %s. Status %s', url, resp.status_code)
         return
 
     try:
@@ -126,7 +126,7 @@ def _rest_desc(ticket, url, auth=None):
     try:
         resp.raise_for_status()
     except:
-        logger.error("Error getting JIRA ticket {0}. Status {1}".format(ticket, resp.status_code))
+        logger.error('Error getting JIRA ticket %s. Status %s', ticket, resp.status_code)
         return
 
     try:

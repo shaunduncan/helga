@@ -88,7 +88,7 @@ class Registry(object):
         if not (isinstance(fn_or_cls, Plugin) or hasattr(fn_or_cls, '_plugins')):
             raise TypeError("Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
 
-        logger.info('Registered plugin {0}'.format(name))
+        logger.info('Registered plugin %s', name)
         self.plugins[name] = fn_or_cls
 
     @property
@@ -119,10 +119,10 @@ class Registry(object):
         """
         for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
             try:
-                logger.debug('Loading entry_point {0}'.format(entry_point.name))
+                logger.debug('Loading entry_point %s', entry_point.name)
                 self.register(entry_point.name, entry_point.load())
             except:
-                logger.exception("Error initializing plugin {0}".format(entry_point))
+                logger.exception('Error initializing plugin %s', entry_point)
 
     def reload(self, name):
         if name not in self.plugins:
@@ -137,7 +137,7 @@ class Registry(object):
                 self.register(entry_point.name, entry_point.load())
                 return True
             except:
-                logger.exception('Failed to reload plugin {0}'.format(entry_point))
+                logger.exception('Failed to reload plugin %s', entry_point)
                 return False
 
     def prioritized(self, channel, high_to_low=True):
@@ -147,9 +147,7 @@ class Registry(object):
         plugins = []
         for name in self.enabled_plugins[channel]:
             if name not in self.plugins:
-                logger.debug(
-                    'Plugin {0} may not be installed or have incorrect entry_point information'.format(name)
-                )
+                logger.debug('Plugin %s may not be installed or have incorrect entry_point information', name)
                 continue
 
             # Decorated functions will have this
@@ -165,7 +163,7 @@ class Registry(object):
             try:
                 channel, nick, message = plugin.preprocess(client, channel, nick, message)
             except:
-                logger.exception("Calling preprocess on plugin {0} failed".format(plugin))
+                logger.exception('Calling preprocess on plugin %s failed', plugin)
                 continue
 
         return channel, nick, message
@@ -181,7 +179,7 @@ class Registry(object):
                 if first_responder:
                     return filter(bool, responses)
             except:
-                logger.exception("Calling process on plugin {0} failed".format(plugin))
+                logger.exception('Calling process on plugin %s failed', plugin)
                 resp = None
 
             if not resp:

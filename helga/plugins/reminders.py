@@ -65,7 +65,7 @@ def init_reminders(client):
 
                 diff = reminder['when'] - now
                 delay = (diff.days * 24 * 3600) + diff.seconds
-                logger.info("Reminder delayed until next occurrence: {0} seconds from now".format(delay))
+                logger.info('Reminder delayed until next occurrence: %s seconds from now', delay)
             elif delay >= -60:  # if it's only 1 minute late
                 logger.info("Reminder is only a little late. Go now!")
                 delay = 0
@@ -136,7 +136,7 @@ def _do_reminder(reminder_id, client):
 
     reminder = db.reminders.find_one(reminder_id)
     if not reminder:
-        logger.error("Tried to locate reminder {0}, but it returned None".format(reminder_id))
+        logger.error('Tried to locate reminder %s, but it returned None', reminder_id)
         _scheduled.discard(reminder_id)
 
     client.msg(str(reminder['channel']), str(reminder['message']))
