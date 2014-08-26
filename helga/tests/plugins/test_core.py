@@ -79,6 +79,16 @@ class RegistryTestCase(TestCase):
         assert items[1].name == 'bar'
         assert items[0].name == 'baz'
 
+    def test_prioritized_ignores_missing_plugin(self):
+        fake_plugin = stub(name='foo', priority=50)
+        registry.plugins = {'foo': fake_plugin}
+        registry.enabled_plugins['#bots'] = set(['foo', 'bar'])
+
+        items = registry.prioritized('#bots')
+
+        assert len(items) == 1
+        assert items[0].name == 'foo'
+
     def test_process_stops_when_async(self):
         things = [Mock(), Mock(), Mock()]
 
@@ -99,7 +109,7 @@ class RegistryTestCase(TestCase):
 
         # Make the middle one raise
         things[0].process.return_value = ['foo', 'bar', None]
-        things[1].process.side_effect = self.snowman
+        things[1].process.return_value = self.snowman
         things[2].process.return_value = 'baz'
 
         with patch.object(registry, 'prioritized') as prio:
@@ -113,7 +123,7 @@ class RegistryTestCase(TestCase):
 
         # Make the middle one raise
         things[0].process.return_value = ['foo', 'bar', None]
-        things[1].process.side_effect = self.snowman
+        things[1].process.return_value = self.snowman
         things[2].process.return_value = 'baz'
 
         with patch.object(registry, 'prioritized') as prio:
@@ -130,12 +140,25 @@ class RegistryTestCase(TestCase):
             responses = registry.process('', '', '', '')
             assert all(map(lambda x: isinstance(x, unicode), responses))
 
+    def test_process_ignores_exception(self):
+        settings.PLUGIN_FIRST_RESPONDER_ONLY = True
+        things = [Mock(), Mock()]
+
+        # Make the middle one raise
+        things[0].process.side_effect = Exception
+        things[1].process.return_value = 'foo'
+
+        with patch.object(registry, 'prioritized') as prio:
+            prio.return_value = things
+            response = registry.process(None, '#bots', 'me', 'foobar')
+            assert response == [u'foo']
+
     def test_registry_is_singleton(self):
         assert id(Registry()) == id(Registry())
 
     def test_register_raises_typeerror(self):
         for plugin in self.invalid_plugins:
-            self.assertRaises(TypeError, registry.register, ('invalid', plugin))
+            self.assertRaises(TypeError, registry.register, 'invalid', plugin)
 
     def test_register_valid_plugins(self):
         for plugin in self.valid_plugins:
@@ -144,7 +167,7 @@ class RegistryTestCase(TestCase):
 
     def test_register_plugin_handles_unicode(self):
         for plugin in self.invalid_plugins:
-            self.assertRaises(TypeError, registry.register, ('invalid', plugin))
+            self.assertRaises(TypeError, registry.register, 'invalid', plugin)
 
         for plugin in self.valid_plugins:
             name = u'{0}-{1}'.format(self.snowman, repr(plugin))
@@ -185,15 +208,22 @@ class RegistryTestCase(TestCase):
         entry_points = [
             Mock(load=lambda: 'foo'),
             Mock(load=lambda: 'snowman'),
+            Mock(),
         ]
         entry_points[0].name = 'foo'
         entry_points[1].name = self.snowman
+
+        # Exceptions should not bomb the load process
+        entry_points[2].name = 'bar'
+        entry_points[2].load.side_effect = Exception
+
         pkg_resources.iter_entry_points.return_value = entry_points
 
         with patch.object(registry, 'register') as register:
             registry.load()
             assert ('foo', 'foo') == register.call_args_list[0][0]
             assert (self.snowman, 'snowman') == register.call_args_list[1][0]
+            assert len(register.call_args_list) == 2  # Only the first two
 
         # Ensure that we sent the signal
         signal.emit.assert_called_with('plugins_loaded')
@@ -223,8 +253,46 @@ class RegistryTestCase(TestCase):
 
         for name in ('foo', self.snowman):
             with patch.object(registry, 'register') as register:
-                registry.reload(name)
+                assert registry.reload(name)
                 register.assert_called_with(name, 'loaded')
+
+    @patch('helga.plugins.core.pkg_resources')
+    @patch('helga.plugins.core.sys')
+    @patch('__builtin__.reload')
+    def test_reload_returns_false_on_exception(self, reloader, sys, pkg_resources):
+        module = Mock(module_name='foo')
+        module.name = 'foo'
+        module.load.side_effect = Exception
+
+        entry_points = [module]
+        pkg_resources.iter_entry_points.return_value = entry_points
+        sys.modules = {'foo': module}
+        registry.plugins = ['foo']
+
+        with patch.object(registry, 'register') as register:
+            assert not registry.reload('foo')
+            assert not register.called
+
+    def test_preprocess(self):
+        plugins = [Mock(), Mock(), Mock()]
+
+        # Raising an exception shouldn't affect the others
+        plugins[0].preprocess.return_value = ('foo', 'bar', self.snowman)
+        plugins[1].preprocess.side_effect = Exception
+        plugins[2].preprocess.return_value = ('abc', 'def', 'ghi')
+
+        with patch.object(registry, 'prioritized') as prio:
+            prio.return_value = plugins
+
+            # Return value is what the last plugin returns
+            retval = registry.preprocess(None, '#bots', 'me', self.snowman)
+            assert retval == ('abc', 'def', 'ghi')
+
+            # Should receive what the first plugin changed
+            plugins[2].preprocess.assert_called_with(None, 'foo', 'bar', self.snowman)
+
+            # Exception raising preprocess should have at least been called
+            assert plugins[1].preprocess.called
 
 
 class PluginTestCase(TestCase):
@@ -245,6 +313,20 @@ class PluginTestCase(TestCase):
         assert len(foo._plugins) == 1
         assert expected == foo(*args)
         assert expected == foo._plugins[0].preprocess(*args)
+
+    def test_preprocess_with_priority(self):
+        @preprocessor(10)
+        def foo(client, channel, nick, message):
+            return 'foo', 'bar', 'baz'
+
+        expected = ('foo', 'bar', 'baz')
+        args = (self.client, '#bots', 'me', 'foobar')
+
+        assert hasattr(foo, '_plugins')
+        assert len(foo._plugins) == 1
+        assert expected == foo(*args)
+        assert expected == foo._plugins[0].preprocess(*args)
+        assert 10 == foo._plugins[0].priority
 
 
 class CommandTestCase(TestCase):

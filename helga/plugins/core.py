@@ -180,7 +180,7 @@ class Registry(object):
                 break
             except:
                 logger.exception('Calling process on plugin %s failed', plugin)
-                resp = None
+                continue
 
             if not resp:
                 continue
