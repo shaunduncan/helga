@@ -1,5 +1,8 @@
-# encoding: utf-8
-from helga.util.encodings import to_unicode, from_unicode
+# -*- coding: utf8 -*-
+from helga.util.encodings import (from_unicode,
+                                  from_unicode_args,
+                                  to_unicode,
+                                  to_unicode_args)
 
 
 def test_to_unicode_with_unicode_string():
@@ -30,3 +33,33 @@ def test_from_unicode_with_byte_string():
     retval = from_unicode(bytes)
     assert bytes == retval
     assert isinstance(retval, str)
+
+
+def test_to_unicode_args():
+    @to_unicode_args
+    def foo(arg1, arg2):
+        return arg1, arg2
+
+    snowman = u'☃'
+    bytes = '\xe2\x98\x83'
+    retval = foo(bytes, 'foo')
+
+    assert retval[0] == snowman
+    assert retval[1] == u'foo'
+    assert isinstance(retval[0], unicode)
+    assert isinstance(retval[1], unicode)
+
+
+def test_from_unicode_args():
+    @from_unicode_args
+    def foo(arg1, arg2):
+        return arg1, arg2
+
+    snowman = u'☃'
+    bytes = '\xe2\x98\x83'
+    retval = foo(snowman, 'foo')
+
+    assert retval[0] == bytes
+    assert retval[1] == 'foo'
+    assert isinstance(retval[0], str)
+    assert isinstance(retval[1], str)

@@ -17,12 +17,19 @@ class ClientTestCase(TestCase):
         assert nick == 'foo'
 
     @patch('helga.comm.irc.IRCClient')
-    def test_msg_encodes_utf_8(self, irc):
-        uni_str = u'ಠ_ಠ'
-        utf8_str = '\xe0\xb2\xa0_\xe0\xb2\xa0'
+    def test_me_converts_from_unicode(self, irc):
+        snowman = u'☃'
+        bytes = '\xe2\x98\x83'
+        self.client.me('#foo', snowman)
+        irc.describe.assertCalledWith('#foo', bytes)
 
-        self.client.msg('#foo', uni_str)
-        irc.msg.assertCalledWith('#foo', utf8_str)
+    @patch('helga.comm.irc.IRCClient')
+    def test_msg_sends_byte_string(self, irc):
+        snowman = u'☃'
+        bytes = '\xe2\x98\x83'
+
+        self.client.msg('#foo', snowman)
+        irc.msg.assertCalledWith('#foo', bytes)
 
     def test_alterCollidedNick(self):
         self.client.alterCollidedNick('foo')
