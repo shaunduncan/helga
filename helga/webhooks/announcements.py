@@ -13,14 +13,14 @@ def announce(request, irc_client, channel):
     provide a single data param 'message'
     """
     if not channel.startswith('#'):
-        channel = '#{}'.format(channel)
+        channel = '#{0}'.format(channel)
 
     message = request.args.get('message', [''])[0]
     if not message:
         request.setResponseCode(400)
         return 'Param message is required'
 
-    logger.info('Sending message to {}: "{}"'.format(channel, message))
+    logger.info('Sending message to %s: "%s"', channel, message)
     irc_client.msg(channel, message)
 
     # Return accepted
