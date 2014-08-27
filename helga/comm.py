@@ -71,16 +71,19 @@ class Client(irc.IRCClient):
         logger.info('Connection made to %s', settings.SERVER['HOST'])
         irc.IRCClient.connectionMade(self)
 
+    @encodings.from_unicode_args
     def connectionLost(self, reason):
         logger.info('Connection to %s lost: %s', settings.SERVER['HOST'], reason)
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
         for channel in settings.CHANNELS:
+            # If channel is more than one item tuple, second value is password
             if len(channel) > 1:
-                self.join(channel[0], channel[1])
+                self.join(encodings.from_unicode(channel[0]),
+                          encodings.from_unicode(channel[1]))
             else:
-                self.join(channel[0])
+                self.join(encodings.from_unicode(channel[0]))
         smokesignal.emit('signon', self)
 
     def joined(self, channel):
