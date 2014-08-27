@@ -21,7 +21,7 @@ class ClientTestCase(TestCase):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
         self.client.me('#foo', snowman)
-        irc.describe.assert_called_with('#foo', bytes)
+        irc.describe.assert_called_with(self.client, '#foo', bytes)
 
     @patch('helga.comm.irc.IRCClient')
     def test_msg_sends_byte_string(self, irc):
@@ -29,7 +29,7 @@ class ClientTestCase(TestCase):
         bytes = '\xe2\x98\x83'
 
         self.client.msg('#foo', snowman)
-        irc.msg.assert_called_with('#foo', bytes)
+        irc.msg.assert_called_with(self.client, '#foo', bytes)
 
     def test_alterCollidedNick(self):
         self.client.alterCollidedNick('foo')
@@ -40,7 +40,7 @@ class ClientTestCase(TestCase):
     def test_signedOn_sends_signal(self, signal, settings):
         settings.CHANNELS = []
         self.client.signedOn()
-        signal.emit.assert_called_with('signon')
+        signal.emit.assert_called_with('signon', self.client)
 
     @patch('helga.comm.registry')
     def test_privmsg_sends_single_string(self, registry):
