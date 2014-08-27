@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import random
 import re
 import time
@@ -18,7 +20,7 @@ def term_regex(term):
     """
     Returns a case-insensitive regex for searching terms
     """
-    return re.compile('^{0}$'.format(re.escape(term)), re.IGNORECASE)
+    return re.compile(r'^{0}$'.format(re.escape(term)), re.IGNORECASE)
 
 
 def show_fact(term):
