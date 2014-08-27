@@ -100,7 +100,7 @@ def test_facts_match_with_nick(add_fact, settings):
     add_fact.return_value = 'ok'
 
     assert 'ok' == facts.facts_match(client, '', '', '', found)
-    add_fact.assertCalledWith('foo bar', 'foo bar is this is the response')
+    add_fact.assert_called_with('foo bar', 'foo bar is this is the response')
 
 
 @patch('helga.plugins.facts.settings')
@@ -153,7 +153,7 @@ def test_facts_as_reply(add_fact):
     add_fact.return_value = 'ok'
 
     assert 'ok' == facts.facts_match('', '', '', '', found)
-    add_fact.assertCalledWith('foo bar', 'this is the response')
+    add_fact.assert_called_with('foo bar', 'this is the response')
 
 
 @patch('helga.plugins.facts.add_fact')
@@ -163,7 +163,7 @@ def test_facts(add_fact):
     add_fact.return_value = 'ok'
 
     assert 'ok' == facts.facts_match('', '', '', '', found)
-    add_fact.assertCalledWith('foo bar', 'foo bar is this is the response')
+    add_fact.assert_called_with('foo bar', 'foo bar is this is the response')
 
 
 @patch('helga.plugins.facts.db')

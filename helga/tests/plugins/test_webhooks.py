@@ -9,7 +9,7 @@ def test_route(reg):
     fake_fn = lambda: 'foo'
     webhooks.route('/foo', methods=['GET', 'POST'])(fake_fn)
 
-    reg.add_route.assertCalledWith(fake_fn, '/foo', ['GET', 'POST'])
+    reg.add_route.assert_called_with(fake_fn, '/foo', ['GET', 'POST'])
 
 
 @patch('helga.plugins.webhooks.registry')
@@ -18,7 +18,7 @@ def test_route_with_no_methods(reg):
     fake_fn = lambda: 'foo'
     webhooks.route('/foo')(fake_fn)
 
-    reg.add_route.assertCalledWith(fake_fn, '/foo', ['GET'])
+    reg.add_route.assert_called_with(fake_fn, '/foo', ['GET'])
 
 
 @patch('helga.plugins.webhooks.settings')
@@ -50,4 +50,4 @@ def test_authenticated_fails_when_called(settings):
 
     fake_fn(request)
 
-    request.setRepsonseCode.assertCalledWith(401)
+    request.setRepsonseCode.assert_called_with(401)

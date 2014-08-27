@@ -11,9 +11,9 @@ def test_auto_enable_plugins(plugins, db):
     db.auto_enabled_plugins.find.return_value = [rec]
 
     manager.auto_enable_plugins(client)
-    plugins.enable.assertCalledWith('a', 'haiku')
-    plugins.enable.assertCalledWith('b', 'haiku')
-    plugins.enable.assertCalledWith('c', 'haiku')
+    plugins.enable.assert_called_with('a', 'haiku')
+    plugins.enable.assert_called_with('b', 'haiku')
+    plugins.enable.assert_called_with('c', 'haiku')
 
 
 @patch('helga.plugins.manager.registry')
