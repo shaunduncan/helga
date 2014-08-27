@@ -48,6 +48,5 @@ def test_authenticated_fails_when_called(settings):
     request.getUser.return_value = 'foo'
     request.getPassword.return_value = 'bar'
 
-    fake_fn(request)
-
-    request.setRepsonseCode.assert_called_with(401)
+    assert fake_fn(request) == '401 Unauthorized'
+    request.setResponseCode.assert_called_with(401)

@@ -1,4 +1,4 @@
-from mock import patch, Mock
+from mock import call, patch, Mock
 
 from helga.plugins import manager
 
@@ -9,11 +9,14 @@ def test_auto_enable_plugins(plugins, db):
     client = Mock()
     rec = {'plugin': 'haiku', 'channels': ['a', 'b', 'c']}
     db.auto_enabled_plugins.find.return_value = [rec]
+    plugins.all_plugins = ['haiku']
 
     manager.auto_enable_plugins(client)
-    plugins.enable.assert_called_with('a', 'haiku')
-    plugins.enable.assert_called_with('b', 'haiku')
-    plugins.enable.assert_called_with('c', 'haiku')
+    assert plugins.enable.call_args_list == [
+        call('a', 'haiku'),
+        call('b', 'haiku'),
+        call('c', 'haiku'),
+    ]
 
 
 @patch('helga.plugins.manager.registry')
