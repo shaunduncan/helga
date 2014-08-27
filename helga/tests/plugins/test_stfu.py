@@ -35,7 +35,7 @@ def test_stfu_silences_channel():
 def test_stfu_for_some_time(reactor):
     client = stub(nickname='helga')
     stfu.stfu(client, '#bots', 'me', 'helga stfu for 30', 'stfu', ['for', '30'])
-    reactor.callLater.assertCalledWith(30*60, stfu.auto_unsilence, client, '#bots', 30*60)
+    reactor.callLater.assert_called_with(30*60, stfu.auto_unsilence, client, '#bots', 30*60)
 
 
 def test_stfu_unsilences_channel():

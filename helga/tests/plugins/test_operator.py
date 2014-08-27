@@ -12,7 +12,7 @@ def test_operator_ignores_non_oper_user():
 def test_operator_join_calls_client_join():
     client = Mock(operators=['me'])
     operator.operator(client, '#bots', 'me', 'do something', 'op', ['join', '#foo'])
-    client.join.assertCalledWith('#foo')
+    client.join.assert_called_with('#foo')
 
 
 def test_operator_join_ignores_invalid_channel():
@@ -24,7 +24,7 @@ def test_operator_join_ignores_invalid_channel():
 def test_operator_leave_calls_client_leave():
     client = Mock(operators=['me'])
     operator.operator(client, '#bots', 'me', 'do something', 'op', ['leave', '#foo'])
-    client.leave.assertCalledWith('#foo')
+    client.leave.assert_called_with('#foo')
 
 
 def test_operator_leave_ignores_invalid_channel():
@@ -45,10 +45,10 @@ def test_add_autojoin_adds(db):
     db.autojoin.find.return_value = db
     db.count.return_value = 0
     operator.add_autojoin('foo')
-    db.autojoin.insert.assertCalledWith({'channel': 'foo'})
+    db.autojoin.insert.assert_called_with({'channel': 'foo'})
 
 
 @patch('helga.plugins.operator.db')
 def test_remove_autojoin(db):
     operator.remove_autojoin('foo')
-    db.autojoin.remove.assertCalledWith({'channel': 'foo'})
+    db.autojoin.remove.assert_called_with({'channel': 'foo'})
