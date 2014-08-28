@@ -22,3 +22,10 @@ def test_dubstep_stops_after_max():
 
     # Should start over now
     assert 'wubwub' in run()
+
+
+def test_dubstep_after_timeout_resets_count():
+    dubstep._last = time.time() - 30
+    dubstep._counts['#bots'] = 10
+    dubstep('', '#bots', '', '', '')
+    assert dubstep._counts['#bots'] == 1
