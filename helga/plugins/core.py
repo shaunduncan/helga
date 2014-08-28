@@ -244,7 +244,7 @@ class Plugin(object):
         :param nick: the current nick of the message sender
         :param message: the message string itself
         """
-        return None
+        return None  # pragma: no cover
 
     def preprocess(self, client, channel, nick, message):
         """
@@ -261,7 +261,7 @@ class Plugin(object):
         :param nick: the current nick of the message sender
         :param message: the message string itself
         """
-        return channel, nick, message
+        return channel, nick, message  # pragma: no cover
 
     def process(self, client, channel, nick, message):
         """
@@ -375,11 +375,11 @@ class Command(Plugin):
         # short alias versions will trump the more verbose ones
         choices = sorted(choices, key=len, reverse=True)
 
+        nick_prefix = ''
+
         # Handle multiple ways to parse this command
         if getattr(settings, 'COMMAND_PREFIX_BOTNICK', True):
             nick_prefix = '{0}\W*\s'.format(botnick)
-        else:
-            nick_prefix = ''
 
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
@@ -407,7 +407,7 @@ class Command(Plugin):
         :param command: the parsed command, which is either the preferred command or a command alias
         :param args: a list of strings, space delimited, that follow the command
         """
-        return None
+        return None  # pragma: no cover
 
     def process(self, client, channel, nick, message):
         """
@@ -489,7 +489,7 @@ class Match(Plugin):
         :param matches: if the ``pattern`` attribute of this class is a callable, this will be its
                         return value, otherwise it will be the return value of ``re.findall``
         """
-        return None
+        return None  # pragma: no cover
 
     def match(self, message):
         """
