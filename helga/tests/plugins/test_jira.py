@@ -1,11 +1,15 @@
-from mock import patch
+# -*- coding: utf -*-
+import pytest
+
+from mock import call, patch, Mock
 from pretend import stub
 
-from helga.plugins import jira
+from helga.plugins import jira, ResponseNotReady
 
 
 settings_stub = stub(JIRA_URL='http://example.com/{ticket}',
-                     JIRA_SHOW_FULL_DESCRIPTION=False)
+                     JIRA_SHOW_FULL_DESCRIPTION=False,
+                     JIRA_REST_API='http://example.com/api/{ticket}')
 
 
 @patch('helga.plugins.jira.settings', settings_stub)
@@ -93,3 +97,264 @@ def test_jira_match_multiple():
     resp = jira.jira_match(None, '#bots', 'me', 'foo-123 and bar-456', ['foo-123', 'bar-456'])
     assert 'http://example.com/foo-123' in resp
     assert 'http://example.com/bar-456' in resp
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+def test_jira_match_handles_unicode():
+    snowman = u'☃'
+    expected = u'me might be talking about JIRA ticket: http://example.com/{0}'.format(snowman)
+    response = jira.jira_match(None, '#bots', 'me', u'this is about {0}'.format(snowman), [snowman])
+    assert response == expected
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.reactor')
+def test_jira_match_does_async(reactor):
+    client = Mock()
+    settings_stub.JIRA_SHOW_FULL_DESCRIPTION = True
+    urls = {'foo-123': 'http://example.com/foo-123'}
+    expected_call = call(0, jira.jira_full_descriptions, client, '#bots', urls)
+    with pytest.raises(ResponseNotReady):
+        jira.jira_match(client, '#bots', 'me', 'ticket foo-123', ['foo-123'])
+        assert reactor.callLater.call_args == expected_call
+
+
+@patch('helga.plugins.jira.remove_re')
+@patch('helga.plugins.jira.add_re')
+def test_jira_command_ignores_invalid_format(add_re, remove_re):
+    arg_tests = [
+        [],
+        ['foo'],
+        [u'☃']
+    ]
+
+    for args in arg_tests:
+        assert jira.jira_command(None, '#bots', 'me', 'foo', 'bar', args) is None
+        assert not add_re.called
+        assert not remove_re.called
+
+        # Reset mocks
+        add_re.reset_mock()
+        remove_re.reset_mock()
+
+
+@patch('helga.plugins.jira.remove_re')
+@patch('helga.plugins.jira.add_re')
+def test_jira_command_add_re(add_re, remove_re):
+    jira.jira_command(None, '#bots', 'me', 'foo', 'bar', ['add_re', 'foobar'])
+    assert add_re.called
+    assert not remove_re.called
+
+
+@patch('helga.plugins.jira.remove_re')
+@patch('helga.plugins.jira.add_re')
+def test_jira_command_remove_re(add_re, remove_re):
+    jira.jira_command(None, '#bots', 'me', 'foo', 'bar', ['remove_re', 'foobar'])
+    assert not add_re.called
+    assert remove_re.called
+
+
+@patch('helga.plugins.jira.remove_re')
+@patch('helga.plugins.jira.add_re')
+def test_jira_command_unknown(add_re, remove_re):
+    jira.jira_command(None, '#bots', 'me', 'foo', 'bar', ['wat', 'foobar'])
+    assert not add_re.called
+    assert not remove_re.called
+
+
+@patch('helga.plugins.jira.requests')
+def test_soup_desc_request_error(requests):
+    response = Mock()
+    response.raise_for_status.side_effect = Exception
+    requests.get.return_value = response
+
+    assert jira._soup_desc('foo', 'bar') is None
+
+
+@patch('helga.plugins.jira.BeautifulSoup')
+@patch('helga.plugins.jira.requests')
+def test_soup_desc(requests, soup):
+    requests.get.return_value = Mock(content='foobar', status_code=200)
+    soup.return_value = soup
+    soup.find.return_value = stub(text='blah blah blah')
+
+    assert jira._soup_desc('foo', 'url') == '[FOO] blah blah blah (url)'
+
+
+@patch('helga.plugins.jira.BeautifulSoup')
+@patch('helga.plugins.jira.requests')
+def test_soup_desc_without_title(requests, soup):
+    requests.get.return_value = Mock(content='foobar', status_code=200)
+    soup.return_value = soup
+    soup.find.side_effect = AttributeError
+
+    assert jira._soup_desc('foo', 'url') == '[FOO] url'
+
+
+@patch('helga.plugins.jira.BeautifulSoup')
+@patch('helga.plugins.jira.requests')
+def test_soup_desc_handles_unicode(requests, soup):
+    snowman = u'☃'
+    requests.get.return_value = Mock(content='foobar', status_code=200)
+    soup.return_value = soup
+    soup.find.return_value = stub(text=snowman)
+
+    assert jira._soup_desc(snowman, snowman) == u'[{0}] {0} ({0})'.format(snowman)
+
+    soup.find.side_effect = AttributeError
+    assert jira._soup_desc(snowman, snowman) == u'[{0}] {0}'.format(snowman)
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.requests')
+def test_rest_desc_request_error(requests):
+    response = Mock()
+    response.raise_for_status.side_effect = Exception
+    requests.get.return_value = response
+    assert jira._rest_desc('foo', 'url') is None
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.requests')
+def test_rest_desc(requests):
+    response = Mock()
+    response.json.return_value = {
+        'fields': {
+            'summary': 'title',
+        },
+    }
+    requests.get.return_value = response
+
+    assert jira._rest_desc('foo', 'url') == '[FOO] title (url)'
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.requests')
+def test_rest_desc_without_summary(requests):
+    response = Mock()
+    response.json.side_effect = Exception
+    requests.get.return_value = response
+
+    assert jira._rest_desc('foo', 'url') == '[FOO] url'
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.requests')
+def test_rest_desc_handles_unicode(requests):
+    snowman = u'☃'
+    response = Mock()
+    response.json.return_value = {
+        'fields': {
+            'summary': snowman,
+        },
+    }
+    requests.get.return_value = response
+
+    assert jira._rest_desc(snowman, snowman) == u'[{0}] {0} ({0})'.format(snowman)
+
+    response.json.side_effect = Exception
+    assert jira._rest_desc(snowman, snowman) == u'[{0}] {0}'.format(snowman)
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira._rest_desc')
+@patch('helga.plugins.jira._soup_desc')
+def test_jira_full_descriptions_uses_beautifulsoup(soup_desc, rest_desc):
+    client = Mock()
+    soup_desc.return_value = 'soup'
+    rest_desc.return_value = 'rest'
+
+    delattr(settings_stub, 'JIRA_REST_API')
+    urls = {'foo': 'foo_url', 'bar': 'bar_url'}
+
+    jira.jira_full_descriptions(client, '#bots', urls)
+    assert soup_desc.called
+    assert not rest_desc.called
+    assert soup_desc.call_args_list == [
+        call('foo', 'foo_url', None),
+        call('bar', 'bar_url', None),
+    ]
+    client.msg.assert_called_with('#bots', 'soup\nsoup')
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira._rest_desc')
+@patch('helga.plugins.jira._soup_desc')
+def test_jira_full_descriptions_uses_api(soup_desc, rest_desc):
+    client = Mock()
+    soup_desc.return_value = 'soup'
+    rest_desc.return_value = 'rest'
+
+    settings_stub.JIRA_REST_API = 'http://example.com/'
+    urls = {'foo': 'foo_url', 'bar': 'bar_url'}
+
+    jira.jira_full_descriptions(client, '#bots', urls)
+    assert not soup_desc.called
+    assert rest_desc.called
+    assert rest_desc.call_args_list == [
+        call('foo', 'foo_url', None),
+        call('bar', 'bar_url', None),
+    ]
+    client.msg.assert_called_with('#bots', 'rest\nrest')
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.HTTPBasicAuth')
+@patch('helga.plugins.jira._rest_desc')
+@patch('helga.plugins.jira._soup_desc')
+def test_jira_full_descriptions_handles_auth(soup_desc, rest_desc, auth):
+    client = Mock()
+    auth.return_value = auth
+    rest_desc.return_value = soup_desc.return_value = 'blah'
+
+    settings_stub.JIRA_REST_API = 'http://example.com/'
+    settings_stub.JIRA_AUTH = ('user', 'pass')
+    urls = {'foo': 'foo_url', 'bar': 'bar_url'}
+
+    jira.jira_full_descriptions(client, '#bots', urls)
+
+    assert rest_desc.call_args_list == [
+        call('foo', 'foo_url', auth),
+        call('bar', 'bar_url', auth),
+    ]
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.HTTPBasicAuth')
+@patch('helga.plugins.jira._rest_desc')
+@patch('helga.plugins.jira._soup_desc')
+def test_jira_full_descriptions_handles_unicode(soup_desc, rest_desc, auth):
+    snowman = u'☃'
+    client = Mock()
+    auth.return_value = auth
+    rest_desc.return_value = soup_desc.return_value = snowman
+
+    settings_stub.JIRA_REST_API = snowman
+    settings_stub.JIRA_AUTH = (snowman, snowman)
+    urls = {snowman: u'{0}_url'.format(snowman)}
+
+    jira.jira_full_descriptions(client, snowman, urls)
+
+    assert rest_desc.call_args_list == [
+        call(snowman, u'{0}_url'.format(snowman), auth),
+    ]
+
+
+@patch('helga.plugins.jira.jira_match')
+@patch('helga.plugins.jira.jira_command')
+def test_jira_plugin_handles_command(command, match):
+    args = ['client', 'channel', 'nick', 'message', 'cmd', ['foo', 'bar', 'baz']]
+    jira.jira(*args)
+    assert command.called
+    assert not match.called
+    command.assert_called_with(*args)
+
+
+@patch('helga.plugins.jira.jira_match')
+@patch('helga.plugins.jira.jira_command')
+def test_jira_plugin_handles_match(command, match):
+    args = ['client', 'channel', 'nick', 'message', ['foo', 'bar', 'baz']]
+    jira.jira(*args)
+    assert not command.called
+    assert match.called
+    match.assert_called_with(*args)
