@@ -28,8 +28,8 @@ def list_plugins(client, channel):
     available = registry.all_plugins - enabled
 
     return [
-        'Plugins enabled on this channel: {0}'.format(', '.join(sorted(enabled))),
-        'Available plugins: {0}'.format(', '.join(sorted(available))),
+        u'Plugins enabled on this channel: {0}'.format(', '.join(sorted(enabled))),
+        u'Available plugins: {0}'.format(', '.join(sorted(available))),
     ]
 
 
@@ -38,13 +38,13 @@ def _filter_valid(channel, *plugins):
 
 
 def enable_plugins(client, channel, *plugins):
-    plugins = _filter_valid(channel, *plugins)
-    if not plugins:
-        return "Sorry, but I don't know about these plugins: {0}".format(', '.join(plugins))
+    valid_plugins = _filter_valid(channel, *plugins)
+    if not valid_plugins:
+        return u"Sorry, but I don't know about these plugins: {0}".format(', '.join(plugins))
 
-    registry.enable(channel, *plugins)
+    registry.enable(channel, *valid_plugins)
 
-    for p in plugins:
+    for p in valid_plugins:
         rec = db.auto_enabled_plugins.find_one({'plugin': p})
         if rec is None:
             db.auto_enabled_plugins.insert({'plugin': p, 'channels': [channel]})
@@ -56,13 +56,13 @@ def enable_plugins(client, channel, *plugins):
 
 
 def disable_plugins(client, channel, *plugins):
-    plugins = _filter_valid(channel, *plugins)
-    if not plugins:
-        return "Sorry, but I don't know about these plugins: {0}".format(', '.join(plugins))
+    valid_plugins = _filter_valid(channel, *plugins)
+    if not valid_plugins:
+        return u"Sorry, but I don't know about these plugins: {0}".format(', '.join(plugins))
 
-    registry.disable(channel, *plugins)
+    registry.disable(channel, *valid_plugins)
 
-    for p in plugins:
+    for p in valid_plugins:
         rec = db.auto_enabled_plugins.find_one({'plugin': p})
         if rec is None or channel not in rec['channels']:
             continue
