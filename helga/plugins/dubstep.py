@@ -23,10 +23,10 @@ def dubstep(client, channel, nick, message, matches):
     dubstep._last = now
     if dubstep._counts[channel] >= MAX_WUBS:
         dubstep._counts[channel] = 0
-        return 'STOP! MY HEAD IS VIBRATING'
+        return u'STOP! MY HEAD IS VIBRATING'
     else:
         dubstep._counts[channel] += 1
-        return 'wubwub' * dubstep._counts[channel] * random.randint(1, 4)
+        return u'wubwub' * dubstep._counts[channel] * random.randint(1, 4)
 
 dubstep._counts = defaultdict(int)
 dubstep._last = None
