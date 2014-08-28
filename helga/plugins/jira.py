@@ -11,6 +11,7 @@ from twisted.internet import reactor
 from helga import log, settings
 from helga.db import db
 from helga.plugins import command, match, ACKS, ResponseNotReady
+from helga.util.encodings import to_unicode
 
 
 logger = log.getLogger(__name__)
@@ -115,13 +116,14 @@ def _soup_desc(ticket, url, auth=None):
     try:
         soup = BeautifulSoup(resp.content)
         title = soup.find('h2', attrs={'id': 'issue_header_summary'}).text
-        return '[{0}] {1} ({2})'.format(ticket.upper(), title, url)
+        return u'[{0}] {1} ({2})'.format(ticket.upper(), title, url)
     except:
-        return '[{0}] {1}'.format(ticket.upper(), url)
+        return u'[{0}] {1}'.format(ticket.upper(), url)
 
 
 def _rest_desc(ticket, url, auth=None):
-    resp = requests.get(settings.JIRA_REST_API.format(ticket=ticket), auth=auth)
+    api_url = to_unicode(settings.JIRA_REST_API)
+    resp = requests.get(api_url.format(ticket=ticket), auth=auth)
 
     try:
         resp.raise_for_status()
@@ -130,9 +132,9 @@ def _rest_desc(ticket, url, auth=None):
         return
 
     try:
-        return '[{0}] {1} ({2})'.format(ticket.upper(), resp.json()['fields']['summary'], url)
+        return u'[{0}] {1} ({2})'.format(ticket.upper(), resp.json()['fields']['summary'], url)
     except:
-        return '[{0}] {1}'.format(ticket.upper(), url)
+        return u'[{0}] {1}'.format(ticket.upper(), url)
 
 
 def jira_full_descriptions(client, channel, urls):
@@ -158,10 +160,11 @@ def jira_full_descriptions(client, channel, urls):
 
 
 def jira_match(client, channel, nick, message, matches):
-    full_urls = dict(map(lambda s: (s, settings.JIRA_URL.format(ticket=s)), matches))
+    jira_url = to_unicode(settings.JIRA_URL)
+    full_urls = dict(map(lambda s: (s, jira_url.format(ticket=s)), matches))
 
     if not getattr(settings, 'JIRA_SHOW_FULL_DESCRIPTION', True):
-        return '{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
+        return u'{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
 
     # Otherwise, do the fetching with a deferred
     reactor.callLater(0, jira_full_descriptions, client, channel, full_urls)
