@@ -29,7 +29,7 @@ def init_jira_patterns(*args, **kwargs):
     """
     global JIRA_PATTERNS
 
-    if db is None:
+    if db is None:  # pragma: no cover
         logger.warning('Cannot initialize JIRA patterns. No database connection')
 
     JIRA_PATTERNS = set(item['re'] for item in db.jira.find())
@@ -67,7 +67,7 @@ def add_re(pattern):
         # Store in DB
         if not db.jira.find(re_doc).count():
             db.jira.insert(re_doc)
-    else:
+    else:  # pragma: no cover
         logger.info('JIRA ticket RE already exists: %s', pattern)
 
     return random.choice(ACKS)

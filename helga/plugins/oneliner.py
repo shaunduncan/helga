@@ -195,4 +195,4 @@ def oneliner(client, channel, nick, message, match):
 
     DEAL WITH IT
     """
-    return match
+    return match  # pragma: no cover
