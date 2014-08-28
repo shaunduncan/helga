@@ -328,6 +328,12 @@ class PluginTestCase(TestCase):
         assert expected == foo._plugins[0].preprocess(*args)
         assert 10 == foo._plugins[0].priority
 
+    def test_base_plugin_process_calls_run(self):
+        plugin = Plugin()
+        with patch.object(plugin, 'run') as run:
+            plugin.process('foo', 'bar', 'baz', 'qux')
+            run.assert_called_with('foo', 'bar', 'baz', 'qux')
+
 
 class CommandTestCase(TestCase):
 
