@@ -1,5 +1,8 @@
-import pymongo
 import warnings
+
+
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 from helga import settings
 
@@ -8,8 +11,8 @@ def _connect():
     db_settings = getattr(settings, 'DATABASE', {})
 
     try:
-        client = pymongo.MongoClient(db_settings['HOST'], db_settings['PORT'])
-    except pymongo.errors.ConnectionFailure:
+        client = MongoClient(db_settings['HOST'], db_settings['PORT'])
+    except ConnectionFailure:
         warnings.warn('MongoDB is not available. Some features may not work')
         return None, None
     else:
