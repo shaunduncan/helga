@@ -123,7 +123,7 @@ def get_random_line(syllables, about=None, by=None):
     skip = random.randint(0, num_rows - 1)
 
     # Bleh, this is how we randomly grab one
-    return str(qs.limit(-1).skip(skip).next()['message'])
+    return qs.limit(-1).skip(skip).next()['message']
 
 
 def make_poem(about=None, by=None, poem_type='haiku'):
@@ -215,9 +215,9 @@ def claim(syllables, input, author=None):
     try:
         db.haiku.update({'message': input}, {'$set': {'author': author}})
         logger.info('%s has claimed the line: %s', author, input)
-        return "{0} has claimed the line: {1}".format(author, input)
+        return u"{0} has claimed the line: {1}".format(author, input)
     except:
-        return "Sorry, I don't know that line."
+        return u"Sorry, I don't know that line."
 
 
 def tweet(client, channel, requested_by):
@@ -225,19 +225,19 @@ def tweet(client, channel, requested_by):
     last = last_poem[channel]
 
     if not last:
-        msg = "{0}, why don't you try making one first".format(requested_by)
+        msg = u"{0}, why don't you try making one first".format(requested_by)
         client.msg(channel, msg)
         return
 
     resp = send_tweet('\n'.join(last))
 
     if not resp:
-        msg = "{0}, that probably did not work :(".format(requested_by)
+        msg = u"{0}, that probably did not work :(".format(requested_by)
         client.msg(channel, msg)
-    else:
-        # This will keep it from over tweeting
-        del last_poem[channel]
+        return
 
+    # This will keep it from over tweeting
+    del last_poem[channel]
     client.msg(channel, resp)
 
 
@@ -249,7 +249,7 @@ def blame(channel, requested_by, default_author=''):
     last = last_poem[channel]
 
     if not last:
-        return "{0}, why don't you try making one first".format(requested_by)
+        return u"{0}, why don't you try making one first".format(requested_by)
 
     authors = []
 
@@ -261,4 +261,4 @@ def blame(channel, requested_by, default_author=''):
         else:
             authors.append(rec.get('author', None) or default_author)
 
-    return "The last poem was brought to you by (in order): {0}".format(', '.join(authors))
+    return u"The last poem was brought to you by (in order): {0}".format(', '.join(authors))
