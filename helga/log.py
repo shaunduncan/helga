@@ -25,7 +25,7 @@ def getLogger(name):
         handler.stream = sys.stdout
 
     # Setup formatting
-    if hasattr(settings, 'LOG_FORMAT'):
+    if hasattr(settings, 'LOG_FORMAT') and settings.LOG_FORMAT:
         formatter = logging.Formatter(settings.LOG_FORMAT)
     else:
         formatter = logging.Formatter('%(asctime)-15s [%(levelname)s] [%(name)s:%(lineno)d]: %(message)s')
