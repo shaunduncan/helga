@@ -1,4 +1,5 @@
-from mock import Mock, patch
+# -*- coding: utf8 -*-
+from mock import Mock, patch, call
 from pretend import stub
 
 from helga.plugins import operator, ACKS
@@ -33,6 +34,34 @@ def test_operator_leave_ignores_invalid_channel():
     assert not client.leave.called
 
 
+@patch('helga.plugins.operator.reload_plugin')
+@patch('helga.plugins.operator.remove_autojoin')
+@patch('helga.plugins.operator.add_autojoin')
+def test_operator_handles_subcmd(add_autojoin, remove_autojoin, reload_plugin):
+    add_autojoin.return_value = 'add_autojoin'
+    remove_autojoin.return_value = 'remove_autojoin'
+    reload_plugin.return_value = 'reload_plugin'
+
+    client = Mock(operators=['me'])
+    args = [client, '#bots', 'me', 'message', 'operator']
+
+    # Client commands
+    for cmd in ('join', 'leave'):
+        client.reset_mock()
+        assert operator.operator(*(args + [[cmd, '#foo']])) is None
+        getattr(client, cmd).assert_called_with('#foo')
+
+    # Autojoin add/remove
+    assert 'add_autojoin' == operator.operator(*(args + [['autojoin', 'add', '#foo']]))
+    assert 'remove_autojoin' == operator.operator(*(args + [['autojoin', 'remove', '#foo']]))
+
+    # The feature that shall not be named
+    operator.operator(*(args + [['nsa', '#other_chan', 'unicode', 'snowman', u'☃']]))
+    client.msg.assert_called_with('#other_chan', u'unicode snowman ☃')
+
+    assert 'reload_plugin' == operator.operator(*(args + [['reload', 'foo']]))
+
+
 @patch('helga.plugins.operator.db')
 def test_add_autojoin_exists(db):
     db.autojoin.find.return_value = db
@@ -52,3 +81,33 @@ def test_add_autojoin_adds(db):
 def test_remove_autojoin(db):
     operator.remove_autojoin('foo')
     db.autojoin.remove.assert_called_with({'channel': 'foo'})
+
+
+@patch('helga.plugins.operator.db')
+def test_join_autojoined_channels(db):
+    client = Mock()
+    db.autojoin.find.return_value = [
+        {'channel': '#bots'},
+        {'channel': u'☃'},
+    ]
+    operator.join_autojoined_channels(client)
+    assert client.join.call_args_list == [call('#bots'), call(u'☃')]
+
+
+@patch('helga.plugins.operator.registry')
+def test_reload_plugin(plugins):
+    plugins.reload.return_value = True
+    assert "Successfully reloaded plugin 'foo'" == operator.reload_plugin('foo')
+
+    plugins.reload.return_value = False
+    assert "Failed to reload plugin 'foo'" == operator.reload_plugin('foo')
+
+
+@patch('helga.plugins.operator.registry')
+def test_reload_plugin_handles_unicode(plugins):
+    snowman = u'☃'
+    plugins.reload.return_value = True
+    assert u"Successfully reloaded plugin '{0}'".format(snowman) == operator.reload_plugin(snowman)
+
+    plugins.reload.return_value = False
+    assert u"Failed to reload plugin '{0}'".format(snowman) == operator.reload_plugin(snowman)

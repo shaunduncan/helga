@@ -10,11 +10,11 @@ from helga.plugins import command, registry, random_ack
 logger = log.getLogger(__name__)
 
 nopes = [
-    "You're not the boss of me",
-    "Whatever I do what want",
-    "You can't tell me what to do",
-    "{nick}, this incident has been reported",
-    "NO. You are now on notice {nick}"
+    u"You're not the boss of me",
+    u"Whatever I do what want",
+    u"You can't tell me what to do",
+    u"{nick}, this incident has been reported",
+    u"NO. You are now on notice {nick}"
 ]
 
 
@@ -22,8 +22,7 @@ nopes = [
 def join_autojoined_channels(client):
     for channel in db.autojoin.find():
         try:
-            # Damn mongo unicode messin with my twisted
-            client.join(str(channel['channel']))
+            client.join(channel['channel'])
         except:
             logger.exception('Could not autojoin %s', channel['channel'])
 
@@ -50,9 +49,9 @@ def reload_plugin(plugin):
     Hooks into the registry and reloads a plugin without restarting
     """
     if registry.reload(plugin):
-        return "Succesfully reloaded plugin '{0}'".format(plugin)
+        return u"Successfully reloaded plugin '{0}'".format(plugin)
     else:
-        return "Failed to reload plugin '{0}'".format(plugin)
+        return u"Failed to reload plugin '{0}'".format(plugin)
 
 
 @command('operator', aliases=['oper', 'op'],
@@ -72,7 +71,7 @@ def operator(client, channel, nick, message, cmd, args):
     if subcmd in ('join', 'leave'):
         channel = args[1]
         if channel.startswith('#'):
-            getattr(client, subcmd)(str(channel))
+            getattr(client, subcmd)(channel)
 
     elif subcmd == 'autojoin':
         op, channel = args[1], args[2]
