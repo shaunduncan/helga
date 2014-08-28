@@ -188,3 +188,19 @@ class Client(irc.IRCClient):
         """
         nick = self.parse_nick(user)
         smokesignal.emit('user_left', self, nick, channel)
+
+    @encodings.from_unicode_args
+    def join(self, channel, key=None):
+        """
+        Join a channel. Override to handle accepting unicode arguments.
+        """
+        logger.info("Joining channel %s", channel)
+        irc.IRCClient.join(self, channel, key=key)
+
+    @encodings.from_unicode_args
+    def leave(self, channel, reason=None):
+        """
+        Leave a channel. Override to handle accepting unicode arguments.
+        """
+        logger.info("Leaving channel %s: %s", channel, reason)
+        irc.IRCClient.leave(self, channel, reason=reason)

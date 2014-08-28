@@ -195,3 +195,17 @@ class ClientTestCase(TestCase):
         user = 'helga!helgabot@127.0.0.1'
         self.client.userLeft(user, '#bots')
         signal.emit.assert_called_with('user_left', self.client, 'helga', '#bots')
+
+    @patch('helga.comm.irc.IRCClient')
+    def test_join_converts_from_unicode(self, irc):
+        snowman = u'☃'
+        bytes = '\xe2\x98\x83'
+        self.client.join(snowman, snowman)
+        irc.join.assert_called_with(self.client, bytes, key=bytes)
+
+    @patch('helga.comm.irc.IRCClient')
+    def test_leave_converts_from_unicode(self, irc):
+        snowman = u'☃'
+        bytes = '\xe2\x98\x83'
+        self.client.leave(snowman, snowman)
+        irc.leave.assert_called_with(self.client, bytes, reason=bytes)
