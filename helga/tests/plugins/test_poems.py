@@ -374,3 +374,32 @@ def test_blame(db):
     ]
     resp = poems.blame('#bots', 'me', default_author='helga')
     assert resp == u'The last poem was brought to you by (in order): foo, ☃, helga'
+
+
+@patch('helga.plugins.poems.db')
+def test_blame_after_use_uses_last_author(db):
+    poems.last_use['#bots'] = ('me', 'three')
+    poems.last_poem['#bots'] = ['one', 'two', 'three']
+    db.haiku.find_one.side_effect = [
+        {'author': 'foo'},
+        {'author': 'bar'},
+        None
+    ]
+
+    ret = poems.blame('#bots', 'sduncan', default_author='helga')
+    assert ret == 'The last poem was brought to you by (in order): foo, bar, me'
+
+
+@patch('helga.plugins.poems.db')
+def test_blame_after_use_when_no_last_used(db):
+    # Edge case test
+    poems.last_use['#bots'] = tuple()
+    poems.last_poem['#bots'] = ['one', 'two', 'three']
+    db.haiku.find_one.side_effect = [
+        {'author': 'foo'},
+        {'author': 'bar'},
+        None
+    ]
+
+    ret = poems.blame('#bots', 'sduncan', default_author='helga')
+    assert ret == 'The last poem was brought to you by (in order): foo, bar, helga'
