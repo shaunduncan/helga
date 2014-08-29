@@ -53,7 +53,7 @@ class WebhookPlugin(Command):
         self.port = getattr(settings, 'WEBHOOKS_PORT', 8080)
 
         @smokesignal.on('signon')
-        def setup(client):
+        def setup(client):  # pragma: no cover
             self._start(client)
             self._init_routes()
 
@@ -62,7 +62,7 @@ class WebhookPlugin(Command):
             try:
                 logger.debug('Loading webhook %s', entry_point.name)
                 entry_point.load()
-            except:
+            except:  # pragma: no cover
                 logger.exception('Error loading webhook %s', entry_point)
 
     def _start(self, client=None):
@@ -88,15 +88,16 @@ class WebhookPlugin(Command):
         """
         Adds a route to the root web resource
         """
-        self.root.add_route(fn, path, methods)
+        self.root.add_route(fn, path, methods)  # pragma: no cover
 
     def list_routes(self, client, nick):
         """
         Messages a user with all webhook routes and their supported HTTP methods
         """
-        client.msg(nick, '{}, here are the routes I know about'.format(nick))
-        for pat, route in self.root.routes.iteritems():
-            client.msg(nick, '[{}] {}'.format(','.join(route[0]), pat))
+        client.msg(nick, u'{0}, here are the routes I know about'.format(nick))
+        for pattern, route in self.root.routes.iteritems():
+            http_methods = route[0]  # Route is a tuple (http_methods, function)
+            client.msg(nick, u'[{0}] {1}'.format(','.join(http_methods), pattern))
 
     def control(self, action):
         """
@@ -107,14 +108,14 @@ class WebhookPlugin(Command):
         if action == 'stop':
             if running:
                 self._stop()
-                return "Webhooks service stopped"
-            return "Webhooks service not running"
+                return u"Webhooks service stopped"
+            return u"Webhooks service not running"
 
         if action == 'start':
             if not running:
                 self._start()
-                return "Webhooks service started"
-            return "Webhooks service already running"
+                return u"Webhooks service started"
+            return u"Webhooks service already running"
 
     def run(self, client, channel, nick, msg, cmd, args):
         try:
@@ -123,11 +124,11 @@ class WebhookPlugin(Command):
             subcmd = 'routes'
 
         if subcmd == 'routes':
-            client.me(channel, 'whispers to {}'.format(nick))
+            client.me(channel, u'whispers to {0}'.format(nick))
             self.list_routes(client, nick)
         elif subcmd in ('start', 'stop'):
             if nick not in client.operators:
-                return "Sorry {}, Only an operator can do that".format(nick)
+                return u"Sorry {0}, Only an operator can do that".format(nick)
             return self.control(subcmd)
 
 
@@ -137,7 +138,7 @@ class WebhookRoot(resource.Resource):
     def __init__(self, irc_client, *args, **kwargs):
         self.irc_client = irc_client
 
-        # Routes is a dict of regex path -> (allowed_methods, callable)
+        # Routes is a dict of regex path -> (allowed_methods_list, callable)
         self.routes = {}
 
     def add_route(self, fn, path, methods):
@@ -157,13 +158,13 @@ class WebhookRoot(resource.Resource):
                 break
         else:
             request.setResponseCode(404)
-            return '404 Not Found'
+            return u'404 Not Found'
 
         # Ensure that this route handles the request method
         methods, fn = route
         if request.method.upper() not in methods:
             request.setResponseCode(405)
-            return '405 Method Not Allowed'
+            return u'405 Method Not Allowed'
 
         return fn(request, self.irc_client, **match.groupdict())
 
@@ -190,7 +191,7 @@ def authenticated(fn):
 
         # No valid basic auth provided
         request.setResponseCode(401)
-        return '401 Unauthorized'
+        return u'401 Unauthorized'
     return ensure_authenticated
 
 
