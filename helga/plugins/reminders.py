@@ -92,13 +92,13 @@ def readable_time_delta(seconds):
     h_suffix = 's' if hours != 1 else ''
     d_suffix = 's' if days != 1 else ''
 
-    retval = '{0} minute{1}'.format(minutes, m_suffix)
+    retval = u'{0} minute{1}'.format(minutes, m_suffix)
 
     if hours != 0:
-        retval = '{0} hour{1} and {2}'.format(hours, h_suffix, retval)
+        retval = u'{0} hour{1} and {2}'.format(hours, h_suffix, retval)
 
     if days != 0:
-        retval = '{0} day{1}, {2}'.format(days, d_suffix, retval)
+        retval = u'{0} day{1}, {2}'.format(days, d_suffix, retval)
 
     return retval
 
@@ -110,8 +110,13 @@ def next_occurrence(reminder):
     now = datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)
     now_dow = now.weekday()
 
-    # Modded range from tomorrow until 1 week from now
-    dow_iter = imap(lambda x: x % 7, xrange(now_dow + 1, now_dow + 8))
+    # Start/end dow starting from tomorrow
+    start_dow = now_dow + 1
+    end_dow = start_dow + 7
+
+    # Modded range from tomorrow until 1 week from now. Normalizes
+    # wraparound values that span into next week
+    dow_iter = imap(lambda x: x % 7, xrange(start_dow, end_dow))
 
     # Filter out any days that aren't in the schedule
     dow_iter = ifilter(lambda x: x in reminder['repeat'], dow_iter)
@@ -124,8 +129,14 @@ def next_occurrence(reminder):
         _scheduled.discard(reminder['_id'])
         return
 
-    # Get the real day delta
-    day_delta = (next_dow if next_dow > now_dow else next_dow + 7) - now_dow
+    # Get the real day delta. Take the next day of the week. if that day of
+    # the week is before the current day of the week, add a week. Normalize
+    # this value by subtracting the starting point. Example:
+    # Now = 3, Next = 1, Delta = (1 + 7) - 3 = 5
+    day_delta = next_dow
+    if next_dow <= now_dow:
+        day_delta += 7
+    day_delta -= now_dow
 
     # Update the record
     return reminder['when'] + datetime.timedelta(days=day_delta), day_delta
@@ -138,8 +149,9 @@ def _do_reminder(reminder_id, client):
     if not reminder:
         logger.error('Tried to locate reminder %s, but it returned None', reminder_id)
         _scheduled.discard(reminder_id)
+        return
 
-    client.msg(str(reminder['channel']), str(reminder['message']))
+    client.msg(reminder['channel'], reminder['message'])
 
     # If this repeats, figure out the next time
     if 'repeat' in reminder:
@@ -189,7 +201,7 @@ def in_reminder(client, channel, nick, args):
         message = ' '.join(args[1:])
 
     if quantity not in in_seconds_map:
-        return "Sorry I didn't understand '{0}'. You must specify m,h,d. Ex: 12m".format(args[0])
+        return u"Sorry I didn't understand '{0}'. You must specify m,h,d. Ex: 12m".format(args[0])
 
     seconds = amount * in_seconds_map[quantity]
     utcnow = datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)
@@ -207,7 +219,7 @@ def in_reminder(client, channel, nick, args):
 
     _scheduled.add(id)
     reactor.callLater(seconds, _do_reminder, id, client)
-    return 'Reminder set for {0} from now'.format(readable_time_delta(seconds))
+    return u'Reminder set for {0} from now'.format(readable_time_delta(seconds))
 
 
 def at_reminder(client, channel, nick, args):
@@ -286,7 +298,7 @@ def at_reminder(client, channel, nick, args):
         repeat_days = sorted([v for k, v in days_of_week.iteritems() if k in sched])
 
         if not repeat_days:
-            return "I didn't understand '{0}'. You must use any of M,Tu,W,Th,F,Sa,Su. Ex: MWF".format(sched)
+            return u"I didn't understand '{0}'. You must use any of M,Tu,W,Th,F,Sa,Su. Ex: MWF".format(sched)
 
         reminder['repeat'] = repeat_days
 
@@ -316,14 +328,14 @@ def at_reminder(client, channel, nick, args):
 
     _scheduled.add(id)
     reactor.callLater(delay, _do_reminder, id, client)
-    return 'Reminder set for {0} from now'.format(readable_time_delta(delay))
+    return u'Reminder set for {0} from now'.format(readable_time_delta(delay))
 
 
 def list_reminders(client, nick, channel):
     reminders = []
 
     for reminder in db.reminders.find({'channel': channel}):
-        about = "[{0}] At {1}: '{2}'"
+        about = u"[{0}] At {1}: '{2}'"
 
         hash = str(reminder['_id'])[:6]
         when = reminder['when'].strftime('%m/%d/%y %H:%M UTC')
@@ -332,14 +344,14 @@ def list_reminders(client, nick, channel):
 
         if 'repeat' in reminder:
             days = [days_of_week_lookup[value] for value in reminder['repeat']]
-            about = '{0} (Repeat every {1})'.format(about, ','.join(days))
+            about = u'{0} (Repeat every {1})'.format(about, ','.join(days))
 
         reminders.append(about)
 
     if not reminders:
-        client.msg(nick, 'There are no reminders for channel: {0}'.format(channel))
+        client.msg(nick, u'There are no reminders for channel: {0}'.format(channel))
     else:
-        reminders.insert(0,  '{0}, here are the reminders for channel: {1}'.format(nick, channel))
+        reminders.insert(0,  u'{0}, here are the reminders for channel: {1}'.format(nick, channel))
         client.msg(nick, '\n'.join(reminders))
 
 
@@ -350,7 +362,7 @@ def delete_reminder(channel, hash):
         db.reminders.remove(rec['_id'])
         return random_ack()
     else:
-        return "No reminder found with hash '{0}'".format(hash)
+        return u"No reminder found with hash '{0}'".format(hash)
 
 
 @command('reminders', aliases=['in', 'at'],
@@ -367,7 +379,7 @@ def reminders(client, channel, nick, message, cmd, args):
         return at_reminder(client, channel, nick, args)
     elif cmd == 'reminders':
         if args[0] == 'list':
-            client.me(channel, 'whispers to {0}'.format(nick))
+            client.me(channel, u'whispers to {0}'.format(nick))
             list_reminders(client, nick, (args[1] if len(args) >= 2 else channel))
             return None
         elif args[0] == 'delete':

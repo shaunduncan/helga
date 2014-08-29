@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 import datetime
 
 from unittest import TestCase
@@ -58,6 +59,25 @@ class DoReminderTestCase(TestCase):
 
         db.reminders.save.assert_called_with(rec_upd)
         reactor.callLater.assert_called_with(72 * 3600, reminders._do_reminder, 1, self.client)
+
+    @patch('helga.plugins.reminders._scheduled')
+    @patch('helga.plugins.reminders.db')
+    def test_scheduled_discarded_with_no_record(self, db, scheduled):
+        db.reminders.find_one.return_value = None
+        reminders._do_reminder(1, Mock())
+        scheduled.discard.assert_called_with(1)
+
+    @patch('helga.plugins.reminders.db')
+    def test_handles_unicode(self, db):
+        client = Mock()
+        snowman = u'☃'
+        reminder = {
+            'channel': snowman,
+            'message': snowman,
+        }
+        db.reminders.find_one.return_value = reminder
+        reminders._do_reminder(1, client)
+        client.msg.assert_called_with(snowman, snowman)
 
 
 class InReminderTestCase(TestCase):
@@ -134,6 +154,10 @@ class InReminderTestCase(TestCase):
         assert inserted['message'] == 'this is the message'
         assert inserted['channel'] == '#bots'
         assert reactor.callLater.call_args[0] == (12 * 24 * 3600, reminders._do_reminder, 1, self.client)
+
+    def test_in_reminder_for_unknown(self):
+        resp = reminders.in_reminder(self.client, '#bots', 'me', ['12x', 'this', 'is', 'the', 'message'])
+        assert resp.startswith("Sorry I didn't understand '12x'")
 
 
 class AtReminderTestCase(TestCase):
@@ -439,3 +463,205 @@ class ListRemindersTestCase(TestCase):
         client.msg.assert_called_with('sduncan',
                                       "sduncan, here are the reminders for channel: #bots\n"
                                       "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)")
+
+
+class InitRemindersTestCase(TestCase):
+
+    @patch('helga.plugins.reminders.db')
+    def test_updates_hash(self, db):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013)
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        reminders.init_reminders(Mock())
+        db.reminders.update.assert_called_with({'_id': 1234567890},
+                                               {'$set': {'hash': '123456'}})
+
+    @patch('helga.plugins.reminders.reactor')
+    @patch('helga.plugins.reminders.db')
+    def test_ignores_scheduled_reminder(self, db, reactor):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013)
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        reminders._scheduled = set([123456789])
+        reminders.init_reminders(Mock())
+        assert not reactor.callLater.called
+
+    @patch('helga.plugins.reminders.reactor')
+    @patch('helga.plugins.reminders.db')
+    def test_schedules_reminder(self, db, reactor):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013, tzinfo=pytz.UTC)
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        with freeze_time(records[0]['when']):
+            client = Mock()
+            reminders._scheduled = set()
+            reminders.init_reminders(client)
+            assert 1234567890 in reminders._scheduled
+            reactor.callLater.assert_called_with(0, reminders._do_reminder, 1234567890, client)
+
+    @patch('helga.plugins.reminders.db')
+    def test_with_stale_reminder(self, db):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013)
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        with freeze_time(records[0]['when'] + datetime.timedelta(days=1)):
+            client = Mock()
+            reminders._scheduled = set()
+            reminders.init_reminders(client)
+            assert 1234567890 not in reminders._scheduled
+            db.reminders.remove.assert_called_with(1234567890)
+
+    @patch('helga.plugins.reminders.reactor')
+    @patch('helga.plugins.reminders.db')
+    def test_with_late_reminder(self, db, reactor):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013)
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        with freeze_time(records[0]['when'] + datetime.timedelta(seconds=60)):
+            client = Mock()
+            reminders._scheduled = set()
+            reminders.init_reminders(client)
+            assert 1234567890 in reminders._scheduled
+            reactor.callLater.assert_called_with(0, reminders._do_reminder, 1234567890, client)
+
+    @patch('helga.plugins.reminders.reactor')
+    @patch('helga.plugins.reminders.db')
+    def test_with_repeated_reminder(self, db, reactor):
+        records = [
+            {
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=13, month=12, year=2013),
+                'repeat': range(7),
+            }
+        ]
+        db.reminders.find.return_value = records
+
+        with freeze_time(records[0]['when'] + datetime.timedelta(seconds=300)):
+            client = Mock()
+            reminders._scheduled = set()
+            reminders.init_reminders(client)
+            assert 1234567890 in reminders._scheduled
+            # It's 300 seconds, late. Should be 1 day from that point
+            reactor.callLater.assert_called_with(86400 - 300, reminders._do_reminder, 1234567890, client)
+            db.reminders.save.assert_called_with({
+                'hash': 'foo',
+                '_id': 1234567890,
+                'when': datetime.datetime(day=14, month=12, year=2013),
+                'repeat': range(7),
+            })
+
+
+class NextOccurrenceTestCase(TestCase):
+
+    def test_next_occurrence(self):
+        reminder = {
+            '_id': 1,
+            # Start on a wednesday
+            'when': datetime.datetime(day=13, month=8, year=2014),
+        }
+
+        past = (0, 5)  # Expect 5 days in the future
+        today = (2, 7)  # Expect 1 week in the future
+        future = (5, 3)  # Expect 3 days in the future
+
+        with freeze_time(reminder['when']):
+            for repeat, expect_delta in (past, today, future):
+                reminder['repeat'] = [repeat]
+                next_time, next_delta = reminders.next_occurrence(reminder)
+                assert expect_delta == next_delta
+                assert next_time == reminder['when'] + datetime.timedelta(days=expect_delta)
+
+    @patch('helga.plugins.reminders._scheduled')
+    @patch('__builtin__.next')
+    def test_when_no_next_dow(self, _next, scheduled):
+        _next.side_effect = StopIteration
+
+        reminder = {
+            '_id': 1,
+            'when': datetime.datetime(day=13, month=8, year=2014),
+            'repeat': range(7),
+        }
+
+        assert reminders.next_occurrence(reminder) is None
+        scheduled.discard.assert_called_with(1)
+
+
+class DeleteReminderTestCase(TestCase):
+
+    @patch('helga.plugins.reminders.db')
+    def test_no_found_record(self, db):
+        db.reminders.find_one.return_value = None
+        retval = reminders.delete_reminder('#bots', 'foo')
+        assert retval == "No reminder found with hash 'foo'"
+
+    @patch('helga.plugins.reminders.db')
+    def test_deletes_record(self, db):
+        db.reminders.find_one.return_value = {'_id': 1}
+        reminders.delete_reminder('#bots', 'foo')
+        db.reminders.remove.assert_called_with(1)
+
+
+class ReminderSubcommandTestCase(TestCase):
+
+    @patch('helga.plugins.reminders.in_reminder')
+    def test_in_reminder(self, in_reminder):
+        client = Mock()
+        reminders.reminders(client, '#bots', 'me', 'message', 'in', ['args'])
+        in_reminder.assert_called_with(client, '#bots', 'me', ['args'])
+
+    @patch('helga.plugins.reminders.at_reminder')
+    def test_at_reminder(self, at_reminder):
+        client = Mock()
+        reminders.reminders(client, '#bots', 'me', 'message', 'at', ['args'])
+        at_reminder.assert_called_with(client, '#bots', 'me', ['args'])
+
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reminders(self, list_reminder):
+        client = Mock()
+        reminders.reminders(client, '#bots', 'me', 'message', 'reminders', ['list'])
+        list_reminder.assert_called_with(client, 'me', '#bots')
+        client.me.assert_called_with('#bots', 'whispers to me')
+
+    @patch('helga.plugins.reminders.list_reminders')
+    def test_list_reminders_with_channel(self, list_reminder):
+        client = Mock()
+        reminders.reminders(client, '#bots', 'me', 'message', 'reminders', ['list', '#blah'])
+        list_reminder.assert_called_with(client, 'me', '#blah')
+        client.me.assert_called_with('#bots', 'whispers to me')
+
+    @patch('helga.plugins.reminders.delete_reminder')
+    def test_delete_reminder(self, delete_reminder):
+        client = Mock()
+        reminders.reminders(client, '#bots', 'me', 'message', 'reminders', ['delete', '1'])
+        delete_reminder.assert_called_with('#bots', '1')
