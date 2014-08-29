@@ -291,10 +291,8 @@ def test_jira_full_descriptions_uses_api(soup_desc, rest_desc):
     jira.jira_full_descriptions(client, '#bots', urls)
     assert not soup_desc.called
     assert rest_desc.called
-    assert rest_desc.call_args_list == [
-        call('foo', 'foo_url', None),
-        call('bar', 'bar_url', None),
-    ]
+    assert call('foo', 'foo_url', None) in rest_desc.call_args_list
+    assert call('bar', 'bar_url', None) in rest_desc.call_args_list
     client.msg.assert_called_with('#bots', 'rest\nrest')
 
 
