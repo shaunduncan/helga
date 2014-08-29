@@ -89,7 +89,7 @@ WEBHOOKS_PORT = 8080
 WEBHOOKS_CREDENTIALS = []  # Tuples of (user, pass)
 
 
-if 'HELGA_SETTINGS' in os.environ:
+if 'HELGA_SETTINGS' in os.environ:  # pragma: no cover
     try:
         path = os.environ['HELGA_SETTINGS']
         overrides = __import__(path, {}, {}, [path.split('.')[-1]])

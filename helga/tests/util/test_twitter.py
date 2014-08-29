@@ -60,3 +60,32 @@ def test_tweet_handles_unicode(api):
     api.update_status.return_value = Mock(id=123456789)
 
     assert twitter.tweet(u'☃') == 'http://twitter.com/helgabot/status/123456789'
+
+
+@patch('helga.util.twitter.message_140')
+@patch('helga.util.twitter.is_properly_configured')
+def test_tweet_with_improperly_configured_settings(configured, message_140):
+    configured.return_value = False
+    twitter.tweet('foobar')
+    assert not message_140.called
+
+
+@patch('helga.util.twitter.tweepy')
+@patch('helga.util.twitter.settings')
+def test_get_api(settings, tweepy):
+    settings.TWITTER_CONSUMER_KEY = 'foo'
+    settings.TWITTER_CONSUMER_SECRET = 'foo'
+    settings.TWITTER_OAUTH_TOKEN = 'foo'
+    settings.TWITTER_OAUTH_TOKEN_SECRET = 'foo'
+    settings.TWITTER_USERNAME = 'helgabot'
+
+    tweepy.OAuthHandler.return_value = tweepy
+    tweepy.API.return_value = tweepy
+
+    assert twitter.get_api() == tweepy
+
+    tweepy.OAuthHandler.assert_called_with(settings.TWITTER_CONSUMER_KEY,
+                                           settings.TWITTER_CONSUMER_SECRET)
+    tweepy.set_access_token.assert_called_with(settings.TWITTER_OAUTH_TOKEN,
+                                               settings.TWITTER_OAUTH_TOKEN_SECRET)
+    tweepy.API.assert_called_with(tweepy)
