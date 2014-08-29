@@ -72,7 +72,8 @@ class ClientTestCase(TestCase):
         assert re.match(r'foo_[\d]+', self.client.nickname)
 
     @patch('helga.comm.settings')
-    def test_signedOn(self, settings):
+    @patch('helga.comm.smokesignal')
+    def test_signedOn(self, signal, settings):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
 
