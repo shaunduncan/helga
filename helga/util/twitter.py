@@ -42,7 +42,7 @@ def tweet(message):
     try:
         logger.info('Tweeting: %s', message)
         status = get_api().update_status(message)
-    except:
+    except:  # pragma: no cover
         logger.exception('Could not post status')
     else:
         tweet_url = 'http://twitter.com/{0}/status/{1}'.format(settings.TWITTER_USERNAME, status.id)
