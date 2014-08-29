@@ -116,7 +116,7 @@ the above rules. Here is a simple example:
 
     class MyPlugin(Plugin):
         def run(self, channel, nick, message):
-            return 'Current timestamp: {0}'.format(time.time())
+            return u'Current timestamp: {0}'.format(time.time())
 
         def process(self, channel, nick, message):
             if message.startswith('!time'):
@@ -124,6 +124,16 @@ the above rules. Here is a simple example:
 
 **NOTE** the previous example is not the preferred way. You should use the included
 decorators instead (shown below).
+
+A Tale of Unicode
+~~~~~~~~~~~~~~~~~
+
+Plugins should try to deal with unicode as much as possible. This is important as all arguments
+a plugin receives will be unicode strings and not byte strings. This process happens automatically
+as all strings received over IRC are decoded as UTF-8 an converted to unicode. If a plugin returns
+a string response that is unicode, it will be encoded as UTF-8 prior to being sent over IRC. To
+help deal with this, there are two helpful methods in ``helga.util.encodings`` to convert to/from
+unicode: ``to_unicode`` and ``from_unicode``.
 
 Plugin Types
 ++++++++++++
@@ -147,12 +157,12 @@ of plugins (which is usually the case). For example:
     @command('foo', aliases=['foobar'], help="The foo command")
     def foo(client, channel, nick, message, cmd, args):
         # This is run on "helga foo" or "helga foobar"
-        return "Running the foo command"
+        return u"Running the foo command"
 
     @match(r'bar')
     def bar(client, channel, nick, message, matches):
         # This will run whenever a user mentions the word 'bar'
-        return "{0} said bar!".format(nick)
+        return u"{0} said bar!".format(nick)
 
 You may notice in the above example that each decorated function accepts different arguments.
 For commands, there are two additional arguments ``cmd`` and ``args``. The former is the parsed
@@ -181,7 +191,7 @@ a function as a preprocessor, a convenient decorator can be used:
 
     @preprocessor
     def blank_message(client, channel, nick, message):
-        return channel, nick, ''
+        return channel, nick, u''
 
 Complex plugins
 +++++++++++++++
