@@ -20,6 +20,7 @@ SYLLABLES_TO_INT = {
 }
 
 last_poem = defaultdict(list)
+last_use = defaultdict(tuple)
 
 
 @command('haiku', aliases=['tanka'],
@@ -27,6 +28,7 @@ last_poem = defaultdict(list)
               "(add|add_use|use|remove|claim) (fives|sevens) (INPUT ...)]")
 def poems(client, channel, nick, message, cmd, args):
     global last_poem
+    global last_use
 
     # Just a poem
     if not args:
@@ -60,6 +62,7 @@ def poems(client, channel, nick, message, cmd, args):
         elif subcmd == 'use':
             poem = use(num_syllables, input)
             last_poem[channel] = poem
+            last_use[channel] = (nick, input)
             return poem
         elif subcmd == 'remove':
             return remove(num_syllables, input)
@@ -258,7 +261,19 @@ def blame(channel, requested_by, default_author=''):
             rec = db.haiku.find_one({'message': line})
         except:
             authors.append(default_author)
-        else:
+            continue
+
+        if rec is not None:
             authors.append(rec.get('author', None) or default_author)
+
+        else:
+            # Determine if this line was a non-stored 'use' line
+            last_used = last_use[channel]
+            try:
+                author, added = last_used
+            except ValueError:
+                authors.append(default_author)
+            else:
+                authors.append(author if added == line else default_author)
 
     return u"The last poem was brought to you by (in order): {0}".format(', '.join(authors))
