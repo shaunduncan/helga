@@ -4,6 +4,9 @@ helga
 .. image:: https://travis-ci.org/shaunduncan/helga.png
     :target: https://travis-ci.org/shaunduncan/helga
 
+.. image:: https://coveralls.io/repos/shaunduncan/helga/badge.png?branch=master
+    :target: https://coveralls.io/r/shaunduncan/helga?branch=master
+
 .. image:: https://badge.fury.io/py/helga.png
     :target: http://badge.fury.io/py/helga
 
