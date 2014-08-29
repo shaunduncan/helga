@@ -1,7 +1,10 @@
 language: python
 install:
   - pip install tox
+  - pip install coveralls
 script: tox
 env:
   - TOXENV=py26
   - TOXENV=py27
+after_success:
+  coveralls
