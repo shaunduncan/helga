@@ -2,6 +2,13 @@ CHANGELOG
 =========
 
 
+1.5.0
+-----
+
+- Fix The Unicode Problem(TM) (Issue 86)
+- Vastly improved test suite. Now with 100% test coverage
+
+
 1.4.6
 -----
 
