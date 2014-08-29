@@ -270,10 +270,8 @@ def test_jira_full_descriptions_uses_beautifulsoup(soup_desc, rest_desc):
     jira.jira_full_descriptions(client, '#bots', urls)
     assert soup_desc.called
     assert not rest_desc.called
-    assert soup_desc.call_args_list == [
-        call('foo', 'foo_url', None),
-        call('bar', 'bar_url', None),
-    ]
+    assert call('foo', 'foo_url', None) in soup_desc.call_args_list
+    assert call('bar', 'bar_url', None) in soup_desc.call_args_list
     client.msg.assert_called_with('#bots', 'soup\nsoup')
 
 
@@ -291,10 +289,8 @@ def test_jira_full_descriptions_uses_api(soup_desc, rest_desc):
     jira.jira_full_descriptions(client, '#bots', urls)
     assert not soup_desc.called
     assert rest_desc.called
-    assert rest_desc.call_args_list == [
-        call('foo', 'foo_url', None),
-        call('bar', 'bar_url', None),
-    ]
+    assert call('foo', 'foo_url', None) in rest_desc.call_args_list
+    assert call('bar', 'bar_url', None) in rest_desc.call_args_list
     client.msg.assert_called_with('#bots', 'rest\nrest')
 
 
@@ -313,10 +309,8 @@ def test_jira_full_descriptions_handles_auth(soup_desc, rest_desc, auth):
 
     jira.jira_full_descriptions(client, '#bots', urls)
 
-    assert rest_desc.call_args_list == [
-        call('foo', 'foo_url', auth),
-        call('bar', 'bar_url', auth),
-    ]
+    assert call('foo', 'foo_url', auth) in rest_desc.call_args_list
+    assert call('bar', 'bar_url', auth) in rest_desc.call_args_list
 
 
 @patch('helga.plugins.jira.settings', settings_stub)
