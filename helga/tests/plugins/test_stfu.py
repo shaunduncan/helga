@@ -1,4 +1,5 @@
-from mock import patch
+# -*- coding: utf8 -*-
+from mock import patch, Mock
 from pretend import stub
 
 from helga.plugins import stfu
@@ -52,3 +53,33 @@ def test_stfu_speak_only_speaks_once():
 
     resp = stfu.stfu(stub(nickname='helga'), '#bots', 'me', 'helga speak', 'speak', [])
     assert resp is None
+
+
+def test_auto_unsilence():
+    stfu.silenced = set(['#bots'])
+    client = Mock()
+    stfu.auto_unsilence(client, '#bots', 300)
+    assert '#bots' not in stfu.silenced
+    client.msg.assert_called_with('#bots', 'Speaking again after waiting 5 minutes')
+
+
+def test_stfu_with_unicode():
+    client = stub(nickname=u'☃')
+    chan, nick, msg = stfu.stfu(client, '#bots', 'me', u'helga speak ☃')
+    assert chan == '#bots'
+    assert nick == 'me'
+    assert msg == u'helga speak ☃'
+
+
+@patch('helga.plugins.stfu.reactor')
+def test_stfu_handles_invalid_args(reactor):
+    client = stub(nickname='helga')
+    test_args = [
+        ['for'],
+        ['for', 'blah'],
+        ['for', None],
+    ]
+
+    for args in test_args:
+        stfu.stfu(client, '#bots', 'me', 'helga stfu for 30', 'stfu', args)
+        assert not reactor.callLater.called
