@@ -17,11 +17,13 @@ class FactoryTestCase(TestCase):
         assert client.factory == self.factory
 
     @patch('helga.comm.settings')
-    def test_client_connection_lost_retries(self, settings):
+    @patch('helga.comm.reactor')
+    def test_client_connection_lost_retries(self, reactor, settings):
         settings.AUTO_RECONNECT = True
+        settings.AUTO_RECONNECT_DELAY = 1
         connector = Mock()
         self.factory.clientConnectionLost(connector, Exception)
-        assert connector.connect.called
+        reactor.callLater.assert_called_with(1, connector.connect)
 
     @patch('helga.comm.settings')
     def test_client_connection_lost_raises(self, settings):
@@ -29,10 +31,21 @@ class FactoryTestCase(TestCase):
         connector = Mock()
         self.assertRaises(Exception, self.factory.clientConnectionLost, connector, Exception)
 
+    @patch('helga.comm.settings')
     @patch('helga.comm.reactor')
-    def test_client_connection_failed(self, reactor):
+    def test_client_connection_failed(self, reactor, settings):
+        settings.AUTO_RECONNECT = False
         self.factory.clientConnectionFailed(Mock(), reactor)
         assert reactor.stop.called
+
+    @patch('helga.comm.settings')
+    @patch('helga.comm.reactor')
+    def test_client_connection_failed_retries(self, reactor, settings):
+        settings.AUTO_RECONNECT = True
+        settings.AUTO_RECONNECT_DELAY = 1
+        connector = Mock()
+        self.factory.clientConnectionFailed(connector, reactor)
+        reactor.callLater.assert_called_with(1, connector.connect)
 
 
 class ClientTestCase(TestCase):

@@ -31,13 +31,20 @@ class Factory(protocol.ClientFactory):
 
         # FIXME: Max retries
         if getattr(settings, 'AUTO_RECONNECT', True):
-            connector.connect()
+            delay = getattr(settings, 'AUTO_RECONNECT_DELAY', 5)
+            reactor.callLater(delay, connector.connect)
         else:
             raise reason
 
     def clientConnectionFailed(self, connector, reason):
         logger.warning('Connection to server failed: %s', reason)
-        reactor.stop()
+
+        # FIXME: Max retries
+        if getattr(settings, 'AUTO_RECONNECT', True):
+            delay = getattr(settings, 'AUTO_RECONNECT_DELAY', 5)
+            reactor.callLater(delay, connector.connect)
+        else:
+            reactor.stop()
 
 
 class Client(irc.IRCClient):
