@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.5.1
+-----
+
+- Added AUTO_RECONNECT support for failed connections (in addition to lost connections)
+- Added AUTO_RECONNECT_DELAY to have a sensible wait time before connect retries
+
 
 1.5.0
 -----
