@@ -16,7 +16,7 @@ RESPONSES = {
     # Direct text responses
     r'(gross|disgusting|eww)': (imgur('XEEI0Rn'),),  # Dumb and Dumber Gag
 
-    r'(GFY|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),  # Ryan Stiles pulling middle finger from pocket
+    r'(\sGFY\s|GTFO|Fuck (You|Off))': (imgur('VPqgYjF'),  # Ryan Stiles pulling middle finger from pocket
                                    imgur('rWhZY3k'),),  # half baked
 
     r'womp womp': ("http://www.sadtrombone.com/?play=true",
