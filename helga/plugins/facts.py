@@ -78,9 +78,24 @@ def forget_fact(term):
     return random.choice(ACKS)
 
 
+def replace_fact(term, fact, author=''):
+    """
+    Replaces an existing fact by removing it, then adding the new definition
+    """
+    forget_fact(term)
+    add_fact(term, fact, author)
+    return random.choice(ACKS)
+
+
 def facts_command(client, channel, nick, message, cmd, args):
     if cmd == 'forget':
         return forget_fact(' '.join(args))
+    if cmd == 'replace':
+        if '<with>' not in args:
+            return 'No definition supplied.'
+        all_args = ' '.join(args)
+        term, fact = all_args.split(' <with> ', 1)
+        return replace_fact(term, fact, author=nick)
 
 
 def facts_match(client, channel, nick, message, found):
@@ -141,6 +156,12 @@ def facts(client, channel, nick, message, *args):
 
         <sduncan> helga forget foo
         <helga> forgotten
+
+    To replace a fact, you must use the ``replace`` command, andprovide the
+    term as well as the new definition, separated by  '<watch>'::
+
+        <sduncan> helga replace foo <with> new def
+        <helga> replaced
     """
     if len(args) == 2:
         return facts_command(client, channel, nick, message, *args)
