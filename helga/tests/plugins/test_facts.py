@@ -204,6 +204,32 @@ def test_facts_command():
     assert facts.facts_command(None, '#bots', 'me', '!forget foo', 'foobar', args) is None
 
 
+@patch('helga.plugins.facts.forget_fact')
+@patch('helga.plugins.facts.add_fact')
+def test_replace_fact(add, forget):
+    facts.replace_fact('term', 'definition', author='person')
+    forget.assert_called_with('term')
+    add.assert_called_with(
+        'term',
+        'definition',
+        'person',
+    )
+
+
+def test_replace_facts_command():
+    facts.replace_fact = lambda x, y, author: (x, y, author)
+    args = ['term1', 'term2', '<with>', 'def1', 'def2']
+    assert (u'term1 term2', u'def1 def2', u'me') == facts.facts_command(None,
+        '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args)
+
+
+def test_replace_facts_missing_pipe_command():
+    facts.replace_fact = lambda x, y, author: (x, y, author)
+    args = ['term1', 'term2', 'def1', 'def2']
+    assert (u'No definition supplied.') == facts.facts_command(None,
+        '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args)
+
+
 @patch('helga.plugins.facts.facts_match')
 @patch('helga.plugins.facts.facts_command')
 def test_facts_plugin(cmd, match):
