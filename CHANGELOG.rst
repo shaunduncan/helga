@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.5.2
+-----
+- Merged PR #119 - Adding replace command for facts plugin
+- Merged PR #117 - Fix oneliner regex to not be noisy for gfycat links
+
 1.5.1
 -----
 
