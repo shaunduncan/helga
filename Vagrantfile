@@ -23,4 +23,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provision "shell", inline: "sudo apt-get update -qq"
   config.vm.provision "shell", inline: "sudo apt-get install -qqy --force-yes mongodb ngircd"
+
+  # Allow connections to the VM and restart mongo
+  config.vm.provision "shell", inline: "sudo sed -i -s 's/^bind_ip = 127.0.0.1/#bind_ip = 127.0.0.1/' /etc/mongodb.conf"
+  config.vm.provision "shell", inline: "sudo service mongodb restart"
 end
