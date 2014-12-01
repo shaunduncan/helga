@@ -223,3 +223,30 @@ class ClientTestCase(TestCase):
         bytes = '\xe2\x98\x83'
         self.client.leave(snowman, snowman)
         irc.leave.assert_called_with(self.client, bytes, reason=bytes)
+
+    @patch('helga.comm.log')
+    def test_get_channel_logger_no_existing_logger(self, log):
+        self.client.channel_loggers = {}
+        log.get_channel_logger.return_value = 'foo'
+
+        assert 'foo' == self.client.get_channel_logger('#foo')
+        assert '#foo' in self.client.channel_loggers
+
+    @patch('helga.comm.log')
+    def test_get_channel_logger_existing_logger(self, log):
+        self.client.channel_loggers = {'#foo': 'bar'}
+        log.get_channel_logger.return_value = 'foo'
+
+        assert 'bar' == self.client.get_channel_logger('#foo')
+        assert not log.get_channel_logger.called
+
+    @patch('helga.comm.settings')
+    def test_log_channel_message(self, settings):
+        settings.CHANNEL_LOGGING = True
+        logger = Mock()
+
+        with patch.object(self.client, 'get_channel_logger'):
+            self.client.get_channel_logger.return_value = logger
+            self.client.log_channel_message('foo', 'bar', 'baz')
+            self.client.get_channel_logger.assert_called_with('foo')
+            logger.info.assert_called_with('baz', extra={'nick': 'bar'})

@@ -9,6 +9,10 @@ SERVER = {
 
 LOG_LEVEL = 'DEBUG'
 
+# Channel logging. Set CHANNEL_LOGGING_DIR
+CHANNEL_LOGGING = False
+CHANNEL_LOGGING_DIR = '.logs'
+
 NICK = 'helga'
 CHANNELS = [
     ('#bots',),

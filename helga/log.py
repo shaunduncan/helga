@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import os
 import sys
 
 from helga import settings
@@ -31,6 +32,29 @@ def getLogger(name):
         formatter = logging.Formatter('%(asctime)-15s [%(levelname)s] [%(name)s:%(lineno)d]: %(message)s')
 
     handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger
+
+
+def get_channel_logger(channel):
+    """
+    Gets a logger with a TimedRotatingFileHandler that is suitable for
+    channel logs
+    """
+    logger = logging.getLogger(u'channel_logger/{0}'.format(channel))
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    # Channel logs are grouped into directories by channel name
+    log_dir = os.path.join(settings.CHANNEL_LOGGING_DIR, channel)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, 'log.txt')
+
+    # Setup a daily rotating file handler
+    handler = logging.handlers.TimedRotatingFileHandler(log_file, when='d', utc=True)
+    handler.setFormatter(logging.Formatter(u'%(asctime)s - %(nick)s - %(message)s'))
     logger.addHandler(handler)
 
     return logger
