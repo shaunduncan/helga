@@ -33,3 +33,6 @@ nosetests.xml
 # Local settings
 my_settings.py
 .vagrant
+
+# Default helga channel logs
+.logs

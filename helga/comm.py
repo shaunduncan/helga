@@ -73,6 +73,27 @@ class Client(irc.IRCClient):
         # Things to keep track of
         self.channels = set()
         self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
+        self.channel_loggers = {}
+
+    def get_channel_logger(self, channel):
+        """
+        Gets a logger for a channel, keeping track of ones we know about
+        """
+        if channel not in self.channel_loggers:
+            self.channel_loggers[channel] = log.get_channel_logger(channel)
+        return self.channel_loggers[channel]
+
+    def log_channel_message(self, channel, nick, *messages):
+        """
+        Logs one or more messages by a user on a channel using a channel
+        logger. If channel logging is not enabled, nothing happens.
+        """
+        if not settings.CHANNEL_LOGGING:
+            return
+        chan_logger = self.get_channel_logger(channel)
+
+        for msg in messages:
+            chan_logger.info(msg, extra={'nick': nick})
 
     def connectionMade(self):
         logger.info('Connection made to %s', settings.SERVER['HOST'])
@@ -117,11 +138,17 @@ class Client(irc.IRCClient):
         user = self.parse_nick(user)
         message = message.strip()
 
+        # Log the incoming message and notify message subscribers
         logger.debug('[<--] %s/%s - %s', channel, user, message)
+        is_public = self.is_public_channel(channel)
 
         # When we get a priv msg, the channel is our current nick, so we need to
         # respond to the user that is talking to us
-        channel = channel if self.is_public_channel(channel) else user
+        if is_public:
+            # Only log convos on public channels
+            self.log_channel_message(channel, user, message)
+        else:
+            channel = user
 
         # Some things should go first
         try:
@@ -133,7 +160,10 @@ class Client(irc.IRCClient):
         responses = registry.process(self, channel, user, message)
 
         if responses:
-            self.msg(channel, '\n'.join(responses))
+            self.msg(channel, u'\n'.join(responses))
+
+            if is_public:
+                self.log_channel_message(channel, self.nickname, *responses)
 
         # Update last message
         self.last_message[channel][user] = message
