@@ -71,6 +71,65 @@ file, set an environment variable ``HELGA_SETTINGS`` to be a python import path:
 
 This will preserve any defaults in ``helga.settings``, but you can override at will.
 
+
+Default Settings
+----------------
+
+As mentioned above, there is a default ``helga.settings`` module. This contains some
+basic helga settings, as outlined below:
+
+- ``SERVER``: A dictionary containing server connection info. At minimum, keys 'HOST'
+  and 'PORT' are required and default to 'localhost' and '6667' respectively. Optional
+  keys include 'SSL' which if True, will connect to 'HOST' using SSL, and 'USERNAME'
+  and 'PASSWORD' if the IRC server requires authentication.
+- ``LOG_LEVEL``: String for the default logging level (default: 'DEBUG')
+- ``LOG_FILE``: If set, a string indicating the log file for python logs
+- ``CHANNEL_LOGGING``: If True, enable conversation logging on all channels (default: False)
+- ``CHANNEL_LOGGING_DIR``: If using channel logs, the directory to which channel logs should
+  logs should be written. A new directory will be created for each channel in which the
+  bot resides, so if this is set to '/foo/bar' logs for channel '#baz' will be created in
+  '/foo/bar/#baz'. (default: '.logs')
+- ``NICK``: The default nick of the bot instance (default: 'helga')
+- ``CHANNELS``: A list of channels to automatically join. You can specify either a single
+  channel name or a two-tuple of channel name, and password (default: ['#bots'])
+- ``AUTO_RECONNECT``: Should the bot automatically reconnect on connection lost? (default: True)
+- ``AUTO_RECONNECT_DELAY``: Time, in seconds, between reconnect attempts (default: 5)
+- ``RATE_LIMIT``: Message rate limit for messages sent over IRC. Default is None implying no limit.
+- ``OPERATORS``: List of IRC nicks that should be considered operators/administrators.
+- ``DATABASE``: A dictionary containing connection info for MongoDB. The minimum settings that should
+  exist here are 'HOST', the MongoDB host, 'PORT, the MongoDB port, and 'DB' which should be the
+  MongoDB database to use. These values default to 'localhost', 27017, and 'helga' respectively
+  without any overrides. Both 'USERNAME' and 'PASSWORD' can be specified if MongoDB requires
+  authentication.
+- ``TIMEZONE``: The default timezone for the bot instance (default: 'US/Eastern')
+- ``ENABLED_PLUGINS``: A list of plugin names that should be enabled automatically for any channel.
+  Note that this does not mean plugins that are loaded. By default, any plugin that has been
+  installed will be loaded and made available. This should be a list of the entry point names
+  defined by each plugin. See below for information about this.
+- ``PLUGIN_FIRST_RESPONDER_ONLY``: If True, only the first plugin that generates a response will
+  be sent back via IRC. If False, all plugin responses are sent. (default: True)
+- ``COMMAND_PREFIX_BOTNICK``: If set to True, command plugins can be run by asking directly, such
+  as 'helga foo_command'. (default: True)
+- ``COMMAND_PREFIX_CHAR``: If non-empty, this char can be used to invoke a command without requiring
+  the bot's nick. For example 'helga foo' could be run with '!foo'. (default: '!')
+- ``FACTS_REQUIRE_NICKNAME``: Boolean, if True, would require the bot's nick to show a stored fact.
+  For example, if True, 'foo?' could only be shown with 'helga foo?'. (default: False)
+- ``JIRA_URL``: A URL format for showing JIRA links. This should contain a format parameter '{ticket}'.
+  (default: 'http://localhost/{ticket}')
+- ``JIRA_REST_API``: If non-empty, this should be the URL for a JIRA REST API for the JIRA plugin to
+  use. Must like ``JIRA_URL``, this should contain a format parameter '{ticket}'. (default: '')
+- ``JIRA_SHOW_FULL_DESCRIPTION``: Boolean, if False, only the formatted ``JIRA_URL`` will be returned.
+  If True, a full ticket title will be shown. (default: True)
+- ``JIRA_AUTH``: A two-tuple of JIRA credentials, username and password. (default: ('', ''))
+- ``REVIEWBOARD_URL``: A URL format for showing ReviewBoard links. This should contain a format
+  parameter '{review}'. (default: 'http://localhost/{review}')
+- ``WIKI_URL``: A URL format for showing user pages on a wiki, such as example.com/~user. This should
+  contian a format parameter '{user}'. (default: 'http://localhost/{user}')
+- ``WEBHOOKS_PORT``: The port the webhooks plugin should listen for http requests. (default: 8080)
+- ``WEBHOOKS_CREDENTIALS``: List of two-tuple username and passwords used for http basic authentication.
+  (default: none).
+
+
 Local Development
 +++++++++++++++++
 
