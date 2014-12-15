@@ -1,4 +1,6 @@
-from mock import patch, Mock
+import time
+
+from mock import call, patch, Mock
 
 from helga import log
 
@@ -81,6 +83,7 @@ def test_get_channel_logger(settings, logging, os):
         return '/'.join(args)
 
     settings.CHANNEL_LOGGING_DIR = '/path/to/channels'
+    settings.CHANNEL_LOGGING_DB = False
     os.path.exists.return_value = True
     os.path.join = os_join
 
@@ -116,9 +119,63 @@ def test_get_channel_logger_creates_log_dirs(settings, logging, os):
         return '/'.join(args)
 
     settings.CHANNEL_LOGGING_DIR = '/path/to/channels'
+    settings.CHANNEL_LOGGING_DB = False
     os.path.exists.return_value = False
     os.path.join = os_join
 
     log.get_channel_logger('#foo')
 
     os.makedirs.assert_called_with('/path/to/channels/#foo')
+
+
+@patch('helga.log.db')
+@patch('helga.log.pymongo')
+def test_database_channel_log_handler(pymongo, db):
+    handler = log.DatabaseChannelLogHandler('#foo')
+    record = Mock(created=time.time(), nick='me', message='The message')
+
+    with patch.object(handler, '_ensure_indexes'):
+        handler.emit(record)
+        db.channel_logs.insert.assert_called_with({
+            'channel': '#foo',
+            'created': record.created,
+            'nick': 'me',
+            'message': 'The message',
+        })
+        assert handler._ensure_indexes.called
+
+
+@patch('helga.log.db', None)
+@patch('helga.log.pymongo')
+def test_database_channel_log_handler_no_db(pymongo):
+    handler = log.DatabaseChannelLogHandler('#foo')
+    record = Mock(created=time.time(), nick='me', message='The message')
+
+    with patch.object(handler, '_ensure_indexes'):
+        handler.emit(record)
+        assert not handler._ensure_indexes.called
+
+
+@patch('helga.log.db')
+@patch('helga.log.pymongo')
+def test_database_channel_log_handler_ensure_indexes(pymongo, db):
+    handler = log.DatabaseChannelLogHandler('#foo')
+    handler._ensure_indexes()
+
+    calls = [
+        call([
+            ('channel', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ]),
+        call([
+            ('nick', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ]),
+        call([
+            ('nick', pymongo.ASCENDING),
+            ('channel', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ]),
+    ]
+
+    db.channel_logs.ensure_index.assert_has_calls(calls)
