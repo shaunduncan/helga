@@ -89,6 +89,9 @@ basic helga settings, as outlined below:
   logs should be written. A new directory will be created for each channel in which the
   bot resides, so if this is set to '/foo/bar' logs for channel '#baz' will be created in
   '/foo/bar/#baz'. (default: '.logs')
+- ``CHANNEL_LOGGING_DB``: If True, enable additional channel logging to the MongoDB instance
+  indicated by the ``DATABASE`` setting. This is required for the ``logger`` plugin, which
+  features search and export.
 - ``NICK``: The default nick of the bot instance (default: 'helga')
 - ``CHANNELS``: A list of channels to automatically join. You can specify either a single
   channel name or a two-tuple of channel name, and password (default: ['#bots'])

@@ -3,7 +3,10 @@ import logging.handlers
 import os
 import sys
 
+import pymongo
+
 from helga import settings
+from helga.db import db
 
 
 def getLogger(name):
@@ -57,4 +60,69 @@ def get_channel_logger(channel):
     handler.setFormatter(logging.Formatter(u'%(asctime)s - %(nick)s - %(message)s'))
     logger.addHandler(handler)
 
+    # If enabled, add the mongo backed handler
+    if settings.CHANNEL_LOGGING_DB:
+        logger.addHandler(DatabaseChannelLogHandler(channel))
+
     return logger
+
+
+class DatabaseChannelLogHandler(logging.Handler):
+    """
+    A logging handler that will store channel logs in helga's Mongo database
+    """
+
+    def __init__(self, channel):
+        self.channel = channel
+        try:
+            super(DatabaseChannelLogHandler, self).__init__(level=logging.INFO)
+        except TypeError:  # pragma NO COVER Python >= 2.7
+            # python 2.6 uses old-style classes for logging.Handler
+            logging.Handler.__init__(self, level=logging.INFO)
+
+    def createLock(self):
+        """
+        This handler requires no threading lock for I/O. That is handled by mongo.
+        """
+        self.lock = None
+
+    def _ensure_indexes(self):
+        """
+        Ensure indexes exist. Note: message is not indexed since
+        'text' indexes are not available until MongoDB 2.6 and may
+        have performance overhead
+        """
+        # Channel only index
+        db.channel_logs.ensure_index([
+            ('channel', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ])
+
+        # Nick only index
+        db.channel_logs.ensure_index([
+            ('nick', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ])
+
+        # Channel+nick index
+        db.channel_logs.ensure_index([
+            ('nick', pymongo.ASCENDING),
+            ('channel', pymongo.ASCENDING),
+            ('created', pymongo.DESCENDING)
+        ])
+
+    def emit(self, record):
+        """
+        Stores a logged channel message in the database
+        """
+        if db is None:
+            return
+
+        db.channel_logs.insert({
+            'channel': self.channel,
+            'created': record.created,
+            'nick': record.nick,
+            'message': record.message,
+        })
+
+        self._ensure_indexes()
