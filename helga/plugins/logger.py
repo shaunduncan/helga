@@ -8,20 +8,25 @@ from helga.db import db
 from helga.plugins import command
 
 
-def _do_search(channel, term=None, nick=None):
+def _do_search(channel, term=None, nick=None, limit=None):
     """
     Search logs, optionally limited by a nick or using a search term
     """
     spec = [{'channel': channel}]
+    limit = limit or settings.CHANNEL_LOGGING_DB_SEARCH_LIMIT
+    about_search = u'Last {0} logged messages for {1}'.format(limit, channel)
 
     if term is not None:
         spec.append({'message':  {'$regex': re.compile(term, re.I)}})
+        about_search = u'{0} (term: {1})'.format(about_search, term)
 
     if nick is not None:
         spec.append({'nick': {'$regex': re.compile(nick, re.I)}})
+        about_search = u'{0} (by: {1})'.format(about_search, nick)
+
+    yield about_search
 
     sort_order = [('created', pymongo.DESCENDING)]
-    limit = settings.CHANNEL_LOGGING_DB_SEARCH_LIMIT
     qs = db.channel_logs.find({'$and': spec}, limit=limit, sort=sort_order)
 
     if qs.count() == 0:
@@ -34,7 +39,7 @@ def _do_search(channel, term=None, nick=None):
         yield u'[{created}][{channel}] {nick} - {message}'.format(**rec)
 
 
-@command('logs', help='Query helga channel logs. Usage: helga logs '
+@command('log', aliases=['logs'], help='Query helga channel logs. Usage: helga logs '
          '(search <term>|search_by <nick> <term>|recent|recent_by <nick>) [on <channel>]')
 def logger(client, channel, nick, message, cmd, args):
     if not settings.CHANNEL_LOGGING_DB:
@@ -67,5 +72,5 @@ def logger(client, channel, nick, message, cmd, args):
     if channel != nick:
         client.me(channel, u'whispers to {0}'.format(nick))
 
-    client.msg(nick, u'Search Results')
-    client.msg(nick, u'\n'.join(_do_search(channel=search_channel, term=search_term, nick=search_nick)))
+    response = _do_search(channel=search_channel, term=search_term, nick=search_nick)
+    client.msg(nick, u'\n'.join(response))
