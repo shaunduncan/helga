@@ -13,6 +13,7 @@ LOG_LEVEL = 'DEBUG'
 CHANNEL_LOGGING = False
 CHANNEL_LOGGING_DIR = '.logs'
 CHANNEL_LOGGING_DB = False
+CHANNEL_LOGGING_DB_SEARCH_LIMIT = 10
 
 NICK = 'helga'
 CHANNELS = [
@@ -41,6 +42,7 @@ ENABLED_PLUGINS = [
     'facts',
     'help',
     'jira',
+    'logger',
     'loljava',
     'manager',
     'meant_to_say',

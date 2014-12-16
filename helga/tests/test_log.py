@@ -1,3 +1,4 @@
+import datetime
 import time
 
 from mock import call, patch, Mock
@@ -130,15 +131,18 @@ def test_get_channel_logger_creates_log_dirs(settings, logging, os):
 
 @patch('helga.log.db')
 @patch('helga.log.pymongo')
-def test_database_channel_log_handler(pymongo, db):
+@patch('helga.log.datetime')
+def test_database_channel_log_handler(dt, pymongo, db):
+    utcnow = datetime.datetime.utcnow()
+    dt.datetime.utcnow.return_value = utcnow
     handler = log.DatabaseChannelLogHandler('#foo')
-    record = Mock(created=time.time(), nick='me', message='The message')
+    record = Mock(nick='me', message='The message')
 
     with patch.object(handler, '_ensure_indexes'):
         handler.emit(record)
         db.channel_logs.insert.assert_called_with({
             'channel': '#foo',
-            'created': record.created,
+            'created': time.mktime(utcnow.timetuple()),
             'nick': 'me',
             'message': 'The message',
         })

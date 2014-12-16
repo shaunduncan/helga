@@ -1,7 +1,9 @@
+import datetime
 import logging
 import logging.handlers
 import os
 import sys
+import time
 
 import pymongo
 
@@ -118,9 +120,11 @@ class DatabaseChannelLogHandler(logging.Handler):
         if db is None:
             return
 
+        created = time.mktime(datetime.datetime.utcnow().timetuple())
+
         db.channel_logs.insert({
             'channel': self.channel,
-            'created': record.created,
+            'created': created,
             'nick': record.nick,
             'message': record.message,
         })
