@@ -70,11 +70,14 @@ def test_do_search_no_results(db):
     qs = MagicMock()
     qs.count.return_value = 0
     db.channel_logs.find.return_value = qs
-    assert ['No results found'] == list(logger._do_search('#bots'))
+    assert list(logger._do_search('#bots')) == [
+        'Last 10 logged messages for #bots',
+        'No results found',
+    ]
 
 
 @pytest.mark.parametrize('channel,term,nick', gen_do_search_params())
-def test_do_search(channel, term, nick, settings, monkeypatch):
+def test_do_search(channel, term, nick, monkeypatch):
     db = MagicMock()
     re = MagicMock()
     re.compile.return_value = re
@@ -82,7 +85,6 @@ def test_do_search(channel, term, nick, settings, monkeypatch):
     monkeypatch.setattr(logger, 'db', db)
     monkeypatch.setattr(logger, 're', re)
 
-    settings.CHANNEL_LOGGING_DB_SEARCH_LIMIT = 10
     qs = MagicMock()
     qs.__iter__.return_value = [
         # pymongo results will be returned in descending order, which we reverse
@@ -100,20 +102,24 @@ def test_do_search(channel, term, nick, settings, monkeypatch):
         },
     ]
     db.channel_logs.find.return_value = qs
-    retval = list(logger._do_search(channel, term=term, nick=nick))
+    retval = list(logger._do_search(channel, term=term, nick=nick, limit=10))
+
+    search_spec = {'$and': [{'channel': channel}]}
+    msg = 'Last 10 logged messages for {0}'.format(channel)
+    if term is not None:
+        search_spec['$and'].append({'message': {'$regex': re.compile(term, re.I)}})
+        msg = '{0} (term: {1})'.format(msg, term)
+    if nick is not None:
+        search_spec['$and'].append({'nick': {'$regex': re.compile(term, re.I)}})
+        msg = '{0} (by: {1})'.format(msg, nick)
 
     assert retval == [
+        msg,
         '[12/01/2001 08:15 UTC][#bots] me - from 2001',
         '[12/01/2002 08:15 UTC][#bots] me - from 2002',
     ]
 
     # Assert searched correctly
-    search_spec = {'$and': [{'channel': channel}]}
-    if term is not None:
-        search_spec['$and'].append({'message': {'$regex': re.compile(term, re.I)}})
-    if nick is not None:
-        search_spec['$and'].append({'nick': {'$regex': re.compile(term, re.I)}})
-
     db.channel_logs.find.assert_called_with(
         search_spec,
         limit=10,
