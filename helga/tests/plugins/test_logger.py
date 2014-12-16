@@ -45,7 +45,13 @@ def gen_do_search_params():
     ]
 
 
-def test_logger_only_for_enabled_db_logging(settings):
+def test_logger_fails_when_irc_search_disabled(settings):
+    settings.CHANNEL_LOGGING_DB_SEARCH_IRC = False
+    ret = logger.logger('', '', '', '', '', '')
+    assert ret == 'Log searching via IRC is disabled'
+
+
+def test_logger_fails_when_db_logging_disabled(settings):
     settings.CHANNEL_LOGGING_DB = False
     ret = logger.logger('', '', '', '', '', '')
     assert ret == 'Log searching is only available with CHANNEL_LOGGING_DB enabled'

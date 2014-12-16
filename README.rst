@@ -92,6 +92,8 @@ basic helga settings, as outlined below:
 - ``CHANNEL_LOGGING_DB``: If True, enable additional channel logging to the MongoDB instance
   indicated by the ``DATABASE`` setting. This is required for the ``logger`` plugin, which
   allows log searching via IRC.
+- ``CHANNEL_LOGGING_DB_SEARCH_IRC``: Boolean whether to allow channel logs to be searched via IRC
+  or not. Default True.
 - ``CHANNEL_LOGGING_DB_SEARCH_LIMIT``: Maximum number of log search results to return to a
   user. Default is 10. Be warned that a high limit may result in unintended kicks due to flood.
 - ``NICK``: The default nick of the bot instance (default: 'helga')
@@ -111,6 +113,9 @@ basic helga settings, as outlined below:
   Note that this does not mean plugins that are loaded. By default, any plugin that has been
   installed will be loaded and made available. This should be a list of the entry point names
   defined by each plugin. See below for information about this.
+- ``ENABLED_WEBHOOKS``: A list of webhook names that should be enabled on process startup. If
+  this value is None, then all webhooks available are loaded via entry points. An empty liste
+  will not load any webhooks. Default is None.
 - ``PLUGIN_FIRST_RESPONDER_ONLY``: If True, only the first plugin that generates a response will
   be sent back via IRC. If False, all plugin responses are sent. (default: True)
 - ``COMMAND_PREFIX_BOTNICK``: If set to True, command plugins can be run by asking directly, such

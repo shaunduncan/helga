@@ -13,6 +13,7 @@ LOG_LEVEL = 'DEBUG'
 CHANNEL_LOGGING = False
 CHANNEL_LOGGING_DIR = '.logs'
 CHANNEL_LOGGING_DB = False
+CHANNEL_LOGGING_DB_SEARCH_IRC = True
 CHANNEL_LOGGING_DB_SEARCH_LIMIT = 10
 
 NICK = 'helga'
@@ -64,6 +65,11 @@ ENABLED_PLUGINS = [
     # Generally, olga isn't being used
     # 'no_more_olga',
 ]
+
+# A list of webhook names that should be enabled on process startup.
+# If this value is None, then all webhooks loaded via entry points
+# are run. An empty list will not load any webhooks
+ENABLED_WEBHOOKS = None
 
 # Set to False if all responses returned by plugins should be returned
 # over IRC. If True, the first responding plugin will send a response
