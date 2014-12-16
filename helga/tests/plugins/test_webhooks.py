@@ -76,6 +76,18 @@ class WebhookPluginTestCase(TestCase):
         pkg_resources.iter_entry_points.assert_called_with(group='helga_webhooks')
         assert entry_points[0].load.called
 
+    @patch('helga.plugins.webhooks.settings')
+    @patch('helga.plugins.webhooks.pkg_resources')
+    def test_init_routes_ignores_not_enabled(self, pkg_resources, settings):
+        settings.ENABLED_WEBHOOKS = ['foo']
+        entry_points = [Mock(), Mock()]
+        entry_points[0].name = 'foo'
+        entry_points[1].name = 'bar'
+        pkg_resources.iter_entry_points.return_value = entry_points
+        self.plugin._init_routes()
+        assert entry_points[0].load.called
+        assert not entry_points[1].load.called
+
     @patch('helga.plugins.webhooks.reactor')
     def test_start(self, reactor):
         client = Mock()

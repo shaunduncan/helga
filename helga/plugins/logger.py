@@ -42,6 +42,9 @@ def _do_search(channel, term=None, nick=None, limit=None):
 @command('log', aliases=['logs'], help='Query helga channel logs. Usage: helga logs '
          '(search <term>|search_by <nick> <term>|recent|recent_by <nick>) [on <channel>]')
 def logger(client, channel, nick, message, cmd, args):
+    if not settings.CHANNEL_LOGGING_DB_SEARCH_IRC:
+        return u'Log searching via IRC is disabled'
+
     if not settings.CHANNEL_LOGGING_DB:
         return u'Log searching is only available with CHANNEL_LOGGING_DB enabled'
 

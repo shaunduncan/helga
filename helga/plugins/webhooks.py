@@ -58,9 +58,15 @@ class WebhookPlugin(Command):
             self._init_routes()
 
     def _init_routes(self):
+        enabled = settings.ENABLED_WEBHOOKS
+
         for entry_point in pkg_resources.iter_entry_points(group='helga_webhooks'):
+            if enabled is not None and entry_point.name not in enabled:
+                logger.info('Skipping disabled webhook %s', entry_point.name)
+                continue
+
             try:
-                logger.debug('Loading webhook %s', entry_point.name)
+                logger.info('Loading webhook %s', entry_point.name)
                 entry_point.load()
             except:  # pragma: no cover
                 logger.exception('Error loading webhook %s', entry_point)
