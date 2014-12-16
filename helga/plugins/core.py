@@ -16,6 +16,24 @@ from helga.util.encodings import to_unicode
 logger = log.getLogger(__name__)
 
 
+__all__ = [
+    'ACKS',
+    'PRIORITY_LOW',
+    'PRIORITY_NORMAL',
+    'PRIORITY_HIGH',
+    'random_ack',
+    'ResponseNotReady',
+    'Registry',
+    'registry',
+    'Plugin',
+    'Command',
+    'Match',
+    'command',
+    'match',
+    'preprocessor',
+]
+
+
 ACKS = [
     'roger',
     '10-4',

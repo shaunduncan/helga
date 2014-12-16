@@ -91,7 +91,9 @@ basic helga settings, as outlined below:
   '/foo/bar/#baz'. (default: '.logs')
 - ``CHANNEL_LOGGING_DB``: If True, enable additional channel logging to the MongoDB instance
   indicated by the ``DATABASE`` setting. This is required for the ``logger`` plugin, which
-  features search and export.
+  allows log searching via IRC.
+- ``CHANNEL_LOGGING_DB_SEARCH_LIMIT``: Maximum number of log search results to return to a
+  user. Default is 10. Be warned that a high limit may result in unintended kicks due to flood.
 - ``NICK``: The default nick of the bot instance (default: 'helga')
 - ``CHANNELS``: A list of channels to automatically join. You can specify either a single
   channel name or a two-tuple of channel name, and password (default: ['#bots'])
