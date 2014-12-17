@@ -68,8 +68,10 @@ class WebhookPluginTestCase(TestCase):
         assert self.plugin.port == 8080
         assert plugin.port == 1337
 
+    @patch('helga.plugins.webhooks.settings')
     @patch('helga.plugins.webhooks.pkg_resources')
-    def test_init_routes(self, pkg_resources):
+    def test_init_routes(self, pkg_resources, settings):
+        settings.ENABLED_WEBHOOKS = None
         entry_points = [Mock()]
         pkg_resources.iter_entry_points.return_value = entry_points
         self.plugin._init_routes()
