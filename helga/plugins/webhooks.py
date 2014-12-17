@@ -4,6 +4,7 @@ import re
 
 from twisted.internet import reactor
 from twisted.web import server, resource
+from twisted.web.error import Error as HttpError
 
 import smokesignal
 
@@ -164,15 +165,20 @@ class WebhookRoot(resource.Resource):
                 break
         else:
             request.setResponseCode(404)
-            return u'404 Not Found'
+            return '404 Not Found'
 
         # Ensure that this route handles the request method
         methods, fn = route
         if request.method.upper() not in methods:
             request.setResponseCode(405)
-            return u'405 Method Not Allowed'
+            return '405 Method Not Allowed'
 
-        return fn(request, self.irc_client, **match.groupdict())
+        # Handle raised HttpErrors
+        try:
+            return fn(request, self.irc_client, **match.groupdict())
+        except HttpError as e:
+            request.setResponseCode(e.status)
+            return e.message or e.response
 
 
 def authenticated(fn):
@@ -197,7 +203,7 @@ def authenticated(fn):
 
         # No valid basic auth provided
         request.setResponseCode(401)
-        return u'401 Unauthorized'
+        return '401 Unauthorized'
     return ensure_authenticated
 
 
