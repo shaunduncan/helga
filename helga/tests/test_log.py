@@ -1,5 +1,9 @@
 import datetime
+import re
 import time
+
+import freezegun
+import pytest
 
 from mock import call, patch, Mock
 
@@ -90,26 +94,26 @@ def test_get_channel_logger(settings, logging, os):
 
     # Mocked returns
     logging.getLogger.return_value = logger
-    logging.handlers.TimedRotatingFileHandler.return_value = handler
     logging.Formatter.return_value = formatter
 
-    log.get_channel_logger('#foo')
+    with patch.object(log, 'ChannelLogFileHandler'):
+        log.ChannelLogFileHandler.return_value = handler
+        log.get_channel_logger('#foo')
 
-    # Gets the right logger
-    logging.getLogger.assert_called_with('channel_logger/#foo')
-    logger.setLevel.assert_called_with(logging.INFO)
-    assert logger.propagate is False
+        # Gets the right logger
+        logging.getLogger.assert_called_with('channel_logger/#foo')
+        logger.setLevel.assert_called_with(logging.INFO)
+        assert logger.propagate is False
 
-    # Sets the handler correctly
-    logging.handlers.TimedRotatingFileHandler.assert_called_with('/path/to/channels/#foo/log.txt',
-                                                                 when='d', utc=True)
-    handler.setFormatter.assert_called_with(formatter)
+        # Sets the handler correctly
+        log.ChannelLogFileHandler.assert_called_with('/path/to/channels/#foo')
+        handler.setFormatter.assert_called_with(formatter)
 
-    # Sets the formatter correctly
-    logging.Formatter.assert_called_with('%(asctime)s - %(nick)s - %(message)s')
+        # Sets the formatter correctly
+        logging.Formatter.assert_called_with('%(utctime)s - %(nick)s - %(message)s')
 
-    # Logger uses the handler
-    logger.addHandler.assert_called_with(handler)
+        # Logger uses the handler
+        logger.addHandler.assert_called_with(handler)
 
 
 @patch('helga.log.os')
@@ -129,57 +133,115 @@ def test_get_channel_logger_creates_log_dirs(settings, logging, os):
     os.makedirs.assert_called_with('/path/to/channels/#foo')
 
 
-@patch('helga.log.db')
-@patch('helga.log.pymongo')
-@patch('helga.log.datetime')
-def test_database_channel_log_handler(dt, pymongo, db):
-    utcnow = datetime.datetime.utcnow()
-    dt.datetime.utcnow.return_value = utcnow
-    handler = log.DatabaseChannelLogHandler('#foo')
-    record = Mock(nick='me', message='The message')
+class TestChannelLogFileHandler(object):
 
-    with patch.object(handler, '_ensure_indexes'):
-        handler.emit(record)
-        db.channel_logs.insert.assert_called_with({
-            'channel': '#foo',
-            'created': time.mktime(utcnow.timetuple()),
-            'nick': 'me',
-            'message': 'The message',
-        })
-        assert handler._ensure_indexes.called
+    def setup(self):
+        self.handler = log.ChannelLogFileHandler('/tmp')
+
+    def test_setup_correctly(self):
+        assert self.handler.basedir == '/tmp'
+        assert re.match(r'/tmp/[0-9]{4}-[0-9]{2}-[0-9]{2}.txt',
+                        self.handler.baseFilename)
+
+    def test_compute_next_rollover(self):
+        expected = datetime.datetime(2014, 11, 1)
+        with freezegun.freeze_time('2014-10-31 08:15'):
+            assert self.handler.compute_next_rollover() == expected
+
+    @freezegun.freeze_time('2014-10-31 08:15')
+    def test_current_filename(self):
+        assert self.handler.current_filename() == '2014-10-31.txt'
+
+    @pytest.mark.parametrize('datestr,rollover', [
+        ('2014-10-31 08:15', False),
+        ('2014-11-01 00:00', True),
+        ('2014-11-01 08:15', True),
+    ])
+    def test_shouldRollover(self, datestr, rollover):
+        self.handler.next_rollover = datetime.datetime(2014, 11, 1)
+        with freezegun.freeze_time(datestr):
+            assert self.handler.shouldRollover(None) is rollover
+
+    def test_do_rollover(self):
+        stream = Mock()
+        self.handler.stream = stream
+
+        old_rollover = self.handler.next_rollover
+        old_filename = self.handler.baseFilename
+        expected_rollover = datetime.datetime(2014, 11, 1, 0, 0, 0)
+
+        assert old_rollover != expected_rollover
+
+        with freezegun.freeze_time('2014-10-31 08:15'):
+            with patch.object(self.handler, '_open'):
+                self.handler.doRollover()
+                assert stream.close.called
+                assert self.handler._open.called
+                assert self.handler.baseFilename != old_filename
+                assert self.handler.baseFilename == '/tmp/2014-10-31.txt'
+                assert self.handler.next_rollover == expected_rollover
 
 
-@patch('helga.log.db', None)
-@patch('helga.log.pymongo')
-def test_database_channel_log_handler_no_db(pymongo):
-    handler = log.DatabaseChannelLogHandler('#foo')
-    record = Mock(created=time.time(), nick='me', message='The message')
+class TestChannelLogMongoHandler(object):
 
-    with patch.object(handler, '_ensure_indexes'):
-        handler.emit(record)
-        assert not handler._ensure_indexes.called
+    def setup(self):
+        self.handler = log.ChannelLogMongoHandler('#foo')
 
+    def test_setup_correctly(self):
+        assert self.handler.channel == '#foo'
 
-@patch('helga.log.db')
-@patch('helga.log.pymongo')
-def test_database_channel_log_handler_ensure_indexes(pymongo, db):
-    handler = log.DatabaseChannelLogHandler('#foo')
-    handler._ensure_indexes()
+    def test_requries_no_lock(self):
+        self.handler.lock = 'lock'
+        self.handler.createLock()
+        assert self.handler.lock is None
 
-    calls = [
-        call([
-            ('channel', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ]),
-        call([
-            ('nick', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ]),
-        call([
-            ('nick', pymongo.ASCENDING),
-            ('channel', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ]),
-    ]
+    @patch('helga.log.db')
+    @patch('helga.log.pymongo')
+    def test_ensure_indexes(self, pymongo, db):
+        self.handler._ensure_indexes()
+        one_day = 24 * 60 * 60
 
-    db.channel_logs.ensure_index.assert_has_calls(calls)
+        calls = [
+            call([
+                ('channel', pymongo.ASCENDING),
+                ('created', pymongo.DESCENDING)
+            ], cache_for=one_day),
+            call([
+                ('nick', pymongo.ASCENDING),
+                ('created', pymongo.DESCENDING)
+            ], cache_for=one_day),
+            call([
+                ('nick', pymongo.ASCENDING),
+                ('channel', pymongo.ASCENDING),
+                ('created', pymongo.DESCENDING)
+            ], cache_for=one_day),
+        ]
+
+        db.channel_logs.ensure_index.assert_has_calls(calls)
+
+    @patch('helga.log.db')
+    @patch('helga.log.pymongo')
+    @patch('helga.log.datetime')
+    def test_emit(self, dt, pymongo, db):
+        utcnow = datetime.datetime.utcnow()
+        dt.datetime.utcnow.return_value = utcnow
+        record = Mock(nick='me', message='The message')
+
+        with patch.object(self.handler, '_ensure_indexes'):
+            self.handler.emit(record)
+            db.channel_logs.insert.assert_called_with({
+                'channel': '#foo',
+                'created': time.mktime(utcnow.timetuple()),
+                'nick': 'me',
+                'message': 'The message',
+            })
+            assert self.handler._ensure_indexes.called
+
+    @patch('helga.log.db', None)
+    @patch('helga.log.pymongo')
+    def test_emit_with_no_db(self, pymongo):
+        record = Mock(created=time.time(), nick='me', message='The message')
+
+        with patch.object(self.handler, '_ensure_indexes'):
+            self.handler.emit(record)
+            assert not self.handler._ensure_indexes.called
