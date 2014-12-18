@@ -19,6 +19,18 @@ class TestIndexView(object):
 
         assert list(self.view.channels()) == ['bar', 'baz', 'foo']
 
+    def test_channels_empty_for_no_logs(self, monkeypatch):
+        monkeypatch.setattr(logger, 'os', Mock())
+        logger.os.path.isdir.return_value = False
+        logger.os.listdir.side_effect = OSError
+
+        try:
+            retval = list(self.view.channels())
+        except:
+            pytest.fail('Should not have raised an Exception')
+        else:
+            assert retval == []
+
 
 class TestChannelIndexView(object):
 
