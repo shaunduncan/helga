@@ -10,6 +10,7 @@ import smokesignal
 
 from helga import log, settings
 from helga.plugins import Command, registry
+from helga.util.encodings import from_unicode
 
 
 logger = log.getLogger(__name__)
@@ -175,7 +176,8 @@ class WebhookRoot(resource.Resource):
 
         # Handle raised HttpErrors
         try:
-            return fn(request, self.irc_client, **match.groupdict())
+            # Explicitly return a byte string. Twisted expects this
+            return from_unicode(fn(request, self.irc_client, **match.groupdict()))
         except HttpError as e:
             request.setResponseCode(e.status)
             return e.message or e.response

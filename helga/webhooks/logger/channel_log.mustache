@@ -1,0 +1,21 @@
+{{> header }}
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th class="col-md-1">Time</th>
+            <th class="col-md-1">Nick</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{# messages }}
+            <tr>
+                <td>{{ time }}</td>
+                <td>{{ nick }}</td>
+                <td>{{ message }}</td>
+            </tr>
+        {{/ messages }}
+    </tbody>
+</table>
+{{> footer }}
+

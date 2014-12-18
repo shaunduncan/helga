@@ -73,7 +73,8 @@ setup(name="helga",
               'wiki_whois   = helga.plugins.wiki_whois:wiki_whois',
           ],
           helga_webhooks=[
-              'announcements = helga.webhooks.announcements:announce'
+              'announcements = helga.webhooks.announcements:announce',
+              'logger        = helga.webhooks.logger:logger'
           ],
           console_scripts=[
               'helga = helga.run:run',
