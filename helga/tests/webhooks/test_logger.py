@@ -109,6 +109,22 @@ class TestChannelLogView(object):
             },
         ]
 
+    def test_download(self, tmpdir):
+        request = Mock()
+        contents = ('00:00:00 - foo - this is what i said\n'
+                    '12:01:35 - bar - another thing i said\n'
+                    '16:17:18 - baz - this - has - delimiters')
+
+        logger.settings.CHANNEL_LOGGING_DIR = str(tmpdir)
+
+        # Create tmp file
+        file = tmpdir.mkdir('#foo').join('2014-12-01.txt')
+        file.write(contents)
+
+        assert self.view.download(request) == contents
+        request.setHeader.assert_any_call('Content-Type', 'text/plain')
+        request.setHeader.assert_any_call('Content-Disposition', 'attachment; filename=2014-12-01.txt')
+
 
 class TestWebhook(object):
 
@@ -155,3 +171,12 @@ class TestWebhook(object):
         assert '<td>00:00:00</td>' in response
         assert '<td>foo</td>' in response
         assert '<td>this is what i said</td>' in response
+
+    def test_renders_channel_log_as_text(self, tmpdir):
+        self._mock_log_dir(tmpdir)
+        response = logger.logger(self.request, None, 'foo', '2014-12-01', as_text=True)
+        self.request.setHeader.assert_any_call('Content-Type', 'text/plain')
+        self.request.setHeader.assert_any_call('Content-Disposition', 'attachment; filename=2014-12-01.txt')
+
+        # Output asserts
+        assert response == '00:00:00 - foo - this is what i said'
