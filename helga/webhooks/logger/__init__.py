@@ -55,21 +55,30 @@ class ChannelLog(object):
     """
 
     def __init__(self, channel, date):
-        self.channel = channel
+        self.channel_name = channel
         self.date = date
+        self.logfile = '{0}.txt'.format(self.date)
+        self.channel = '#{0}'.format(self.channel_name)
+
+    @property
+    def logfile_path(self):
+        return os.path.join(settings.CHANNEL_LOGGING_DIR, self.channel, self.logfile)
 
     def title(self):
-        return u'#{0} Channel Logs for {1}'.format(self.channel, self.date)
+        """
+        The page title
+        """
+        return u'{0} Channel Logs for {1}'.format(self.channel, self.date)
 
     def messages(self):
-        logfile = '{0}.txt'.format(self.date)
-        channel = '#{0}'.format(self.channel)
-        logfile_full = os.path.join(settings.CHANNEL_LOGGING_DIR, channel, logfile)
-
-        if not os.path.isfile(logfile_full):
+        """
+        Generator for logged channel messages as a dictionary
+        of the message time, message nick, and message contents
+        """
+        if not os.path.isfile(self.logfile_path):
             raise HttpError(404)
 
-        with open(logfile_full, 'r') as fp:
+        with open(self.logfile_path, 'r') as fp:
             for line in fp.readlines():
                 parts = line.strip().split(' - ')
                 yield {
@@ -78,11 +87,21 @@ class ChannelLog(object):
                     'message': ' - '.join(parts),
                 }
 
+    def download(self, request):
+        """
+        Offers this logfile as a download
+        """
+        request.setHeader('Content-Type', 'text/plain')
+        request.setHeader('Content-Disposition',
+                          'attachment; filename={0}'.format(self.logfile))
+        with open(self.logfile_path, 'r') as fp:
+            return '\n'.join(line.strip() for line in fp.readlines())
+
 
 @route(r'/logger/?$')
 @route(r'/logger/(?P<channel>[\w\-_]+)/?$')
-@route(r'/logger/(?P<channel>[\w\-_]+)/(?P<date>[\w\-]+)/?$')
-def logger(request, irc_client, channel=None, date=None):
+@route(r'/logger/(?P<channel>[\w\-_]+)/(?P<date>[\w\-]+)(?P<as_text>\.txt)?/?$')
+def logger(request, irc_client, channel=None, date=None, as_text=None):
     if not settings.CHANNEL_LOGGING:
         raise HttpError(501, 'Channel logging is not enabled')
 
@@ -97,5 +116,7 @@ def logger(request, irc_client, channel=None, date=None):
         page = ChannelIndex(channel)
     else:
         page = ChannelLog(channel, date)
+        if as_text is not None:
+            return page.download(request)
 
     return renderer.render(page)
