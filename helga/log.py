@@ -62,10 +62,6 @@ def get_channel_logger(channel):
     handler.setFormatter(logging.Formatter(u'%(utctime)s - %(nick)s - %(message)s'))
     logger.addHandler(handler)
 
-    # If enabled, add the mongo backed handler
-    if settings.CHANNEL_LOGGING_DB:
-        logger.addHandler(ChannelLogMongoHandler(channel))
-
     return logger
 
 
@@ -137,71 +133,3 @@ class ChannelLogFileHandler(logging.handlers.BaseRotatingHandler):
         self.stream = self._open()
 
         self.next_rollover = self.compute_next_rollover()
-
-
-class ChannelLogMongoHandler(logging.Handler):
-    """
-    A logging handler that will store channel logs in helga's Mongo database
-    """
-
-    def __init__(self, channel):
-        self.channel = channel
-        try:
-            super(ChannelLogMongoHandler, self).__init__(level=logging.INFO)
-        except TypeError:  # pragma NO COVER Python >= 2.7
-            # python 2.6 uses old-style classes for logging.Handler
-            logging.Handler.__init__(self, level=logging.INFO)
-
-    def createLock(self):
-        """
-        Explicitly sets the handler lock to None as this is handled by mongo.
-        """
-        self.lock = None
-
-    def _ensure_indexes(self):
-        """
-        Ensure indexes exist. Index combinations are created to aid in log
-        searching: (created, channel), (created, nick), and (created, nick, channel)
-
-        Note: message is not indexed since 'text' indexes are not available
-        until MongoDB 2.6 and may have performance overhead
-        """
-        # Cache the ensure_index call for a day
-        one_day = 24 * 60 * 60
-
-        # Channel only index
-        db.channel_logs.ensure_index([
-            ('channel', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ], cache_for=one_day)
-
-        # Nick only index
-        db.channel_logs.ensure_index([
-            ('nick', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ], cache_for=one_day)
-
-        # Channel+nick index
-        db.channel_logs.ensure_index([
-            ('nick', pymongo.ASCENDING),
-            ('channel', pymongo.ASCENDING),
-            ('created', pymongo.DESCENDING)
-        ], cache_for=one_day)
-
-    def emit(self, record):
-        """
-        Stores a logged channel message in the database
-        """
-        if db is None:
-            return
-
-        created = time.mktime(datetime.datetime.utcnow().timetuple())
-
-        db.channel_logs.insert({
-            'channel': self.channel,
-            'created': created,
-            'nick': record.nick,
-            'message': record.message,
-        })
-
-        self._ensure_indexes()
