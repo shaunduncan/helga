@@ -7,16 +7,24 @@ from helga.plugins.webhooks import HttpError, route
 
 
 class Index(object):
+    """
+    Rendered object for the logger index page meant to show the full list
+    of logged channels.
+    """
 
     def title(self):
         return u'Channel Logs'
 
     def channels(self):
-        channels = sorted(os.listdir(settings.CHANNEL_LOGGING_DIR))
-        return map(lambda s: s.lstrip('#'), channels)
+        for chan in sorted(os.listdir(settings.CHANNEL_LOGGING_DIR)):
+            yield chan.lstrip('#')
 
 
 class ChannelIndex(object):
+    """
+    Rendered object for the logger channel index page meant to show the full list
+    of log files (UTC dates) for a given IRC channel.
+    """
 
     def __init__(self, channel):
         self.channel = channel
@@ -27,14 +35,19 @@ class ChannelIndex(object):
     def dates(self):
         channel = '#{0}'.format(self.channel)
         basedir = os.path.join(settings.CHANNEL_LOGGING_DIR, channel)
+
         if not os.path.isdir(basedir):
             raise HttpError(404)
 
-        dates = sorted(os.listdir(basedir), reverse=True)
-        return map(lambda s: s.replace('.txt', ''), dates)
+        for date in sorted(os.listdir(basedir), reverse=True):
+            yield date.replace('.txt', '')
 
 
 class ChannelLog(object):
+    """
+    Rendered object for displaying the full contents of a channel log for a
+    given channel and date.
+    """
 
     def __init__(self, channel, date):
         self.channel = channel
@@ -53,7 +66,7 @@ class ChannelLog(object):
 
         with open(logfile_full, 'r') as fp:
             for line in fp.readlines():
-                parts = line.split(' - ')
+                parts = line.strip().split(' - ')
                 yield {
                     'time': parts.pop(0),
                     'nick': parts.pop(0),
