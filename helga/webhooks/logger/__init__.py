@@ -16,7 +16,12 @@ class Index(object):
         return u'Channel Logs'
 
     def channels(self):
-        for chan in sorted(os.listdir(settings.CHANNEL_LOGGING_DIR)):
+        log_dir = settings.CHANNEL_LOGGING_DIR
+
+        if not os.path.isdir(log_dir):
+            raise StopIteration
+
+        for chan in sorted(os.listdir(log_dir)):
             yield chan.lstrip('#')
 
 
