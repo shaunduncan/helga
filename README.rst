@@ -379,6 +379,26 @@ The route decorator accepts two arguments: 1) a path regular expression and 2) a
 HTTP methods to accept. If you do not specify a list of HTTP methods, only GET requests will be served.
 All regex paths must be named groups and they will be passed as keyword arguments.
 
+Webhooks should return a string response, which will be returned to the requesting client as the
+content body of the response. You can arbitrarily set response headers using the passed ``request``
+argument. For example:
+
+.. code-block:: python
+
+    def foo(request, irc_client):
+        request.setResponseHeader(404)
+        return '404 Not Found'
+
+For convenience, if you would like to simplify settings resopnse status codes with an optional
+message, simply raise ``helga.plugins.webhooks.HttpError``:
+
+.. code-block:: python
+
+    from helga.plugins.webhooks import HttpError
+
+    def foo(request, irc_client):
+        raise HttpError(404)
+
 To register a new webhook plugin, you must declare an entry_point much in the same way normal plugins
 are done. However, the entry_point group name is ``helga_webhooks``. For example:
 
