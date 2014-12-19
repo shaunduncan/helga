@@ -31,6 +31,18 @@ class TestIndexView(object):
         else:
             assert retval == []
 
+    def test_channels_hides_blacklist(self, monkeypatch):
+        monkeypatch.setattr(logger, 'os', Mock())
+
+        # Should handle with or without leading '#'
+        monkeypatch.setattr(logger, 'settings', Mock(
+            CHANNEL_LOGGING_HIDE_CHANNELS=['#foo', 'bar']
+        ))
+
+        logger.os.listdir.return_value = ['#foo', '#bar', '#baz']
+
+        assert list(self.view.channels()) == ['baz']
+
 
 class TestChannelIndexView(object):
 
