@@ -1,5 +1,7 @@
 import os
+import re
 
+from collections import deque
 from itertools import imap
 from operator import methodcaller
 
@@ -85,14 +87,35 @@ class ChannelLog(object):
         if not os.path.isfile(self.logfile_path):
             raise HttpError(404)
 
+        line_pat = re.compile(r'^(\d{2}:?){3} - \w+ - .*$')
+        message = ''
+        log = deque()
+
+        # XXX: This is kind of terrible. Some things will log only a single time
+        # if the message sent over IRC has newlines. So we have to read in reverse
+        # and construct the response list
         with open(self.logfile_path, 'r') as fp:
-            for line in fp.readlines():
+            for line in reversed(fp.readlines()):
+                if not line_pat.match(line):
+                    message = u''.join((line, message))
+                    continue
+
                 parts = line.strip().split(' - ')
-                yield {
+                log.appendleft({
                     'time': parts.pop(0),
                     'nick': parts.pop(0),
-                    'message': ' - '.join(parts),
-                }
+                    'message': u'\n'.join((u' - '.join(parts), message)).rstrip('\n'),
+                })
+                message = ''
+
+        if message:
+            log.appendleft({
+                'time': '',
+                'nick': '',
+                'message': message,
+            })
+
+        return log
 
     def download(self, request):
         """

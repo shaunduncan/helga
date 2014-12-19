@@ -121,6 +121,40 @@ class TestChannelLogView(object):
             },
         ]
 
+    def test_messages_with_multiline_content(self, tmpdir):
+        logger.settings.CHANNEL_LOGGING_DIR = str(tmpdir)
+
+        # Create tmp file
+        file = tmpdir.mkdir('#foo').join('2014-12-01.txt')
+        file.write('\n'.join([
+            '00:00:00 - foo - this is what i said',
+            '...and here',
+            '...and here again',
+        ]))
+
+        assert list(self.view.messages()) == [
+            {
+                'time': '00:00:00',
+                'nick': 'foo',
+                'message': 'this is what i said\n...and here\n...and here again',
+            }
+        ]
+
+    def test_messages_with_unhandled_content(self, tmpdir):
+        logger.settings.CHANNEL_LOGGING_DIR = str(tmpdir)
+
+        # Create tmp file
+        file = tmpdir.mkdir('#foo').join('2014-12-01.txt')
+        file.write("it's lonely here")
+
+        assert list(self.view.messages()) == [
+            {
+                'time': '',
+                'nick': '',
+                'message': "it's lonely here",
+            }
+        ]
+
     def test_download(self, tmpdir):
         request = Mock()
         contents = ('00:00:00 - foo - this is what i said\n'
@@ -182,7 +216,7 @@ class TestWebhook(object):
         assert '<title>#foo Channel Logs for 2014-12-01</title>' in response
         assert '<td><a href="#00:00:00" name="00:00:00">00:00:00</a></td>' in response
         assert '<td>foo</td>' in response
-        assert '<td>this is what i said</td>' in response
+        assert '<td><pre>this is what i said</pre></td>' in response
 
     def test_renders_channel_log_as_text(self, tmpdir):
         self._mock_log_dir(tmpdir)
