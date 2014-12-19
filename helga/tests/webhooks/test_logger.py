@@ -168,7 +168,7 @@ class TestWebhook(object):
 
         # Output asserts
         assert '<title>#foo Channel Logs for 2014-12-01</title>' in response
-        assert '<td>00:00:00</td>' in response
+        assert '<td><a href="#00:00:00" name="00:00:00">00:00:00</a></td>' in response
         assert '<td>foo</td>' in response
         assert '<td>this is what i said</td>' in response
 
