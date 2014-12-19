@@ -1,5 +1,8 @@
 import os
 
+from itertools import imap
+from operator import methodcaller
+
 import pystache
 
 from helga import settings
@@ -17,12 +20,16 @@ class Index(object):
 
     def channels(self):
         log_dir = settings.CHANNEL_LOGGING_DIR
+        lstrip = methodcaller('lstrip', '#')
+        hidden = set(imap(lstrip, settings.CHANNEL_LOGGING_HIDE_CHANNELS))
 
         if not os.path.isdir(log_dir):
             raise StopIteration
 
-        for chan in sorted(os.listdir(log_dir)):
-            yield chan.lstrip('#')
+        for chan in imap(lstrip, sorted(os.listdir(log_dir))):
+            if chan in hidden:
+                continue
+            yield chan
 
 
 class ChannelIndex(object):
