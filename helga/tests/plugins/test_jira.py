@@ -352,3 +352,17 @@ def test_jira_plugin_handles_match(command, match):
     assert not command.called
     assert match.called
     match.assert_called_with(*args)
+
+
+def test_find_jira_numbers_with_no_patterns():
+    with patch.object(jira, 'JIRA_PATTERNS', set()):
+        assert [] == jira.find_jira_numbers('foo-123')
+
+
+@patch('helga.plugins.jira.settings', settings_stub)
+@patch('helga.plugins.jira.db')
+def test_find_jira_numbers_when_no_patterns(mock_db):
+    with patch.object(jira, 'JIRA_PATTERNS', set()):
+        with patch.object(jira, 'jira_match'):
+            jira.jira._plugins[1](Mock(), '#bots', 'me', 'foo-123')
+            assert not jira.jira_match.called

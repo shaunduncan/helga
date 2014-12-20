@@ -44,11 +44,15 @@ def find_jira_numbers(message):
 
     pat = r'(https?://.*?)?(({0})-\d+)($|[\s\W]+)'.format('|'.join(JIRA_PATTERNS))
     tickets = []
-    for match in re.findall(pat, message, re.IGNORECASE):
-        # if match[0] is not empty, the ticket is in a URL. Ignore it
-        if match[0]:
+
+    if not JIRA_PATTERNS:
+        return tickets
+
+    for matched in re.findall(pat, message, re.IGNORECASE):
+        # if matched[0] is not empty, the ticket is in a URL. Ignore it
+        if matched[0]:
             continue
-        tickets.append(match[1])
+        tickets.append(matched[1])
 
     return tickets
 
@@ -161,7 +165,7 @@ def jira_full_descriptions(client, channel, urls):
 
 def jira_match(client, channel, nick, message, matches):
     jira_url = to_unicode(settings.JIRA_URL)
-    full_urls = dict(map(lambda s: (s, jira_url.format(ticket=s)), matches))
+    full_urls = dict((s, jira_url.format(ticket=s)) for s in matches)
 
     if not getattr(settings, 'JIRA_SHOW_FULL_DESCRIPTION', True):
         return u'{0} might be talking about JIRA ticket: {1}'.format(nick, ', '.join(full_urls.values()))
