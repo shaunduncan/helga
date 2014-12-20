@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.6.0
+-----
+- Added a new channel logger to log conversations to UTC dated text files. Also features a
+  web UI for log browsing.
+
 1.5.2
 -----
 - Merged PR #119 - Adding replace command for facts plugin
