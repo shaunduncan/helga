@@ -22,7 +22,7 @@ setup(name="helga",
       version=version,
       description=('IRC bot using twisted that supports plugins'),
       classifiers=[
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
           'Framework :: Twisted',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',

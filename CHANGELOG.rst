@@ -5,6 +5,7 @@ CHANGELOG
 -----
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
+- Fixed #120 - Operator plugin doesn't format responses properly
 - Fixed #126 - JIRA plugin exception when JIRA_PATTERNS is empty
 - Fixed #127 - Allow optional setting to use shlex for comman arg string parsing instead of
   naive whitespace splitting (see README for COMMAND_ARGS_SHLEX)
