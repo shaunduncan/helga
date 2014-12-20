@@ -108,4 +108,3 @@ class TestMeantToSay(object):
             [('foo', 'bar', '/gic')]
         )
         assert resp == 'me meant to say: this is a bar message bar'
-
