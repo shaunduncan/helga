@@ -5,6 +5,7 @@ CHANGELOG
 -----
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
+- Fixed #126 - JIRA plugin exception when JIRA_PATTERNS is empty
 
 1.5.2
 -----
