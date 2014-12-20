@@ -376,11 +376,12 @@ class Command(Plugin):
     aliases = []
     help = ''
 
-    def __init__(self, command='', aliases=None, help='', priority=PRIORITY_NORMAL):
+    def __init__(self, command='', aliases=None, help='', priority=PRIORITY_NORMAL, shlex=False):
         super(Command, self).__init__(priority)
         self.command = command or self.command
         self.aliases = aliases or self.aliases
         self.help = help or self.help
+        self.shlex = shlex
 
     def parse(self, botnick, message):
         """
@@ -426,7 +427,7 @@ class Command(Plugin):
         the message 'helga foo bar "baz qux"', the former would produce arguments
         ['bar', '"baz', 'qux"'] while the latter would produce ['bar', 'baz qux']
         """
-        if settings.COMMAND_ARGS_SHLEX:
+        if self.shlex or settings.COMMAND_ARGS_SHLEX:
             argv = shlex.split(from_unicode(argstr.strip()))
         else:
             argv = argstr.strip().split(' ')
@@ -571,7 +572,7 @@ class Match(Plugin):
         return self.run(client, channel, nick, message, matches)
 
 
-def command(command, aliases=None, help='', priority=PRIORITY_NORMAL):
+def command(command, aliases=None, help='', priority=PRIORITY_NORMAL, shlex=False):
     """
     A decorator for creating simple commands where subclassing the ``Command``
     plugin type may be overkill. This is generally the easiest way to create helga
@@ -603,8 +604,10 @@ def command(command, aliases=None, help='', priority=PRIORITY_NORMAL):
     :param help: a simple help/usage string
     :param priority: priority weight to give this plugin. Must be an integer value, a higher value
                      meaning a higher priority (default 50)
+    :param shlex: Enable using shlex.split() for arg string parsing. This will be the default
+                  behavior in a future version.
     """
-    return Command(command, aliases=aliases, help=help, priority=priority).decorate
+    return Command(command, aliases=aliases, help=help, priority=priority, shlex=shlex).decorate
 
 
 def match(pattern='', priority=PRIORITY_LOW):

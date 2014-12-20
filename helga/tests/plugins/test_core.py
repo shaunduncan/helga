@@ -449,6 +449,18 @@ class TestCommand(object):
 
         assert 'bar' == foo._plugins[0](self.client, '#bots', 'me', 'helga baz')
 
+    def test_decorator_with_shlex(self):
+        @command('foo', shlex=True)
+        def foo(client, chan, nick, msg, cmd, args):
+            return args
+
+        with patch('helga.plugins.core.settings') as settings:
+            settings.COMMAND_ARGS_SHLEX = False
+            settings.COMMAND_PREFIX_BOTNICK = True
+            settings.COMMAND_PREFIX_CHAR = '!'
+            message = 'helga foo bar "baz qux"'
+            assert foo._plugins[0](self.client, '#bots', 'me', message) == ['bar', 'baz qux']
+
 
 class TestMatch(object):
 
