@@ -83,7 +83,7 @@ class Client(irc.IRCClient):
             self.channel_loggers[channel] = log.get_channel_logger(channel)
         return self.channel_loggers[channel]
 
-    def log_channel_message(self, channel, nick, *messages):
+    def log_channel_message(self, channel, nick, message):
         """
         Logs one or more messages by a user on a channel using a channel
         logger. If channel logging is not enabled, nothing happens.
@@ -91,9 +91,7 @@ class Client(irc.IRCClient):
         if not settings.CHANNEL_LOGGING:
             return
         chan_logger = self.get_channel_logger(channel)
-
-        for msg in messages:
-            chan_logger.info(msg, extra={'nick': nick})
+        chan_logger.info(message, extra={'nick': nick})
 
     def connectionMade(self):
         logger.info('Connection made to %s', settings.SERVER['HOST'])
@@ -160,10 +158,11 @@ class Client(irc.IRCClient):
         responses = registry.process(self, channel, user, message)
 
         if responses:
-            self.msg(channel, u'\n'.join(responses))
+            message = u'\n'.join(responses)
+            self.msg(channel, message)
 
             if is_public:
-                self.log_channel_message(channel, self.nickname, *responses)
+                self.log_channel_message(channel, self.nickname, message)
 
         # Update last message
         self.last_message[channel][user] = message
