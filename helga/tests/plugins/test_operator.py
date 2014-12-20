@@ -7,7 +7,8 @@ from helga.plugins import operator, ACKS
 
 def test_operator_ignores_non_oper_user():
     client = stub(operators=['me'])
-    assert operator.operator(client, '#bots', 'sduncan', 'do something', '', '') in operator.nopes
+    formatted_nopes = map(lambda s: s.format(nick='sduncan'), operator.nopes)
+    assert operator.operator(client, '#bots', 'sduncan', 'do something', '', '') in formatted_nopes
 
 
 def test_operator_join_calls_client_join():
