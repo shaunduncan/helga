@@ -5,6 +5,9 @@ CHANGELOG
 -----
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
+- Fixed #68 - Custom settings overrides can be supplied via command line argument --settings.
+  The old env var is still supported. Either option can be an import string 'foo.bar.baz' or
+  a path on the filesystem 'foo/bar/baz.py'
 - Fixed #107 - Set erroneousNickFallback for default IRC client
 - Fixed #111 - Better README docs on SERVER settings
 - Fixed #120 - Operator plugin doesn't format responses properly
