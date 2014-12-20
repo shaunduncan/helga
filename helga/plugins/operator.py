@@ -64,7 +64,7 @@ def operator(client, channel, nick, message, cmd, args):
     for this command must have his or her nick listed in OPERATORS list in helga settings.
     """
     if nick not in client.operators:
-        return random.choice(nopes)
+        return random.choice(nopes).format(nick=nick)
 
     subcmd = args[0]
 
