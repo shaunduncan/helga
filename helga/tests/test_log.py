@@ -1,11 +1,10 @@
 import datetime
 import re
-import time
 
 import freezegun
 import pytest
 
-from mock import call, patch, Mock
+from mock import patch, Mock
 
 from helga import log
 

@@ -219,15 +219,17 @@ def test_replace_fact(add, forget):
 def test_replace_facts_command():
     facts.replace_fact = lambda x, y, author: (x, y, author)
     args = ['term1', 'term2', '<with>', 'def1', 'def2']
-    assert (u'term1 term2', u'def1 def2', u'me') == facts.facts_command(None,
-        '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args)
+    assert (u'term1 term2', u'def1 def2', u'me') == facts.facts_command(
+        None, '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args
+    )
 
 
 def test_replace_facts_missing_pipe_command():
     facts.replace_fact = lambda x, y, author: (x, y, author)
     args = ['term1', 'term2', 'def1', 'def2']
-    assert (u'No definition supplied.') == facts.facts_command(None,
-        '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args)
+    assert (u'No definition supplied.') == facts.facts_command(
+        None, '#bots', 'me', '!replace term1 term2 <with> def1 def2', 'replace', args
+    )
 
 
 @patch('helga.plugins.facts.facts_match')
