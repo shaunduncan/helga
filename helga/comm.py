@@ -63,6 +63,7 @@ class Client(irc.IRCClient):
     lineRate = getattr(settings, 'RATE_LIMIT', None)
     sourceURL = 'http://github.com/shaunduncan/helga'
     encoding = 'UTF-8'
+    erroneousNickFallback = '{0}_{1}'.format(settings.NICK, int(time.time()))
 
     def __init__(self, factory=None):
         self.factory = factory
@@ -178,7 +179,7 @@ class Client(irc.IRCClient):
             parts = parts[:-1]
 
         stripped = '_'.join(parts)
-        self.nickname = '{0}_{1}'.format(stripped, time.time())
+        self.nickname = '{0}_{1}'.format(stripped, int(time.time()))
 
         return self.nickname
 
