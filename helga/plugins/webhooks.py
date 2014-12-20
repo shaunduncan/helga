@@ -4,7 +4,7 @@ import re
 
 from twisted.internet import reactor
 from twisted.web import server, resource
-from twisted.web.error import Error as HttpError
+from twisted.web.error import Error
 
 import smokesignal
 
@@ -14,6 +14,11 @@ from helga.util.encodings import from_unicode
 
 
 logger = log.getLogger(__name__)
+
+
+# Subclassed only for better naming
+class HttpError(Error):
+    pass
 
 
 class WebhookPlugin(Command):
