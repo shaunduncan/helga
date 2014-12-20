@@ -78,11 +78,14 @@ class ClientTestCase(TestCase):
 
     def test_alterCollidedNick(self):
         self.client.alterCollidedNick('foo')
-        assert re.match(r'foo_[\d]+', self.client.nickname)
+        assert re.match(r'^foo_[\d]+$', self.client.nickname)
 
         # Should take the first part up to '_'
         self.client.alterCollidedNick('foo_bar')
-        assert re.match(r'foo_[\d]+', self.client.nickname)
+        assert re.match(r'^foo_[\d]+$', self.client.nickname)
+
+    def test_erroneousNickFallback(self):
+        assert re.match(r'^helga_[\d]+$', self.client.erroneousNickFallback)
 
     @patch('helga.comm.settings')
     @patch('helga.comm.smokesignal')
