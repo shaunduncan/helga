@@ -84,6 +84,12 @@ basic helga settings, as outlined below:
   and 'PASSWORD' if the IRC server requires authentication.
 - ``LOG_LEVEL``: String for the default logging level (default: 'DEBUG')
 - ``LOG_FILE``: If set, a string indicating the log file for python logs
+- ``COMMAND_ARGS_SHLEX``: Control the behavior of argument parsing for command plugins
+  By default this is a naive str.split(' '), however a plugin may need this behavior to be a bit more
+  robust. By setting this value to True, shlex.split() will be used instead so that commands
+  like ``helga foo bar "baz qux"`` will yield an argument list like ['bar', 'baz qux'] instead
+  of ['bar', '"baz', 'qux"']. Shlex splits will be the default and only supported behavior
+  in a future version.
 - ``CHANNEL_LOGGING``: If True, enable conversation logging on all channels (default: False)
 - ``CHANNEL_LOGGING_DIR``: If using channel logs, the directory to which channel logs should
   logs should be written. A new directory will be created for each channel in which the

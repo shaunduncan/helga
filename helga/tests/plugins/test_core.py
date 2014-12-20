@@ -3,7 +3,8 @@
 Tests for helga.plugins
 """
 from collections import defaultdict
-from unittest import TestCase
+
+import pytest
 
 from mock import Mock, patch
 from pretend import stub
@@ -20,9 +21,9 @@ from helga.plugins.core import (Command,
                                 registry)
 
 
-class RegistryTestCase(TestCase):
+class TestRegistry(object):
 
-    def setUp(self):
+    def setup(self):
         registry.plugins = {}
         registry.enabled_plugins = defaultdict(set)
 
@@ -158,7 +159,8 @@ class RegistryTestCase(TestCase):
 
     def test_register_raises_typeerror(self):
         for plugin in self.invalid_plugins:
-            self.assertRaises(TypeError, registry.register, 'invalid', plugin)
+            with pytest.raises(TypeError):
+                registry.register('invalid', plugin)
 
     def test_register_valid_plugins(self):
         for plugin in self.valid_plugins:
@@ -167,7 +169,8 @@ class RegistryTestCase(TestCase):
 
     def test_register_plugin_handles_unicode(self):
         for plugin in self.invalid_plugins:
-            self.assertRaises(TypeError, registry.register, 'invalid', plugin)
+            with pytest.raises(TypeError):
+                registry.register('invalid', plugin)
 
         for plugin in self.valid_plugins:
             name = u'{0}-{1}'.format(self.snowman, repr(plugin))
@@ -295,9 +298,9 @@ class RegistryTestCase(TestCase):
             assert plugins[1].preprocess.called
 
 
-class PluginTestCase(TestCase):
+class TestPlugin(object):
 
-    def setUp(self):
+    def setup(self):
         self.plugin = Plugin()
         self.client = Mock(nickname='helga')
 
@@ -335,9 +338,9 @@ class PluginTestCase(TestCase):
             run.assert_called_with('foo', 'bar', 'baz', 'qux')
 
 
-class CommandTestCase(TestCase):
+class TestCommand(object):
 
-    def setUp(self):
+    def setup(self):
         self.cmd = Command('foo', aliases=('bar', 'baz'), help='foo cmd')
         self.client = Mock(nickname='helga')
 
@@ -392,6 +395,24 @@ class CommandTestCase(TestCase):
         self.cmd.command = snowman
         assert (snowman, [disapproval]) == self.cmd.parse('helga', cmd)
 
+    @pytest.mark.parametrize('argstr,expected', [
+        ('foo bar "baz qux"', ['foo', 'bar', 'baz qux']),
+        (u'foo "bar ☃"', ['foo', u'bar ☃']),
+    ])
+    def test_parse_argstr_shlex(self, argstr, expected):
+        with patch('helga.plugins.core.settings') as settings:
+            settings.COMMAND_ARGS_SHLEX = True
+            assert self.cmd._parse_argstr(argstr) == expected
+
+    @pytest.mark.parametrize('argstr,expected', [
+        ('foo bar "baz qux"', ['foo', 'bar', '"baz', 'qux"']),
+        (u'foo "bar ☃"', ['foo', '"bar', u'☃"']),
+    ])
+    def test_parse_argstr_whitespace(self, argstr, expected):
+        with patch('helga.plugins.core.settings') as settings:
+            settings.COMMAND_ARGS_SHLEX = False
+            assert self.cmd._parse_argstr(argstr) == expected
+
     def test_process_for_different_command_returns_none(self):
         assert self.cmd.process(self.client, '#bots', 'me', 'helga qux') is None
 
@@ -429,9 +450,9 @@ class CommandTestCase(TestCase):
         assert 'bar' == foo._plugins[0](self.client, '#bots', 'me', 'helga baz')
 
 
-class MatchTestCase(TestCase):
+class TestMatch(object):
 
-    def setUp(self):
+    def setup(self):
         self.match = Match('foo')
         self.client = Mock()
 

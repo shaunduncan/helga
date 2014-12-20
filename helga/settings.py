@@ -9,6 +9,15 @@ SERVER = {
 
 LOG_LEVEL = 'DEBUG'
 
+# Control the behavior of argument parsing for command plugins
+# By default this is a naive str.split(' '), however a plugin
+# may need this behavior to be a bit more robust. By setting this value
+# to True, shlex.split() will be used instead so that commands
+# like `helga foo bar "baz qux"` will yield an argument list like
+# ['bar', 'baz qux'] instead of ['bar', '"baz', 'qux"']. Shlex splits
+# will be the default and only supported behavior in a future version.
+COMMAND_ARGS_SHLEX = False
+
 # Channel logging. Set CHANNEL_LOGGING_DIR
 CHANNEL_LOGGING = False
 CHANNEL_LOGGING_DIR = '.logs'

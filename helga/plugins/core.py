@@ -2,7 +2,9 @@ import functools
 import pkg_resources
 import random
 import re
+import shlex
 import sys
+import warnings
 
 from collections import defaultdict
 from itertools import ifilter, imap
@@ -10,7 +12,7 @@ from itertools import ifilter, imap
 import smokesignal
 
 from helga import log, settings
-from helga.util.encodings import to_unicode
+from helga.util.encodings import from_unicode, to_unicode
 
 
 logger = log.getLogger(__name__)
@@ -51,6 +53,10 @@ ACKS = [
 PRIORITY_LOW = 25
 PRIORITY_NORMAL = 50
 PRIORITY_HIGH = 75
+
+
+if not settings.COMMAND_ARGS_SHLEX:
+    warnings.warn(u'Command arg parsing will default to shlex in a future version', FutureWarning)
 
 
 def random_ack():
@@ -410,7 +416,22 @@ class Command(Plugin):
             # FIXME: Log here?
             return u'', []
 
-        return cmd, filter(bool, argstr.strip().split(' '))
+        return cmd, filter(bool, self._parse_argstr(argstr))
+
+    def _parse_argstr(self, argstr):
+        """
+        Parse an argument string for this command. If COMMAND_ARGS_SHLEX
+        is set to False, then naive whitespace splitting is performed on the argument
+        string. If not, a more robust shlex.split() is performed. For example, given
+        the message 'helga foo bar "baz qux"', the former would produce arguments
+        ['bar', '"baz', 'qux"'] while the latter would produce ['bar', 'baz qux']
+        """
+        if settings.COMMAND_ARGS_SHLEX:
+            argv = shlex.split(from_unicode(argstr.strip()))
+        else:
+            argv = argstr.strip().split(' ')
+
+        return map(to_unicode, argv)
 
     def run(self, client, channel, nick, message, command, args):
         """
