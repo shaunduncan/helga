@@ -5,6 +5,7 @@ CHANGELOG
 -----
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
+- Fixed #111 - Better README docs on SERVER settings
 - Fixed #120 - Operator plugin doesn't format responses properly
 - Fixed #123 - Changed PyPI classifier to Production/Stable
 - Fixed #126 - JIRA plugin exception when JIRA_PATTERNS is empty
