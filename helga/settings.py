@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 
 SERVER = {
     'HOST': 'localhost',
@@ -109,13 +108,22 @@ WEBHOOKS_PORT = 8080
 WEBHOOKS_CREDENTIALS = []  # Tuples of (user, pass)
 
 
-if os.environ.get('HELGA_SETTINGS', ''):  # pragma: no cover
-    try:
-        path = os.environ['HELGA_SETTINGS']
-        overrides = __import__(path, {}, {}, [path.split('.')[-1]])
-    except ImportError:
-        warnings.warn('Unabled to import HELGA_SETTINGS override. Is it on sys.path?')
-    else:
-        this = sys.modules[__name__]
-        for attr in filter(lambda x: not x.startswith('_'), dir(overrides)):
-            setattr(this, attr, getattr(overrides, attr))
+def configure(overrides):
+    """
+    Applies custom configuration to global helga settings. Overrides can either be
+    a python import path string like 'foo.bar.baz' or a filesystem path like
+    'foo/bar/baz.py'
+    """
+    this = sys.modules[__name__]
+
+    # Filesystem path to settings file
+    if os.path.isfile(overrides):
+        execfile(overrides, this.__dict__)
+        return
+
+    # Module import path settings file
+    fromlist = [overrides.split('.')[-1]]
+    overrides = __import__(overrides, this.__dict__, {}, fromlist)
+
+    for attr in filter(lambda x: not x.startswith('_'), dir(overrides)):
+        setattr(this, attr, getattr(overrides, attr))

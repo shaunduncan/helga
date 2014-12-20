@@ -180,3 +180,13 @@ class TestChannelLogFileHandler(object):
                 assert self.handler.baseFilename != old_filename
                 assert self.handler.baseFilename == '/tmp/2014-10-31.txt'
                 assert self.handler.next_rollover == expected_rollover
+
+
+def test_utc_time_filter():
+    record = Mock()
+    filter = log.UTCTimeLogFilter()
+    date = datetime.datetime(2014, 10, 31, 8, 15)
+    with freezegun.freeze_time(date):
+        filter.filter(record)
+        assert record.utcnow == date
+        assert record.utctime == '08:15:00'

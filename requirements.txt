@@ -1,5 +1,6 @@
 # System Requirements:
 # openssl
+# libssl-dev
 # mongodb
 
 Twisted==13.1.0

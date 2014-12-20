@@ -1,11 +1,18 @@
+import subprocess
+import sys
+
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
-import subprocess
 
 from pip.req import parse_requirements
 
 
 version = '1.6.0'
+
+
+extra_requires = []
+if sys.version_info[:2] == (2, 6):
+    extra_requires = ['argparse==1.3.0']
 
 
 class PyTest(TestCommand):
@@ -42,7 +49,7 @@ setup(name="helga",
       packages=find_packages(),
       install_requires=[
           str(req.req) for req in parse_requirements('requirements.txt')
-      ],
+      ] + extra_requires,
       tests_require=[
           'freezegun',
           'mock',
@@ -77,7 +84,7 @@ setup(name="helga",
               'logger        = helga.webhooks.logger:logger'
           ],
           console_scripts=[
-              'helga = helga.run:run',
+              'helga = helga.bin.helga:main',
           ],
       ),
 )
