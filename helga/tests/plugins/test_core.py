@@ -495,3 +495,21 @@ class TestMatch(object):
         def snowman_match(client, chan, nick, msg, matches):
             return 'snowman'
         assert 'snowman' == snowman_match._plugins[0](self.client, '#bots', 'me', u'☃')
+
+
+def test_custom_plugin_priorities(tmpdir):
+    file = tmpdir.join('foo.py')
+    file.write('\n'.join([
+        'PLUGIN_PRIORITY_LOW = 1',
+        'PLUGIN_PRIORITY_NORMAL = 42',
+        'PLUGIN_PRIORITY_HIGH = 9000',
+    ]))
+
+    settings.configure(str(file))
+
+    from helga.plugins import core
+    reload(core)
+
+    assert core.PRIORITY_LOW == 1
+    assert core.PRIORITY_NORMAL == 42
+    assert core.PRIORITY_HIGH == 9000

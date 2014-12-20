@@ -8,6 +8,11 @@ SERVER = {
 
 LOG_LEVEL = 'DEBUG'
 
+# Helga plugin priority values
+PLUGIN_PRIORITY_LOW = 25
+PLUGIN_PRIORITY_NORMAL = 50
+PLUGIN_PRIORITY_HIGH = 75
+
 # Control the behavior of argument parsing for command plugins
 # By default this is a naive str.split(' '), however a plugin
 # may need this behavior to be a bit more robust. By setting this value

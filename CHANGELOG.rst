@@ -8,6 +8,7 @@ CHANGELOG
 - Fixed #68 - Custom settings overrides can be supplied via command line argument --settings.
   The old env var is still supported. Either option can be an import string 'foo.bar.baz' or
   a path on the filesystem 'foo/bar/baz.py'
+- Fixed #77 - Allow custom plugin priority weights to be set in settings overrides
 - Fixed #107 - Set erroneousNickFallback for default IRC client
 - Fixed #111 - Better README docs on SERVER settings
 - Fixed #120 - Operator plugin doesn't format responses properly
