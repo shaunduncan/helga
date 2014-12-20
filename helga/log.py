@@ -3,12 +3,8 @@ import logging
 import logging.handlers
 import os
 import sys
-import time
-
-import pymongo
 
 from helga import settings
-from helga.db import db
 
 
 def getLogger(name):
