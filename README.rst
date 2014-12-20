@@ -86,6 +86,12 @@ basic helga settings, as outlined below:
   and 'PASSWORD' if the IRC server requires authentication.
 - ``LOG_LEVEL``: String for the default logging level (default: 'DEBUG')
 - ``LOG_FILE``: If set, a string indicating the log file for python logs
+- ``PLUGIN_PRIORITY_LOW``: The value for 'low' priority plugins (see "Plugin Priorities"
+  below). Default 25.
+- ``PLUGIN_PRIORITY_NORMAL``: The value for 'normal' priority plugins (see "Plugin Priorities"
+  below). Default 50.
+- ``PLUGIN_PRIORITY_HIGH``: The value for 'high' priority plugins (see "Plugin Priorities"
+  below). Default 75.
 - ``COMMAND_ARGS_SHLEX``: Control the behavior of argument parsing for command plugins
   By default this is a naive str.split(' '), however a plugin may need this behavior to be a bit more
   robust. By setting this value to True, shlex.split() will be used instead so that commands
@@ -328,6 +334,9 @@ Also, each decorator/plugin type has its own default value for priority:
 - Preprocessors have default priority of ``PRIORITY_NORMAL``
 - Commands have default priority of ``PRIORITY_NORMAL``
 - Matches have default priority of ``PRIORITY_LOW``
+
+The above priority values are defaults and can be tuned if necessary via settings overrides
+(see default settings above).
 
 Publishing plugins
 ++++++++++++++++++
