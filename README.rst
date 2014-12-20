@@ -51,25 +51,27 @@ Then grab the latest copy and install requirements:
     $ git clone https://github.com/shaunduncan/helga src/helga
     $ cd src/helga
     $ python setup.py develop
-    $ pip install -r requirements.txt
 
 Once you have performed the above steps, there will be a ``helga`` executable
 placed in the ``bin`` dir of your virtualenv. Run helga by calling this:
 
 .. code-block:: bash
 
-    $ /path/to/venv/bin/helga
+    $ helga
 
 Note that this uses the default settings file, ``helga.settings`` to start.
-You can, and should, use your own custom setttings. This file must a be an
-importable python file on $PYTHONPATH. To run helga with your custom settings
-file, set an environment variable ``HELGA_SETTINGS`` to be a python import path:
+You can, and should, use your own custom setttings. The behavior of a custom
+settings file is to preserve defaults in helga.settings and apply overrides.
+For this reason, you do not need to apply all configuration settings known to
+helga. To use a custom settings file, either export an environment variable
+``HELGA_SETTINGS`` or use the ``--settings`` argument:
 
 .. code-block:: bash
 
-    $ export HELGA_SETTINGS=path.to.mysettings
+    $ helga --settings=foo.bar
 
-This will preserve any defaults in ``helga.settings``, but you can override at will.
+Note that this should be a string that is either an importable python module
+like ``foo.bar.baz`` or a filesystem path like ``/foo/bar/baz.py``.
 
 
 Default Settings

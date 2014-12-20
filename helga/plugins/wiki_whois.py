@@ -4,7 +4,7 @@ from helga.plugins import command
 
 @command('showme', aliases=['whois', 'whothehellis'],
          help="Show a URL for the user's intranet page. Usage: helga (showme|whois|whothehellis) <nick>")
-def wiki_whois(client, channel, nick, message, cmd, args):
+def wiki_whois(client, channel, nick, message, cmd, args):  # pragma: no cover
     """
     Show the intranet page for a user. Settings must have a WIKI_URL value with formattable
     substring named {user}

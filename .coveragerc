@@ -1,2 +1,4 @@
 [run]
-omit = helga/tests/*
+omit =
+    helga/tests/*
+    helga/my_settings.py

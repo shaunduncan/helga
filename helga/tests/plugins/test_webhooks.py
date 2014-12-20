@@ -223,6 +223,14 @@ class WebhookRootTestCase(TestCase):
         mock_fn.assert_called_with(request, self.root.irc_client)
         request.setHeader.assert_called_with('Server', 'helga')
 
+    def test_reunder_handles_http_error(self):
+        mock_fn = Mock(side_effect=webhooks.HttpError(404, 'foo not found'))
+        request = Mock(path='/path/to/resource', method='GET')
+        self.root.routes['/path/to/resource'] = (['GET'], mock_fn)
+
+        assert 'foo not found' == self.root.render(request)
+        request.setResponseCode.assert_called_with(404)
+
     def test_add_route(self):
         fn = lambda: None
         methods = ['GET', 'POST']
