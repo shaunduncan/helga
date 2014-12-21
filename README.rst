@@ -97,7 +97,8 @@ basic helga settings, as outlined below:
   robust. By setting this value to True, shlex.split() will be used instead so that commands
   like ``helga foo bar "baz qux"`` will yield an argument list like ['bar', 'baz qux'] instead
   of ['bar', '"baz', 'qux"']. Shlex splits will be the default and only supported behavior
-  in a future version.
+  in a future version. This can also be used per plugin by passing ``shlex=True`` to an
+  ``@command`` decorator (described below in "Plugin Types")
 - ``CHANNEL_LOGGING``: If True, enable conversation logging on all channels (default: False)
 - ``CHANNEL_LOGGING_DIR``: If using channel logs, the directory to which channel logs should
   logs should be written. A new directory will be created for each channel in which the
@@ -258,6 +259,15 @@ the result of ``re.findall``. However, the ``@match`` decorator accepts a callab
 a regex string. This callable should accept one argument: the message being processed. It should
 return a value that can be evaluated for truthiness and will be passed to the decorated function
 as the ``matches`` parameter.
+
+Command plugins currently have multiple ways of parsing argument strings. The old way that
+will be deprecated in a future version is naive whitespace splitting. For example, the command
+``helga foo bar "baz qux"`` would produce args ``['bar', '"baz', 'qux"']``. This may not be ideal
+for some plugins. To get around this, you can optionally pass ``shlex=True`` to your command
+decorator like ``@command('foo', shlex=True)``. With this enabled, the command ``helga foo bar "baz qux"``
+would produce args ``['bar', 'baz qux']``. This behavior will become the default in a future
+version. You can also enable this behavior globally by setting COMMAND_ARGS_SHLEX to True
+in your settings file.
 
 Preprocessors
 +++++++++++++
