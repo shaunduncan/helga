@@ -139,9 +139,11 @@ basic helga settings, as outlined below:
 - ``JIRA_URL``: A URL format for showing JIRA links. This should contain a format parameter '{ticket}'.
   (default: 'http://localhost/{ticket}')
 - ``JIRA_REST_API``: If non-empty, this should be the URL for a JIRA REST API for the JIRA plugin to
-  use. Must like ``JIRA_URL``, this should contain a format parameter '{ticket}'. (default: '')
+  use. Must like ``JIRA_URL``, this should contain a format parameter '{ticket}'. Note that this
+  requires a minmum JIRA version to work, one that has the updated REST api. See
+  https://docs.atlassian.com/software/jira/docs/api/REST/latest/.
 - ``JIRA_SHOW_FULL_DESCRIPTION``: Boolean, if False, only the formatted ``JIRA_URL`` will be returned.
-  If True, a full ticket title will be shown. (default: True)
+  If True, a full ticket title will be shown. This requires ``JIRA_REST_API`` to be set. (default: False)
 - ``JIRA_AUTH``: A two-tuple of JIRA credentials, username and password. (default: ('', ''))
 - ``REVIEWBOARD_URL``: A URL format for showing ReviewBoard links. This should contain a format
   parameter '{review}'. (default: 'http://localhost/{review}')

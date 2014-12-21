@@ -97,12 +97,13 @@ COMMAND_PREFIX_CHAR = '!'
 # MISC PLUGIN SETTINGS
 FACTS_REQUIRE_NICKNAME = False
 
-# Jira settings. If JIRA_FULL_DESCRIPTION is false, only links to the Jira
+# Jira settings. If JIRA_SHOW_FULL_DESCRIPTION is false, only links to the Jira
 # ticket will be shown. Otherwise, the ticket title will be pulled and shown.
+# Full descriptions require JIRA_REST_API to be set.
 # JIRA_USERNAME and JIRA_PASSWORD are optional if authentication is required
 JIRA_URL = 'http://localhost/{ticket}'
 JIRA_REST_API = ''
-JIRA_SHOW_FULL_DESCRIPTION = True
+JIRA_SHOW_FULL_DESCRIPTION = False
 JIRA_AUTH = ('', '')
 
 REVIEWBOARD_URL = 'http://localhost/{review}'
