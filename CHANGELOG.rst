@@ -15,7 +15,8 @@ CHANGELOG
 - Fixed #123 - Changed PyPI classifier to Production/Stable
 - Fixed #126 - JIRA plugin exception when JIRA_PATTERNS is empty
 - Fixed #127 - Allow optional setting to use shlex for comman arg string parsing instead of
-  naive whitespace splitting (see README for COMMAND_ARGS_SHLEX)
+  naive whitespace splitting (see README for COMMAND_ARGS_SHLEX). This can also be a command
+  decorator argument like @command('foo', shlex=True).
 
 1.5.2
 -----
