@@ -7,7 +7,7 @@ from setuptools.command.test import test as TestCommand
 from pip.req import parse_requirements
 
 
-version = '1.6.0'
+version = '1.6.1'
 
 
 extra_requires = []
@@ -47,6 +47,9 @@ setup(name="helga",
       url='https://github.com/shaunduncan/helga',
       license='MIT',
       packages=find_packages(),
+      package_data={
+          'helga': ['webhooks/logger/*.mustache'],
+      },
       install_requires=[
           str(req.req) for req in parse_requirements('requirements.txt')
       ] + extra_requires,
