@@ -1,13 +1,21 @@
 CHANGELOG
 =========
 
+1.6.2
+-----
+
+- Fix UnicodeDecodeError for channel log web UI
+
+
 1.6.1
 -----
+
 - Fix broken packaging that did not include channel log web UI mustache templates.
 
 
 1.6.0
 -----
+
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
 - Fixed #68 - Custom settings overrides can be supplied via command line argument --settings.
@@ -27,6 +35,7 @@ CHANGELOG
 
 1.5.2
 -----
+
 - Merged PR #119 - Adding replace command for facts plugin
 - Merged PR #117 - Fix oneliner regex to not be noisy for gfycat links
 

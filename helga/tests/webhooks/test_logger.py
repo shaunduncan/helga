@@ -1,3 +1,4 @@
+# coding: utf-8
 import pytest
 
 from mock import Mock
@@ -101,7 +102,8 @@ class TestChannelLogView(object):
             '00:00:00 - foo - this is what i said',
             '12:01:35 - bar - another thing i said',
             '16:17:18 - baz - this - has - delimiters',
-        ]))
+            u'21:22:23 - qux - ☃'.encode('utf-8')
+        ]), mode='wb')
 
         assert list(self.view.messages()) == [
             {
@@ -119,6 +121,11 @@ class TestChannelLogView(object):
                 'nick': 'baz',
                 'message': 'this - has - delimiters',
             },
+            {
+                'time': '21:22:23',
+                'nick': 'qux',
+                'message': u'☃',
+            },
         ]
 
     def test_messages_with_multiline_content(self, tmpdir):
@@ -130,13 +137,14 @@ class TestChannelLogView(object):
             '00:00:00 - foo - this is what i said',
             '...and here',
             '...and here again',
-        ]))
+            u'...☃'.encode('utf-8')
+        ]), mode='wb')
 
         assert list(self.view.messages()) == [
             {
                 'time': '00:00:00',
                 'nick': 'foo',
-                'message': 'this is what i said\n...and here\n...and here again',
+                'message': u'this is what i said\n...and here\n...and here again\n...☃',
             }
         ]
 
@@ -159,13 +167,14 @@ class TestChannelLogView(object):
         request = Mock()
         contents = ('00:00:00 - foo - this is what i said\n'
                     '12:01:35 - bar - another thing i said\n'
-                    '16:17:18 - baz - this - has - delimiters')
+                    '16:17:18 - baz - this - has - delimiters\n'
+                    u'21:22:23 - qux - ☃'.encode('utf-8'))
 
         logger.settings.CHANNEL_LOGGING_DIR = str(tmpdir)
 
         # Create tmp file
         file = tmpdir.mkdir('#foo').join('2014-12-01.txt')
-        file.write(contents)
+        file.write(contents, mode='wb')
 
         assert self.view.download(request) == contents
         request.setHeader.assert_any_call('Content-Type', 'text/plain')
