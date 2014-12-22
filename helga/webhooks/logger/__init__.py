@@ -9,6 +9,7 @@ import pystache
 
 from helga import settings
 from helga.plugins.webhooks import HttpError, route
+from helga.util.encodings import to_unicode
 
 
 class Index(object):
@@ -88,23 +89,26 @@ class ChannelLog(object):
             raise HttpError(404)
 
         line_pat = re.compile(r'^(\d{2}:?){3} - \w+ - .*$')
-        message = ''
+        message = u''
         log = deque()
 
         # XXX: This is kind of terrible. Some things will log only a single time
         # if the message sent over IRC has newlines. So we have to read in reverse
         # and construct the response list
         with open(self.logfile_path, 'r') as fp:
-            for line in reversed(fp.readlines()):
+            for line in imap(to_unicode, reversed(fp.readlines())):
                 if not line_pat.match(line):
                     message = u''.join((line, message))
                     continue
 
-                parts = line.strip().split(' - ')
+                parts = line.strip().split(u' - ')
+                time = parts.pop(0)
+                nick = parts.pop(0)
+                message = u'\n'.join((u' - '.join(parts), message))
                 log.appendleft({
-                    'time': parts.pop(0),
-                    'nick': parts.pop(0),
-                    'message': u'\n'.join((u' - '.join(parts), message)).rstrip('\n'),
+                    'time': time,
+                    'nick': nick,
+                    'message': message.rstrip(u'\n'),
                 })
                 message = ''
 

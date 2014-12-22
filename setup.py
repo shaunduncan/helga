@@ -7,7 +7,7 @@ from setuptools.command.test import test as TestCommand
 from pip.req import parse_requirements
 
 
-version = '1.6.1'
+version = '1.6.2'
 
 
 extra_requires = []
