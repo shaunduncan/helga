@@ -53,6 +53,7 @@ ENABLED_PLUGINS = [
     'dubstep',
     'facts',
     'help',
+    'ignore',
     'jira',
     'loljava',
     'manager',

@@ -15,7 +15,7 @@ if sys.version_info[:2] == (2, 6):
     extra_requires = ['argparse==1.3.0']
 
 
-class PyTest(TestCommand):
+class Tox(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
@@ -53,14 +53,8 @@ setup(name="helga",
       install_requires=[
           str(req.req) for req in parse_requirements('requirements.txt')
       ] + extra_requires,
-      tests_require=[
-          'freezegun',
-          'mock',
-          'pretend',
-          'tox',
-          'pytest',
-      ],
-      cmdclass = {'test': PyTest},
+      tests_require=['tox'],
+      cmdclass={'test': Tox},
       entry_points = dict(
           helga_plugins=[
               'dubstep      = helga.plugins.dubstep:dubstep',
@@ -68,6 +62,7 @@ setup(name="helga",
               'giphy        = helga.plugins.giphy:giphy',
               'help         = helga.plugins.help:help',
               'icanhazascii = helga.plugins.icanhazascii:icanhazascii',
+              'ignore       = helga.plugins.ignore:ignore',
               'jira         = helga.plugins.jira:jira',
               'loljava      = helga.plugins.loljava:make_bullshit_java_thing',
               'manager      = helga.plugins.manager:manager',
