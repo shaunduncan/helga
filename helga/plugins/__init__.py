@@ -1,1 +1,1 @@
-from helga.plugins.core import *
+from helga.plugins.core import *  # NOQA
