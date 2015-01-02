@@ -35,3 +35,9 @@ Copyright (c) 2014 Shaun Duncan
 Helga is open source software, dual licensed under the `MIT` and `GPL` licenses. Dual licensing
 was chosen for this project so that plugin authors can create plugins under their choice
 of license that is compatible with this project.
+
+.. _`GPL`: https://github.com/shaunduncan/helga/blob/master/LICENSE-GPL
+.. _`MIT`: https://github.com/shaunduncan/helga/blob/master/LICENSE-MIT
+.. _`Twisted`: https://twistedmatrix.com/trac/
+.. _`olga`: https://github.com/thepeopleseason/olga
+.. _`github`: https://github.com/shaunduncan/helga/issues
