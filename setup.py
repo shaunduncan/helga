@@ -4,6 +4,7 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
+from pip.download import PipSession
 from pip.req import parse_requirements
 
 import helga
@@ -50,7 +51,7 @@ setup(name=helga.__title__,
           'helga': ['webhooks/logger/*.mustache'],
       },
       install_requires=[
-          str(req.req) for req in parse_requirements('requirements.txt')
+          str(req.req) for req in parse_requirements('requirements.txt', session=PipSession())
       ] + extra_requires,
       tests_require=[
           'freezegun',
