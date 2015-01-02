@@ -10,15 +10,15 @@ from mock import Mock, patch
 from pretend import stub
 
 from helga import settings
-from helga.plugins.core import (Command,
-                                Match,
-                                Plugin,
-                                Registry,
-                                ResponseNotReady,
-                                command,
-                                match,
-                                preprocessor,
-                                registry)
+from helga.plugins import (Command,
+                           Match,
+                           Plugin,
+                           Registry,
+                           ResponseNotReady,
+                           command,
+                           match,
+                           preprocessor,
+                           registry)
 
 
 class TestRegistry(object):
@@ -205,8 +205,8 @@ class TestRegistry(object):
         assert 'foo' not in registry.enabled_plugins['#foo']
         assert self.snowman not in registry.enabled_plugins['#foo']
 
-    @patch('helga.plugins.core.pkg_resources')
-    @patch('helga.plugins.core.smokesignal')
+    @patch('helga.plugins.pkg_resources')
+    @patch('helga.plugins.smokesignal')
     def test_load(self, signal, pkg_resources):
         entry_points = [
             Mock(load=lambda: 'foo'),
@@ -235,8 +235,8 @@ class TestRegistry(object):
         assert 'Unknown plugin' in registry.reload('foo')
         assert 'Unknown plugin' in registry.reload(self.snowman)
 
-    @patch('helga.plugins.core.pkg_resources')
-    @patch('helga.plugins.core.sys')
+    @patch('helga.plugins.pkg_resources')
+    @patch('helga.plugins.sys')
     @patch('__builtin__.reload')
     def test_reload(self, reloader, sys, pkg_resources):
         entry_points = [
@@ -259,8 +259,8 @@ class TestRegistry(object):
                 assert registry.reload(name)
                 register.assert_called_with(name, 'loaded')
 
-    @patch('helga.plugins.core.pkg_resources')
-    @patch('helga.plugins.core.sys')
+    @patch('helga.plugins.pkg_resources')
+    @patch('helga.plugins.sys')
     @patch('__builtin__.reload')
     def test_reload_returns_false_on_exception(self, reloader, sys, pkg_resources):
         module = Mock(module_name='foo')
@@ -358,7 +358,7 @@ class TestCommand(object):
     def test_parse_handles_main_command(self):
         assert 'foo' == self.cmd.parse('helga', 'helga foo')[0]
 
-    @patch('helga.plugins.core.settings')
+    @patch('helga.plugins.settings')
     def test_parse_handles_char_prefix(self, settings):
         settings.COMMAND_PREFIX_CHAR = '#'
         assert 'foo' == self.cmd.parse('helga', '#foo')[0]
@@ -400,7 +400,7 @@ class TestCommand(object):
         (u'foo "bar ☃"', ['foo', u'bar ☃']),
     ])
     def test_parse_argstr_shlex(self, argstr, expected):
-        with patch('helga.plugins.core.settings') as settings:
+        with patch('helga.plugins.settings') as settings:
             settings.COMMAND_ARGS_SHLEX = True
             assert self.cmd._parse_argstr(argstr) == expected
 
@@ -409,7 +409,7 @@ class TestCommand(object):
         (u'foo "bar ☃"', ['foo', '"bar', u'☃"']),
     ])
     def test_parse_argstr_whitespace(self, argstr, expected):
-        with patch('helga.plugins.core.settings') as settings:
+        with patch('helga.plugins.settings') as settings:
             settings.COMMAND_ARGS_SHLEX = False
             assert self.cmd._parse_argstr(argstr) == expected
 
@@ -454,7 +454,7 @@ class TestCommand(object):
         def foo(client, chan, nick, msg, cmd, args):
             return args
 
-        with patch('helga.plugins.core.settings') as settings:
+        with patch('helga.plugins.settings') as settings:
             settings.COMMAND_ARGS_SHLEX = False
             settings.COMMAND_PREFIX_BOTNICK = True
             settings.COMMAND_PREFIX_CHAR = '!'
@@ -519,9 +519,9 @@ def test_custom_plugin_priorities(tmpdir):
 
     settings.configure(str(file))
 
-    from helga.plugins import core
-    reload(core)
+    from helga import plugins
+    reload(plugins)
 
-    assert core.PRIORITY_LOW == 1
-    assert core.PRIORITY_NORMAL == 42
-    assert core.PRIORITY_HIGH == 9000
+    assert plugins.PRIORITY_LOW == 1
+    assert plugins.PRIORITY_NORMAL == 42
+    assert plugins.PRIORITY_HIGH == 9000

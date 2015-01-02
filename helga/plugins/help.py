@@ -1,7 +1,6 @@
 from collections import defaultdict
 
-from helga.plugins import command
-from helga.plugins.core import registry
+from helga.plugins import command, registry
 
 
 def format_help_string(name, *helps):

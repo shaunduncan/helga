@@ -12,3 +12,4 @@ requests==2.2.1
 smokesignal==0.5
 giphypop==0.2
 pystache==0.5.4
+decorator==3.4.0

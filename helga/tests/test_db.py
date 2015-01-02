@@ -13,7 +13,7 @@ def test_connect_returns_none_on_failure(settings, mongo):
     }
 
     mongo.side_effect = ConnectionFailure
-    assert db._connect() == (None, None)
+    assert db.connect() == (None, None)
 
 
 @patch('helga.db.MongoClient')
@@ -33,7 +33,7 @@ def test_connect_authenticates(settings, mongo):
     mongo.__getitem__ = Mock()
     mongo.__getitem__.return_value = database
 
-    db._connect()
+    db.connect()
     database.authenticate.assert_called_with('foo', 'bar')
 
 
@@ -52,5 +52,5 @@ def test_connect(settings, mongo):
     mongo.__getitem__ = Mock()
     mongo.__getitem__.return_value = database
 
-    assert db._connect() == (mongo, database)
+    assert db.connect() == (mongo, database)
     mongo.__getitem__.assert_called_with('baz')

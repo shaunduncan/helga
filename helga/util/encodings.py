@@ -1,13 +1,17 @@
 """
-Utils for deailing with encode/decode and unicode pain
+Utilities for working with unicode and/or byte strings
 """
-from functools import wraps
+from decorator import decorator
 
 
 def to_unicode(bytestr, errors='ignore'):
     """
-    Enforces a byte string to be unicode. If it already is unicode, no
-    action is taken. Otherwise, the byte string is decoded as UTF-8
+    Safely convert a byte string to unicode by first checking if it already is unicode before decoding.
+    This function assumes UTF-8 for byte strings and by default will ignore any decoding errors.
+
+    :param bytestr: either a byte string or unicode string
+    :param str errors: a string indicating how decoding errors should be handled
+                       (i.e. 'strict', 'ignore', 'replace')
     """
     if isinstance(bytestr, unicode):
         return bytestr
@@ -16,37 +20,37 @@ def to_unicode(bytestr, errors='ignore'):
 
 def from_unicode(unistr, errors='ignore'):
     """
-    Enforces a unicode string to be a byte string. If it already is a byte
-    string, no action is taken. Otherwise, it is encoded as UTF-8
+    Safely convert unicode to a byte string by first checking if it already is a byte string before
+    encoding. This function assumes UTF-8 for byte strings and by default will ignore any encoding errors.
+
+    :param unistr: either unicode or a byte string
+    :param str errors: a string indicating how encoding errors should be handled
+                       (i.e. 'strict', 'ignore', 'replace')
     """
     if not isinstance(unistr, unicode):
         return unistr
     return unistr.encode('utf-8', errors)
 
 
-def to_unicode_args(fn):
+@decorator
+def to_unicode_args(fn, *args, **kwargs):
     """
-    Automatically converts all positional byte string arguments to unicode
+    Decorator used to safely convert a function's positional arguments from byte strings to unicode
     """
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        args = list(args)
-        for i, val in enumerate(args):
-            if isinstance(val, str):
-                args[i] = to_unicode(val)
-        return fn(*args, **kwargs)
-    return wrapper
+    args = list(args)
+    for i, val in enumerate(args):
+        if isinstance(val, str):
+            args[i] = to_unicode(val)
+    return fn(*args, **kwargs)
 
 
-def from_unicode_args(fn):
+@decorator
+def from_unicode_args(fn, *args, **kwargs):
     """
-    Automatically converts all positional unicode arguments to byte strings
+    Decorator used to safely convert a function's positional arguments from unicode to byte strings
     """
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        args = list(args)
-        for i, val in enumerate(args):
-            if isinstance(val, unicode):
-                args[i] = from_unicode(val)
-        return fn(*args, **kwargs)
-    return wrapper
+    args = list(args)
+    for i, val in enumerate(args):
+        if isinstance(val, unicode):
+            args[i] = from_unicode(val)
+    return fn(*args, **kwargs)

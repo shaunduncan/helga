@@ -1,3 +1,6 @@
+"""
+Logging utilities for helga
+"""
 import datetime
 import logging
 import logging.handlers
@@ -9,16 +12,20 @@ from helga import settings
 
 def getLogger(name):
     """
-    Make some logger the same for all points in the app
+    Obtains a named logger and ensures that it is configured according to helga's log settings
+    (see :ref:`helga.settings.logging`). Use of this is generally intended to mimic
+    :func:`logging.getLogger` with the exception that it takes care of formatters and handlers.
+
+    :param str name: The name of the logger to get
     """
-    level = getattr(settings, 'LOG_LEVEL', 'INFO')
+    level = settings.LOG_LEVEL
 
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, level, logging.INFO))
     logger.propagate = False
 
     # Setup the default handler
-    if hasattr(settings, 'LOG_FILE') and settings.LOG_FILE:
+    if settings.LOG_FILE:
         handler = logging.handlers.RotatingFileHandler(filename=settings.LOG_FILE,
                                                        maxBytes=50*1024*1024,
                                                        backupCount=6)
@@ -27,10 +34,8 @@ def getLogger(name):
         handler.stream = sys.stdout
 
     # Setup formatting
-    if hasattr(settings, 'LOG_FORMAT') and settings.LOG_FORMAT:
-        formatter = logging.Formatter(settings.LOG_FORMAT)
-    else:
-        formatter = logging.Formatter('%(asctime)-15s [%(levelname)s] [%(name)s:%(lineno)d]: %(message)s')
+    default_format = '%(asctime)-15s [%(levelname)s] [%(name)s:%(lineno)d]: %(message)s'
+    formatter = logging.Formatter(settings.LOG_FORMAT or default_format)
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -40,8 +45,9 @@ def getLogger(name):
 
 def get_channel_logger(channel):
     """
-    Gets a logger with a TimedRotatingFileHandler that is suitable for
-    channel logs
+    Obtains a python logger configured to operate as a channel logger.
+
+    :param str channel: the channel name for the desired logger
     """
     logger = logging.getLogger(u'channel_logger/{0}'.format(channel))
     logger.setLevel(logging.INFO)
@@ -63,12 +69,18 @@ def get_channel_logger(channel):
 
 class UTCTimeLogFilter(logging.Filter):
     """
-    A log record filter that will add an attribute 'utcnow' and 'utctime'
+    A log record filter that will add an attribute ``utcnow`` and ``utctime``
     to a log record. The former is a utcnow datetime object, the latter is
     the formatted time of day for utcnow.
     """
 
     def filter(self, record):
+        """
+        Filter the log record and add two attributes:
+
+        * ``utcnow``: the value of :func:`datetime.datetime.utcnow`
+        * ``utctime``: the time formatted string of ``utcnow`` in the form ``HH:MM:SS``
+        """
         record.utcnow = datetime.datetime.utcnow()
         record.utctime = record.utcnow.strftime('%H:%M:%S')
         return True
@@ -76,8 +88,8 @@ class UTCTimeLogFilter(logging.Filter):
 
 class ChannelLogFileHandler(logging.handlers.BaseRotatingHandler):
     """
-    A rotating file handler that will create UTC date formatted log files
-    suitable for channel logging
+    A rotating file handler implementation that will create UTC dated log files
+    suitable for channel logging.
     """
 
     def __init__(self, basedir):
@@ -113,6 +125,8 @@ class ChannelLogFileHandler(logging.handlers.BaseRotatingHandler):
         """
         Returns True if the current UTC datetime occurs on or after the
         next scheduled rollover datetime. False otherwise.
+
+        :param record: a python log record
         """
         return datetime.datetime.utcnow() >= self.next_rollover
 

@@ -1,3 +1,17 @@
+"""
+`pymongo`_ connection objects and utilities
+
+.. attribute:: client
+
+    A :class:`pymongo.mongo_client.MongoClient` instance, the connection client to MongoDB
+
+.. attribute:: db
+
+    A :class:`pymongo.database.Database` instance, the default MongoDB database to use
+
+
+.. _`pymongo`: http://api.mongodb.org/python/current/
+"""
 import warnings
 
 
@@ -7,7 +21,14 @@ from pymongo.errors import ConnectionFailure
 from helga import settings
 
 
-def _connect():
+def connect():
+    """
+    Connect to a MongoDB instance, if helga is configured to do so (see setting
+    :data:`~helga.settings.DATABASE`). This will return the MongoDB client as well
+    as the default database as configured.
+
+    :returns: A two-tuple of (:class:`pymongo.MongoClient`, :class:`pymongo.database.Database`)
+    """
     db_settings = getattr(settings, 'DATABASE', {})
 
     try:
@@ -24,4 +45,4 @@ def _connect():
         return client, db
 
 
-client, db = _connect()
+client, db = connect()

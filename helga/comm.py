@@ -1,3 +1,6 @@
+"""
+Twisted protocol and communication implementations for IRC
+"""
 import time
 
 from collections import defaultdict
@@ -8,7 +11,7 @@ from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
 from helga import settings, log
-from helga.plugins.core import registry
+from helga.plugins import registry
 from helga.util import encodings
 
 
@@ -17,16 +20,28 @@ logger = log.getLogger(__name__)
 
 class Factory(protocol.ClientFactory):
     """
-    The client factory for twisted. Does little more than add in some logging along the
-    way and make sure the client is properly created. Also handles auto reconnect if it
-    is configured in settings.
+    The client factory for twisted. Ensures that a client is properly created and handles
+    auto reconnect if helga is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT`
+    and :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
     """
 
     def buildProtocol(self, address):
+        """
+        Build the helga protocol for twisted, or in other words, create the client
+        object and return it.
+
+        :param address: an implementation of :class:`twisted.internet.interfaces.IAddress`
+        :returns: an instance of :class:`helga.comm.Client`
+        """
         logger.debug('Constructing Helga protocol')
         return Client(factory=self)
 
     def clientConnectionLost(self, connector, reason):
+        """
+        Handler for when the IRC connection is lost. Handles auto reconnect if helga
+        is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT` and
+        :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
+        """
         logger.info('Connection to server lost: %s', reason)
 
         # FIXME: Max retries
@@ -37,6 +52,11 @@ class Factory(protocol.ClientFactory):
             raise reason
 
     def clientConnectionFailed(self, connector, reason):
+        """
+        Handler for when the IRC connection fails. Handles auto reconnect if helga
+        is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT` and
+        :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
+        """
         logger.warning('Connection to server failed: %s', reason)
 
         # FIXME: Max retries
@@ -49,24 +69,64 @@ class Factory(protocol.ClientFactory):
 
 class Client(irc.IRCClient):
     """
-    Implementation of twisted IRCClient using settings as overrides for default
-    values. Some methods are subclassed here only to provide logging output.
+    An implementation of :class:`twisted.words.protocols.irc.IRCClient` with some overrides
+    derived from helga settings (see :ref:`config`). Some methods are overridden
+    to provide additional functionality.
+
+    .. attribute:: channels
+        :annotation: = set()
+
+        A set containing all of the channels the bot is currently in
+
+    .. attribute:: operators
+        :annotation: = set()
+
+        A set containing all of the configured operators (setting :data:`~helga.settings.OPERATORS`)
+
+    .. attribute:: last_message
+        :annotation: = dict()
+
+        A channel keyed dictionary containing dictionaries of nick -> message of the last messages
+        the bot has seen a user send on a given channel. For instance, if in the channel ``#foo``::
+
+            <sduncan> test
+
+        The contents of this dictionary would be::
+
+            self.last_message['#foo']['sduncan'] = 'test'
+
+    .. attribute:: channel_loggers
+        :annotation: = dict()
+
+        A dictionary of known channel loggers, keyed off the channel name
     """
 
+    #: The preferred IRC nick of the bot instance (setting :data:`~helga.settings.NICK`)
     nickname = settings.NICK
 
-    # Server related things
+    #: A username should the IRC server require authentication (setting :data:`~helga.settings.SERVER`)
     username = settings.SERVER.get('USERNAME', None)
+
+    #: A password should the IRC server require authentication (setting :data:`~helga.settings.SERVER`)
     password = settings.SERVER.get('PASSWORD', None)
 
-    # Other confg
+    #: An integer, in seconds, if IRC messages should be sent at a limit of once per this many seconds.
+    #: ``None`` implies no limit. (setting :data:`~helga.settings.RATE_LIMIT`)
     lineRate = getattr(settings, 'RATE_LIMIT', None)
+
+    #: The URL where the source of the bot is found
     sourceURL = 'http://github.com/shaunduncan/helga'
+
+    #: The assumed encoding of IRC messages
     encoding = 'UTF-8'
-    erroneousNickFallback = '{0}_{1}'.format(settings.NICK, int(time.time()))
+
+    #: A backup nick should the preferred :attr:`nickname` be taken. This defaults to a string in the
+    #: form of the preferred nick plus the timestamp when the process was started (i.e. helga_12345)
+    erroneousNickFallback = None
 
     def __init__(self, factory=None):
         self.factory = factory
+        self.erroneousNickFallback = '{0}_{1}'.format(settings.NICK, int(time.time()))
 
         # Pre-configured helga admins
         self.operators = set(getattr(settings, 'OPERATORS', []))
@@ -78,7 +138,10 @@ class Client(irc.IRCClient):
 
     def get_channel_logger(self, channel):
         """
-        Gets a logger for a channel, keeping track of ones we know about
+        Gets a channel logger, keeping track of previously requested ones.
+        (see :ref:`builtin.channel_logging`)
+
+        :param str channel: A channel name
         """
         if channel not in self.channel_loggers:
             self.channel_loggers[channel] = log.get_channel_logger(channel)
@@ -86,8 +149,12 @@ class Client(irc.IRCClient):
 
     def log_channel_message(self, channel, nick, message):
         """
-        Logs one or more messages by a user on a channel using a channel
-        logger. If channel logging is not enabled, nothing happens.
+        Logs one or more messages by a user on a channel using a channel logger.
+        If channel logging is not enabled, nothing happens. (see :ref:`builtin.channel_logging`)
+
+        :param str channel: A channel name
+        :param str nick: The nick of the user sending an IRC message
+        :param str message: The IRC message
         """
         if not settings.CHANNEL_LOGGING:
             return
@@ -104,6 +171,10 @@ class Client(irc.IRCClient):
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
+        """
+        Called when the client has successfully signed on to IRC. Establishes automatically
+        joining channels. Sends the ``signon`` signal (see :ref:`plugins.signals`)
+        """
         for channel in settings.CHANNELS:
             # If channel is more than one item tuple, second value is password
             if len(channel) > 1:
@@ -114,26 +185,58 @@ class Client(irc.IRCClient):
         smokesignal.emit('signon', self)
 
     def joined(self, channel):
+        """
+        Called when the client successfully joins a new channel. Adds the channel to the known
+        channel list and sends the ``join`` signal (see :ref:`plugins.signals`)
+
+        :param str channel: the channel that has been joined
+        """
         logger.info('Joined %s', channel)
         self.channels.add(channel)
         smokesignal.emit('join', self, channel)
 
     def left(self, channel):
+        """
+        Called when the client successfully leaves a channel. Removes the channel from the known
+        channel list and sends the ``left`` signal (see :ref:`plugins.signals`)
+
+        :param str channel: the channel that has been left
+        """
         logger.info('Left %s', channel)
         self.channels.discard(channel)
         smokesignal.emit('left', self, channel)
 
     def parse_nick(self, full_nick):
         """
-        Parses a full IRC nick like {nick}!~{user}@{host}
+        Parses a nick from a full IRC user string. For example from ``me!~myuser@localhost``
+        would return ``me``.
+
+        :param str full_nick: the full IRC user string of the form ``{nick}!~{user}@{host}``
+        :returns: The nick portion of the IRC user string
         """
         return full_nick.split('!')[0]
 
     def is_public_channel(self, channel):
-        return self.nickname != channel
+        """
+        Checks if a given channel is public or not. A channel is public if it starts with
+        '#' and is not the bot's nickname (which occurs when a private message is received)
+
+        :param str channel: the channel name to check
+        """
+        return self.nickname != channel and channel.startswith('#')
 
     @encodings.to_unicode_args
     def privmsg(self, user, channel, message):
+        """
+        Handler for an IRC message. This method handles logging channel messages (if it occurs
+        on a public channel) as well as allowing the plugin manager to send the message to all
+        registered plugins. Should the plugin manager yield a response, it will be sent back
+        over IRC.
+
+        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param str channel: the channel from which the message came
+        :param str message: the message contents
+        """
         user = self.parse_nick(user)
         message = message.strip()
 
@@ -170,7 +273,10 @@ class Client(irc.IRCClient):
 
     def alterCollidedNick(self, nickname):
         """
-        Returns timestamp appended nick
+        Called when the both has a nickname collision. This will generate a new nick
+        containing the perferred nick and the current timestamp.
+
+        :param str nickname: the nickname that was already taken
         """
         logger.info('Nick %s already taken', nickname)
 
@@ -189,10 +295,24 @@ class Client(irc.IRCClient):
 
     @encodings.from_unicode_args
     def msg(self, channel, message):
+        """
+        Send a message over IRC to the specified channel
+
+        :param channel: The IRC channel to send the message to. A channel not prefixed by a '#'
+                        will be sent as a private message to a user with that nick.
+        :param message: The message to send
+        """
         logger.debug('[-->] %s - %s', channel, message)
         irc.IRCClient.msg(self, channel, message)
 
     def on_invite(self, inviter, invitee, channel):
+        """
+        Handler for /INVITE commands. If the invitee is the bot, it will join the requested channel.
+
+        :param str inviter: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param str invitee: the nick of the user receiving the invite
+        :param str channel: the channel to which invitee has been invited
+        """
         nick = self.parse_nick(inviter)
         if invitee == self.nickname:
             logger.info('%s invited %s to %s', nick, invitee, channel)
@@ -200,7 +320,11 @@ class Client(irc.IRCClient):
 
     def irc_unknown(self, prefix, command, params):
         """
-        Handle any unknown things...like INVITE
+        Handler for any unknown IRC commands. Currently handles /INVITE commands
+
+        :param str prefix: any command prefix, such as the IRC user
+        :param str command: the IRC command received
+        :param list params: list of parameters for the given command
         """
         if command.lower() == 'invite':
             self.on_invite(prefix, params[0], params[1])
@@ -208,20 +332,33 @@ class Client(irc.IRCClient):
     @encodings.from_unicode_args
     def me(self, channel, message):
         """
-        A proxy for the WTF-named method `describe`. Basically the same as doing `/me waves`
+        Equivalent to: /me message
+
+        :param channel: The IRC channel to send the message to. A channel not prefixed by a '#'
+                        will be sent as a private message to a user with that nick.
+        :param message: The message to send
         """
+        # A proxy for the WTF-named method `describe`. Basically the same as doing `/me waves`
         irc.IRCClient.describe(self, channel, message)
 
     def userJoined(self, user, channel):
         """
-        Send a signal when a user has joined a channel
+        Called when a user joins a channel in which the bot resides. Responsible for sending
+        the ``user_joined`` signal (see :ref:`plugins.signals`)
+
+        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param str channel: the channel in which the event occurred
         """
         nick = self.parse_nick(user)
         smokesignal.emit('user_joined', self, nick, channel)
 
     def userLeft(self, user, channel):
         """
-        Send a signal when a user has left a channel
+        Called when a user leaves a channel in which the bot resides. Responsible for sending
+        the ``user_left`` signal (see :ref:`plugins.signals`)
+
+        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param str channel: the channel in which the event occurred
         """
         nick = self.parse_nick(user)
         smokesignal.emit('user_left', self, nick, channel)
@@ -229,7 +366,10 @@ class Client(irc.IRCClient):
     @encodings.from_unicode_args
     def join(self, channel, key=None):
         """
-        Join a channel. Override to handle accepting unicode arguments.
+        Join a channel, optionally with a passphrase required to join.
+
+        :param str channel: the name of the channel to join
+        :param str key: an optional passphrase used to join the given channel
         """
         logger.info("Joining channel %s", channel)
         irc.IRCClient.join(self, channel, key=key)
@@ -237,7 +377,10 @@ class Client(irc.IRCClient):
     @encodings.from_unicode_args
     def leave(self, channel, reason=None):
         """
-        Leave a channel. Override to handle accepting unicode arguments.
+        Leave a channel, optionally with a reason for leaving
+
+        :param str channel: the name of the channel to leave
+        :param str reason: an optional reason for leaving
         """
         logger.info("Leaving channel %s: %s", channel, reason)
         irc.IRCClient.leave(self, channel, reason=reason)
