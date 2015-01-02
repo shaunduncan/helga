@@ -42,13 +42,6 @@ PLUGIN_PRIORITY_NORMAL = 50
 #: Integer value for 'high' priority plugins (see :ref:`plugins.priorities`)
 PLUGIN_PRIORITY_HIGH = 75
 
-#: A boolean that controls the behavior of argument parsing for command plugins. If False,
-#: command plugin arguments are parsed using a naive whitespace split. If True, they will
-#: be parsed using :func:`shlex.split`. See :ref:`plugins.creating.commands` for more information.
-#: The default is False, but this shlex parsing will be the only supported means of argument
-#: string parsing in a future version.
-COMMAND_ARGS_SHLEX = False
-
 #: A boolean, if True, will enable conversation logging on all channels
 CHANNEL_LOGGING = False
 
@@ -159,6 +152,17 @@ COMMAND_PREFIX_BOTNICK = True
 #: A string char, if non-empty, that can be used to invoke a command without requiring the bot's nick.
 #: For example 'helga foo' could be run with '!foo'.
 COMMAND_PREFIX_CHAR = '!'
+
+#: A boolean that controls the behavior of argument parsing for command plugins. If False,
+#: command plugin arguments are parsed using a naive whitespace split. If True, they will
+#: be parsed using :func:`shlex.split`. See :ref:`plugins.creating.commands` for more information.
+#: The default is False, but this shlex parsing will be the only supported means of argument
+#: string parsing in a future version.
+COMMAND_ARGS_SHLEX = False
+
+#: A boolean on whether commands should be treated with case insensitivity. For example,
+#: a command 'foo' will respond to 'FOO', 'Foo', 'foo', etc.
+COMMAND_IGNORECASE = False
 
 # MISC PLUGIN SETTINGS
 FACTS_REQUIRE_NICKNAME = False

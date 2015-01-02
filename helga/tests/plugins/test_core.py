@@ -425,6 +425,13 @@ class TestCommand(object):
         cmd.run = lambda client, chan, nick, msg, cmd, args: 'runner'
         assert 'runner' == cmd.process(self.client, '#bots', 'me', 'helga foo')
 
+    def test_process_is_case_insensitive(self):
+        with patch.object(self.cmd, 'run'):
+            with patch.object(settings, 'COMMAND_IGNORECASE', True):
+                settings.COMMAND_IGNORECASE = True
+                self.cmd.run.return_value = 'run'
+                assert 'run' == self.cmd.process(self.client, '#bots', 'me', 'HELGA FOO')
+
     def test_multiple_decorators(self):
         @command('foo')
         @command('bar')
