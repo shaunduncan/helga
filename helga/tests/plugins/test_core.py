@@ -104,6 +104,22 @@ class TestRegistry(object):
             assert things[1].process.called
             assert not things[2].process.called
 
+    def test_process_async_honors_all_responses(self):
+        things = [Mock(), Mock(), Mock()]
+
+        # Make the middle one raise
+        things[0].process.return_value = None
+        things[1].process.side_effect = ResponseNotReady
+        things[2].process.return_value = None
+
+        with patch.object(registry, 'prioritized') as prio:
+            with patch.object(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', False):
+                prio.return_value = things
+                assert [] == registry.process(None, '#bots', 'me', 'foobar')
+                assert things[0].process.called
+                assert things[1].process.called
+                assert things[2].process.called
+
     def test_process_returns_all_responses(self):
         settings.PLUGIN_FIRST_RESPONDER_ONLY = False
         things = [Mock(), Mock(), Mock()]

@@ -281,8 +281,9 @@ class Registry(object):
             try:
                 resp = plugin.process(client, channel, nick, message)
             except ResponseNotReady:
-                # FIXME: This ignores first_responder = False
-                break
+                if first_responder:
+                    break
+                continue
             except:
                 logger.exception('Calling process on plugin %s failed', plugin)
                 continue
