@@ -1,3 +1,26 @@
+"""
+Webhook HTTP server plugin and core webhook API
+
+Webhooks provide a way to expose HTTP endpoints that can interact with helga. A command
+plugin manages an HTTP server that is run on a port specified by setting
+:data:`helga.settings.WEBHOOKS_PORT` (default 8080). An additional, optional setting that can be
+used for routes requiring HTTP basic auth is :data:`helga.settings.WEBOOKS_CREDENTIALS`,
+which should be a list of tuples, where each tuple is a pair of (username, password).
+
+Routes are URL path endpoints. On the surface they are just python callables decorated using
+:func:`@route <route>`. The route decorated must be given a path regex, and optional list of
+HTTP methods to accept. Webhook plugins must be registered in the same way normal plugins are
+registered, using setuptools entry_points. However, they must belong to the entry_point group
+``helga_webhooks``. For example::
+
+    setup(entry_points={
+        'helga_webhooks': [
+            'api = myapi.decorated_route'
+        ]
+    })
+
+For more information, see :ref:`webhooks`
+"""
 import functools
 import pkg_resources
 import re
@@ -23,29 +46,13 @@ class HttpError(Error):
 
 class WebhookPlugin(Command):
     """
-    Webhooks provides a way to expose HTTP endpoints that can interact with
-    helga. An HTTP listener will be started on a port specified by setting
-    WEBHOOKS_PORT (default 8080). An additional, optional setting that can
-    be used for routes requiring HTTP basic auth is WEBOOKS_CREDENTIALS, which
-    should be a list of tuples, where each tuple is a pair of (username, password).
+    A command plugin that manages running an HTTP server for webhook routes and services. Usage::
 
-    Routes are HTTP path endpoints. On the surface they are just python
-    callables decorated using @route. The route decorate (described below)
-    must be given a path regex, and optional HTTP methods to accept. Webhook
-    plugins must be registered in the same way normal plugins are registered,
-    using setuptools entry_points. However, they must belong to the entry_point
-    group ``helga_webhooks``. For example::
+        helga webhooks (start|stop|routes)
 
-        setup(entry_points={
-            'helga_webhooks': [
-                'api = myapi.decorated_route'
-            ]
-        })
-
-    This will make new webhooks installable in a very simple, and repeatable way.
-
-    The exposed webhook plugin gives control for starting and stopping the HTTP
-    service, as well as listing available routes.
+    Both ``start`` and ``stop`` are privileged actions and can start and stop the HTTP listener for
+    webhooks respectively. To use them, a user must be configured as an operator. The ``routes``
+    subcommand will list all of the URL routes known to the webhook listener.
     """
     command = 'webhooks'
     help = ('HTTP service for interacting with helga. Command options usage: '
@@ -99,13 +106,21 @@ class WebhookPlugin(Command):
 
     def add_route(self, fn, path, methods):
         """
-        Adds a route to the root web resource
+        Adds a route handler function to the root web resource at a given path
+        and for the given methods
+
+        :param fn: the route handler function
+        :param str path: the URL path of the route
+        :param list methods: list of HTTP methods that the route should respond to
         """
         self.root.add_route(fn, path, methods)  # pragma: no cover
 
     def list_routes(self, client, nick):
         """
         Messages a user with all webhook routes and their supported HTTP methods
+
+        :param client: an instance of :class:`helga.comm.Client`
+        :param str nick: the nick of the IRC user to message
         """
         client.msg(nick, u'{0}, here are the routes I know about'.format(nick))
         for pattern, route in self.root.routes.iteritems():
@@ -114,7 +129,9 @@ class WebhookPlugin(Command):
 
     def control(self, action):
         """
-        Operator-level control over stop/start of the running TCP listener
+        Control the running HTTP server. Intended for helga operators.
+
+        :param str action: the action to perform, either 'start' or 'stop'
         """
         running = self.tcp is not None
 
@@ -146,23 +163,45 @@ class WebhookPlugin(Command):
 
 
 class WebhookRoot(resource.Resource):
+    """
+    The root HTTP resource the webhook HTTP server uses to respond to requests. This
+    manages all registered webhook route handlers, manages running them, and manages
+    returning any responses generated.
+    """
     isLeaf = True
 
     def __init__(self, irc_client, *args, **kwargs):
+        #: An instance of :class:`helga.comm.Client`
         self.irc_client = irc_client
 
-        # Routes is a dict of regex path -> (allowed_methods_list, callable)
+        #: A dictionary of regular expression URL paths as keys, and two-tuple values
+        #: of allowed methods, and the route handler function
         self.routes = {}
 
     def add_route(self, fn, path, methods):
         """
-        Adds a webhook route for service
+        Adds a route handler function to the root web resource at a given path
+        and for the given methods
+
+        :param fn: the route handler function
+        :param str path: the URL path of the route
+        :param list methods: list of HTTP methods that the route should respond to
         """
         self.routes[path] = (methods, fn)
 
     def render(self, request):
         """
-        Handle finding and dispatching the route matching the incoming request path
+        Renders a response for an incoming request. Handles finding and dispatching the route
+        matching the incoming request path. Any response string generated will be explicitly
+        encoded as a UTF-8 byte string.
+
+        If no route patch matches the incoming request, a 404 is returned.
+
+        If a route is found, but the request uses a method that the route handler does not
+        support, a 405 is returned.
+
+        :param request: The incoming HTTP request, ``twisted.web.http.Request``
+        :returns: a string with the HTTP response content
         """
         request.setHeader('Server', 'helga')
         for pat, route in self.routes.iteritems():
@@ -190,17 +229,12 @@ class WebhookRoot(resource.Resource):
 
 def authenticated(fn):
     """
-    A wrapper for a webhook route that ensures value HTTP basic auth
-    credentials are supplied. Example::
+    Decorator for declaring a webhook route as requiring HTTP basic authentication.
+    Incoming requests validate a supplied basic auth username and password against the list
+    configured in the setting :data:`~helga.settings.WEBHOOKS_CREDENTIALS`. If no valid
+    credentials are supplied, an HTTP 401 response is returned.
 
-        @authenticated
-        @route('/foo/bar')
-        def my_endpoint(request, irc_client):
-            pass
-
-    Any valid credentials in the setting WEBHOOKS_CREDENTIALS, which should
-    be a list of tuples (username, password) will be allowed. If no valid
-    credentials are supplied, an HTTP 401 is returned
+    :param fn: the route handler to decorate
     """
     @functools.wraps(fn)
     def ensure_authenticated(request, *args, **kwargs):
@@ -216,23 +250,21 @@ def authenticated(fn):
 
 def route(path, methods=None):
     """
-    Decorator to register a webhook route. You must specify a path
-    regular expression, and optionally a list of HTTP methods to accept.
-    If you do not specify a list of HTTP methods, only GET requests will
-    be served. All regex matches must be named groups and they will be passed
-    as keyword arguments. For those who are familiar with something
-    like Flask, this will feel very similar. Example::
+    Decorator to register a webhook route. This requires a path regular expression, and
+    optionally a list of HTTP methods to accept, which defaults to accepting ``GET`` requests
+    only. Incoming HTTP requests that use a non-allowed method will receive a 405 HTTP response.
 
-        @route(r'/users/(?P<user_id>[0-9]+)')
-        def get_user(request, irc_client, user_id):
-            pass
+    :param str path: a regular expression string for the URL path of the route
+    :param methods: a list of accepted HTTP methods for this route, defaulting to ``['GET']``
 
-        @route(r'/foo/(?P<subpage>[a-z]+)/(?P<page_id>[0-9]+)', methods=['GET', 'POST'])
-        def page(request, irc_client, subpage, page_id):
-            pass
+    Decorated routes must follow this pattern:
 
-    Note that route callables (shown above) must accept as the first two
-    positional arguments a request object, and the current irc client.
+    .. function:: func(request, client)
+        :noindex:
+
+        :param request: The incoming HTTP request, ``twisted.web.http.Request``
+        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :returns: a string HTTP response
     """
     plugin = registry.get_plugin('webhooks')
     if methods is None:

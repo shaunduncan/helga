@@ -6,8 +6,7 @@ from setuptools.command.test import test as TestCommand
 
 from pip.req import parse_requirements
 
-
-version = '1.6.2'
+import helga
 
 
 extra_requires = []
@@ -25,9 +24,9 @@ class PyTest(TestCommand):
         return subprocess.call('tox')
 
 
-setup(name="helga",
-      version=version,
-      description=('IRC bot using twisted that supports plugins'),
+setup(name=helga.__title__,
+      version=helga.__version__,
+      description=helga.__description__,
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
@@ -42,10 +41,10 @@ setup(name="helga",
           'Topic :: Software Development :: Libraries :: Python Modules',
       ],
       keywords='irc bot helga',
-      author='Shaun Duncan',
+      author=helga.__author__,
       author_email='shaun.duncan@gmail.com',
       url='https://github.com/shaunduncan/helga',
-      license='MIT',
+      license=helga.__license__,
       packages=find_packages(),
       package_data={
           'helga': ['webhooks/logger/*.mustache'],

@@ -6,8 +6,7 @@ import smokesignal
 
 from helga import log
 from helga.db import db
-from helga.plugins import command, ACKS
-from helga.plugins.core import registry
+from helga.plugins import command, ACKS, registry
 
 
 logger = log.getLogger(__name__)
