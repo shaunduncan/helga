@@ -13,6 +13,7 @@ import warnings
 
 from collections import defaultdict
 from itertools import ifilter, imap
+from operator import methodcaller
 
 import smokesignal
 
@@ -555,7 +556,13 @@ class Command(Plugin):
         :returns: None if the plugin should not run, otherwise the return value of the ``run`` method
         """
         command, args = self.parse(client.nickname, message)
-        if command != self.command and command not in self.aliases:
+        all_commands = [self.command] + list(self.aliases)
+
+        if settings.COMMAND_IGNORECASE:
+            command = command.lower()
+            all_commands = map(methodcaller('lower'), all_commands)
+
+        if command not in all_commands:
             return None
 
         return self.run(client, channel, nick, message, command, args)
