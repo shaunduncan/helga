@@ -1,21 +1,26 @@
 CHANGELOG
 =========
 
+1.6.3
+-----
+- Added full documentation and updated many docstrings.
+- Removed package helga.plugins.core contents and placed in helga.plugins.__init__
+- Updated setup.py to support pip >= 0.7
+- Fixed #20 - Added case-insensitive command support.
+- Fixed #131 - ResponseNotReady does not honor PLUGIN_FIRST_RESPONDER_ONLY = False
+
 1.6.2
 -----
-
 - Fix UnicodeDecodeError for channel log web UI
 
 
 1.6.1
 -----
-
 - Fix broken packaging that did not include channel log web UI mustache templates.
 
 
 1.6.0
 -----
-
 - Added a new channel logger to log conversations to UTC dated text files. Also features a
   web UI for log browsing.
 - Fixed #68 - Custom settings overrides can be supplied via command line argument --settings.
@@ -35,67 +40,57 @@ CHANGELOG
 
 1.5.2
 -----
-
 - Merged PR #119 - Adding replace command for facts plugin
 - Merged PR #117 - Fix oneliner regex to not be noisy for gfycat links
 
 
 1.5.1
 -----
-
 - Added AUTO_RECONNECT support for failed connections (in addition to lost connections)
 - Added AUTO_RECONNECT_DELAY to have a sensible wait time before connect retries
 
 
 1.5.0
 -----
-
 - Fix The Unicode Problem(TM) (Issue 86)
 - Vastly improved test suite. Now with 100% test coverage
 
 
 1.4.6
 -----
-
 - Fixed regex bug in command parsing that looks for a space after a command/alias
 
 
 1.4.5
 -----
-
 - Fixed a bug where the WebHook root object doesn't get the current IRC client
   on signon. (Issue #89)
 
 
 1.4.4
 -----
-
 - Signals are now sent when a user joins or leaves a channel. Sending args
   (client, nick, channel)
 
 
 1.4.3
 -----
-
 - Changed markdown documents to reStructuredText
 
 
 1.4.2
 -----
-
 - Fix a quirk in command alias ordering where shorter commands would override
   the longer variants (i.e. 't' vs 'thanks')
 
 
 1.4.1
 -----
-
 - Minor adjustment to operator plugin docstring
 
 
 1.4.0
 -----
-
 - Merged pull requests #59 and #62
 - Changed license from MIT to dual MIT/GPLv3
 - Switched to semantic versioning
@@ -103,19 +98,16 @@ CHANGELOG
 
 1.3
 ---
-
 - Refactored simple announcement service into an extensible webhook plugin system
 
 
 1.2
 ---
-
 - Added a very simple announcement HTTP service
 
 
 1.1
 ---
-
 - Included ability for operators to reload installed plugins without restarting
 - Haiku/Tanka tweets now run via ``reactor.callLater``
 - Any plugin that raises ``ResponseNotReady`` when helga is set to allow first
@@ -124,6 +116,5 @@ CHANGELOG
 
 1.0
 ---
-
 - Completely refactored the internal plugin API to be simpler and easier to use
 - All plugins use setuptools entry_points now
