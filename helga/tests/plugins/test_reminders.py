@@ -445,7 +445,6 @@ class ListRemindersTestCase(TestCase):
         db.reminders.find.return_value = [self.rec]
         reminders.list_reminders(client, 'sduncan', '#bots')
 
-        print client.msg.calls
         client.msg.assert_called_with('sduncan',
                                       "sduncan, here are the reminders for channel: #bots\n"
                                       "[123456] At 12/11/13 13:15 UTC: 'Standup Time!'")
@@ -459,7 +458,6 @@ class ListRemindersTestCase(TestCase):
         db.reminders.find.return_value = [self.rec]
         reminders.list_reminders(client, 'sduncan', '#bots')
 
-        print client.msg.calls
         client.msg.assert_called_with('sduncan',
                                       "sduncan, here are the reminders for channel: #bots\n"
                                       "[123456] At 12/11/13 13:15 UTC: 'Standup Time!' (Repeat every M,W,F)")
