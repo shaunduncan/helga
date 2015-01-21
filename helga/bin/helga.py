@@ -10,13 +10,18 @@ from twisted.internet import reactor, ssl
 from helga import settings
 
 
+def _get_comm():  # pragma: no cover
+    # XXX: This is here ONLY to make patching eaiser. We have to delay the import
+    # of comm so that settings are properly overridden for any class attributes
+    from helga import comm
+    return comm
+
+
 def run():
     """
     Run the helga process
     """
-    # XXX: Delayed import so we use properly overridden settings
-    from helga import comm
-
+    comm = _get_comm()
     smokesignal.emit('started')
 
     factory = comm.Factory()
