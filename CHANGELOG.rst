@@ -1,9 +1,15 @@
 CHANGELOG
 =========
 
+1.6.5
+-----
+- Fixed #134 - Missing __init__.py in helga.bin causing console script issues
+
+
 1.6.4
 -----
 - Fixed #133 - custom settings are not properly overriding client settings
+
 
 1.6.3
 -----
@@ -12,6 +18,7 @@ CHANGELOG
 - Updated setup.py to support pip >= 0.7
 - Fixed #20 - Added case-insensitive command support.
 - Fixed #131 - ResponseNotReady does not honor PLUGIN_FIRST_RESPONDER_ONLY = False
+
 
 1.6.2
 -----
