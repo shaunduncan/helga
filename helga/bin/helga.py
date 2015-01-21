@@ -7,13 +7,16 @@ import smokesignal
 
 from twisted.internet import reactor, ssl
 
-from helga import comm, settings
+from helga import settings
 
 
 def run():
     """
     Run the helga process
     """
+    # XXX: Delayed import so we use properly overridden settings
+    from helga import comm
+
     smokesignal.emit('started')
 
     factory = comm.Factory()

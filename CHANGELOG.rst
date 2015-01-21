@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.6.4
+-----
+- Fixed #133 - custom settings are not properly overriding client settings
+
 1.6.3
 -----
 - Added full documentation and updated many docstrings.

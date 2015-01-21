@@ -102,17 +102,17 @@ class Client(irc.IRCClient):
     """
 
     #: The preferred IRC nick of the bot instance (setting :data:`~helga.settings.NICK`)
-    nickname = settings.NICK
+    nickname = None
 
     #: A username should the IRC server require authentication (setting :data:`~helga.settings.SERVER`)
-    username = settings.SERVER.get('USERNAME', None)
+    username = None
 
     #: A password should the IRC server require authentication (setting :data:`~helga.settings.SERVER`)
-    password = settings.SERVER.get('PASSWORD', None)
+    password = None
 
     #: An integer, in seconds, if IRC messages should be sent at a limit of once per this many seconds.
     #: ``None`` implies no limit. (setting :data:`~helga.settings.RATE_LIMIT`)
-    lineRate = getattr(settings, 'RATE_LIMIT', None)
+    lineRate = None
 
     #: The URL where the source of the bot is found
     sourceURL = 'http://github.com/shaunduncan/helga'
@@ -127,6 +127,12 @@ class Client(irc.IRCClient):
     def __init__(self, factory=None):
         self.factory = factory
         self.erroneousNickFallback = '{0}_{1}'.format(settings.NICK, int(time.time()))
+
+        # These are set here to ensure using properly overridden settings
+        self.nickname = settings.NICK
+        self.username = settings.SERVER.get('USERNAME', None)
+        self.password = settings.SERVER.get('PASSWORD', None)
+        self.lineRate = getattr(settings, 'RATE_LIMIT', None)
 
         # Pre-configured helga admins
         self.operators = set(getattr(settings, 'OPERATORS', []))
