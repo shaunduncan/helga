@@ -107,6 +107,7 @@ API Documentation
     Settings that control plugin and/or webhook behaviors. See :ref:`plugins` or :ref:`webhooks`
 
     .. autodata:: ENABLED_PLUGINS
+    .. autodata:: DEFAULT_CHANNEL_PLUGINS
     .. autodata:: ENABLED_WEBHOOKS
     .. autodata:: PLUGIN_PRIORITY_LOW
     .. autodata:: PLUGIN_PRIORITY_NORMAL
