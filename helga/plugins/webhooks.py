@@ -62,8 +62,12 @@ class WebhookPlugin(Command):
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
 
-        self.root = None
-        self.site = None
+        # Per issue 137, these were previously set on signon, but there is a bit of a
+        # chicken and egg situation where routes in the same module as commands and matches
+        # would try to register themselves before the connection was made, so the command
+        # or match would fail to load.
+        self.root = WebhookRoot()
+        self.site = server.Site(self.root)
         self.port = getattr(settings, 'WEBHOOKS_PORT', 8080)
 
         @smokesignal.on('signon')
@@ -87,15 +91,7 @@ class WebhookPlugin(Command):
 
     def _start(self, client=None):
         logger.info('Starting webhooks service on port %s', self.port)
-
-        if self.root is None:
-            self.root = WebhookRoot(client)
-        else:
-            self.root.irc_client = client
-
-        if self.site is None:
-            self.site = server.Site(self.root)
-
+        self.root.irc_client = client
         self.tcp = reactor.listenTCP(self.port, self.site)
 
     def _stop(self):
@@ -170,9 +166,9 @@ class WebhookRoot(resource.Resource):
     """
     isLeaf = True
 
-    def __init__(self, irc_client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         #: An instance of :class:`helga.comm.Client`
-        self.irc_client = irc_client
+        self.irc_client = None
 
         #: A dictionary of regular expression URL paths as keys, and two-tuple values
         #: of allowed methods, and the route handler function
