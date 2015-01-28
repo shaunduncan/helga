@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.6.6
+-----
+- Fixed #137 - Chicken/egg situation with @route in the same module as a command or match
+
+
 1.6.5
 -----
 - Fixed #134 - Missing __init__.py in helga.bin causing console script issues
