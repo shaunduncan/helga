@@ -61,6 +61,11 @@ class WebhookPluginTestCase(TestCase):
     def setUp(self):
         self.plugin = webhooks.WebhookPlugin()
 
+    def test_initializes_root_and_site(self):
+        plugin = webhooks.WebhookPlugin()
+        assert isinstance(plugin.root, webhooks.WebhookRoot)
+        assert isinstance(plugin.site, webhooks.server.Site)
+
     @patch('helga.plugins.webhooks.settings')
     def test_custom_port(self, settings):
         settings.WEBHOOKS_PORT = 1337
