@@ -24,7 +24,7 @@ RESPONSES = {
 
     r'^:w?q$': ("this ain't your vi",),
 
-    r'^((sudo|ls|cd|rm)( .+)?|pwd)': "this ain't your shell",
+    r'^(pwd$|(sudo|ls|cd|rm)(\s\w+|$))': "this ain't your shell",
 
     r'php': ("php is just terrible",
              "php's motto: MERGE ALL THE PULL REQUESTS"),
