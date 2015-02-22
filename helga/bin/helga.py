@@ -13,8 +13,8 @@ from helga import settings
 def _get_comm():  # pragma: no cover
     # XXX: This is here ONLY to make patching eaiser. We have to delay the import
     # of comm so that settings are properly overridden for any class attributes
-    from helga import comm
-    return comm
+    from helga.comm import irc
+    return irc
 
 
 def run():
