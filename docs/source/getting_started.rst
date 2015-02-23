@@ -90,6 +90,13 @@ as private network IP 192.168.10.101. Once this VM is up and running, simply:
     $ vagrant ssh
     $ helga
 
+The source directory includes an `irssi <http://www.irssi.org/>`_ configuration file that
+connects to the IRC server at localhost:6667 and auto-joins the ``#bots`` channel; to use
+this simply run from the git clone directory:
+
+.. code-block:: bash
+
+    $ irssi --home=.irssi
 
 .. _getting_started.tests:
 
