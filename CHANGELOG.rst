@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.6.7
+-----
+- Fixed #140 - Allow simple string channel names for CHANNELS setting
+- Merged PR #138 - Fix shell oneliner response
+
 1.6.6
 -----
 - Fixed #137 - Chicken/egg situation with @route in the same module as a command or match
