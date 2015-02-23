@@ -183,11 +183,10 @@ class Client(irc.IRCClient):
         """
         for channel in settings.CHANNELS:
             # If channel is more than one item tuple, second value is password
-            if len(channel) > 1:
-                self.join(encodings.from_unicode(channel[0]),
-                          encodings.from_unicode(channel[1]))
+            if isinstance(channel, (tuple, list)):
+                self.join(*channel)
             else:
-                self.join(encodings.from_unicode(channel[0]))
+                self.join(channel)
         smokesignal.emit('signon', self)
 
     def joined(self, channel):
