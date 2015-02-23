@@ -91,12 +91,13 @@ class ClientTestCase(TestCase):
     @patch('helga.comm.smokesignal')
     def test_signedOn(self, signal, settings):
         snowman = u'☃'
-        bytes = '\xe2\x98\x83'
 
         settings.CHANNELS = [
             ('#bots',),
             ('#foo', 'bar'),
             (u'#baz', snowman),  # Handles unicode gracefully?
+            ['#a', 'b'],  # As a list
+            '#test',  # Single channel
         ]
 
         with patch.object(self.client, 'join') as join:
@@ -104,7 +105,9 @@ class ClientTestCase(TestCase):
             assert join.call_args_list == [
                 call('#bots'),
                 call('#foo', 'bar'),
-                call('#baz', bytes),
+                call('#baz', snowman),
+                call('#a', 'b'),
+                call('#test'),
             ]
 
     @patch('helga.comm.settings')
