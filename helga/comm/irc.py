@@ -24,6 +24,8 @@ class Factory(protocol.ClientFactory):
     auto reconnect if helga is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT`
     and :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
     """
+    def __init__(self):
+        self.client = Client(factory=self)
 
     def buildProtocol(self, address):
         """
@@ -34,7 +36,7 @@ class Factory(protocol.ClientFactory):
         :returns: an instance of :class:`helga.comm.Client`
         """
         logger.debug('Constructing Helga protocol')
-        return Client(factory=self)
+        return self.client
 
     def clientConnectionLost(self, connector, reason):
         """
