@@ -13,11 +13,11 @@ class TestRun(object):
             'PORT': 6667,
         }
 
-        with patch.multiple(helga, smokesignal=Mock(), _get_comm=Mock(), reactor=Mock()):
+        with patch.multiple(helga, smokesignal=Mock(), _get_backend=Mock(), reactor=Mock()):
             with patch.object(helga.settings, 'SERVER', server):
                 factory = Mock()
-                helga._get_comm.return_value = helga._get_comm
-                helga._get_comm.Factory.return_value = factory
+                helga._get_backend.return_value = helga._get_backend
+                helga._get_backend.Factory.return_value = factory
 
                 helga.run()
 
@@ -32,14 +32,14 @@ class TestRun(object):
             'SSL': True
         }
 
-        with patch.multiple(helga, smokesignal=Mock(), _get_comm=Mock(), reactor=Mock(), ssl=Mock()):
+        with patch.multiple(helga, smokesignal=Mock(), _get_backend=Mock(), reactor=Mock(), ssl=Mock()):
             with patch.object(helga.settings, 'SERVER', server):
                 ssl = Mock()
                 helga.ssl.ClientContextFactory.return_value = ssl
 
                 factory = Mock()
-                helga._get_comm.return_value = helga._get_comm
-                helga._get_comm.Factory.return_value = factory
+                helga._get_backend.return_value = helga._get_backend
+                helga._get_backend.Factory.return_value = factory
 
                 helga.run()
 

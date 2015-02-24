@@ -1,7 +1,10 @@
 import time
 
+from collections import defaultdict
+
 from twisted.internet import protocol, reactor
 from twisted.words.xish import domish, xpath
+from twisted.words.xish.xmlstream import XmlStreamFactoryMixin
 from twisted.words.protocols.jabber import client, jid, xmlstream
 
 import smokesignal
@@ -14,7 +17,7 @@ from helga.util import encodings
 logger = log.getLogger(__name__)
 
 
-class Factory(xmlstream.XmlStreamFactoryMixin, protocol.ClientFactory):
+class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
     """
     XMPP client factory. following :func:`twisted.words.protocols.jabber.client.XMPPClientFactory`.
     Ensures that a client is properly created and handles auto reconnect if helga
@@ -25,11 +28,11 @@ class Factory(xmlstream.XmlStreamFactoryMixin, protocol.ClientFactory):
     protocol = xmlstream.XmlStream
 
     def __init__(self):
-        self.client = Client(factory=self)
         self.jid = jid.JID('{user}@{host}'.format(user=settings.SERVER['USERNAME'],
                                                   host=settings.SERVER['HOST']))
         self.auth = client.XMPPAuthenticator(self.jid, settings.SERVER['PASSWORD'])
-        xmlstream.XmlStreamFactoryMixin.__init__(self, self.auth)
+        XmlStreamFactoryMixin.__init__(self, self.auth)
+        self.client = Client(factory=self)
 
     def clientConnectionLost(self, connector, reason):
         """
@@ -97,15 +100,21 @@ class Client(object):
     def __init__(self, factory):
         self.factory = factory
         self.jid = factory.jid
-        self.nickname = self.jid.user
+        self.nickname = settings.NICK
         self.stream = None
 
         # Used for formatting and checking group chat
-        self.conference_host = settings.get('XMPP_CONFERENCE_HOST',
-                                            'conference.{0}'.format(self.jid.host))
+        self.conference_domain = getattr(settings, 'XMPP_CONFERENCE_DOMAIN', 'conference')
+        self.conference_host = '{conf}.{host}'.format(conf=self.conference_domain,
+                                                      host=settings.SERVER['HOST'])
 
         # Setup event listeners
         self._bootstrap()
+
+        # Things to keep track of
+        self.channels = set()
+        self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
+        self.channel_loggers = {}
 
     def _bootstrap(self):
         """
@@ -256,7 +265,12 @@ class Client(object):
         """
         from_jid = jid.JID(message['from'])
 
-        if message['type'].lower() == 'groupchat':
+        try:
+            message_type = message['type']
+        except KeyError:
+            message_type = ''
+
+        if message_type.lower() == 'groupchat':
             return '#{0}'.format(from_jid.user)
         elif from_jid.host == self.conference_host:
             return from_jid.resource
@@ -295,13 +309,12 @@ class Client(object):
         channel = self.parse_channel(element)
         message = self.parse_message(element)
 
+        # This will be empty for messages that were delayed
         if not message:
-            logger.debug('Ignoring empty message from %s on %s', nick, channel)
             return
 
         # If we don't ignore this, we'll get infinite replies
         if nick == self.nickname:
-            logger.debug('Ignoring own message on %s', channel)
             return
 
         # Log the incoming message and notify message subscribers
@@ -348,13 +361,13 @@ class Client(object):
         is_public = self.is_public_channel(channel)
 
         if is_public:
-            resp_host = self.conferenc_host
+            resp_host = self.conference_host
             resp_type = 'groupchat'
         else:
             resp_host = self.jid.host
             resp_type = 'chat'
 
-        resp_channel = '{user}@{host}'.format(user=channel, host=resp_host)
+        resp_channel = '{user}@{host}'.format(user=channel, host=resp_host).lstrip('#')
 
         # Create the response <message/> element
         element = domish.Element(('jabber:client', 'message'))
@@ -454,11 +467,11 @@ class Client(object):
         :param str channel: the name of the channel to join
         :param str key: an optional passphrase used to join the given channel
         """
+        channel = self.format_channel(channel.lstrip('#'))
         logger.info("Joining channel %s", channel)
-        channel = self.format_channel(channel)
 
         element = domish.Element(('jabber:client', 'presence'))
-        element['to'] = '{channel}/{nick}'.format(channel, self.nickname)
+        element['to'] = '{channel}/{nick}'.format(channel=channel, nick=self.nickname)
         element['from'] = self.jid.full()
 
         if password:
@@ -492,10 +505,18 @@ class Client(object):
         JID string, then it is returned in the userhost form. Otherwise,
         a string in the form ``{chan}@{host}`` is returned
         """
+        channel = channel.lstrip('#')
+        fallback = '{channel}@{host}'.format(channel=channel,
+                                             host=self.conference_host)
+
         try:
             channel_jid = jid.JID(channel)
         except jid.InvalidFormat:
-            return '{channel}@{host}'.format(channel=channel.lstrip('#'),
-                                             host=self.conference_host)
+            return fallback
         else:
-            return channel_jid.userhost()
+            if channel_jid.user != channel:
+                logger.warning('Parsed channel jid %s is invalid', channel_jid.full())
+                return fallback
+            else:
+                print "User '%s' host '%s'" % (channel_jid.user, channel_jid.host)
+                return channel_jid.userhost()
