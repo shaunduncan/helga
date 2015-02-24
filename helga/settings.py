@@ -22,6 +22,14 @@ SERVER = {
     'PORT': 6667,
 }
 
+#: The type of connection to use. Default is 'irc', but could be 'xmpp'
+SERVER_TYPE = 'irc'
+
+
+#: The conference subdomain for XMPP group chat. Defaults to 'conference'
+#: which is prepended on the value of SERVER['HOST']
+XMPP_CONFERENCE_DOMAIN = 'conference'
+
 
 #: A string for the logging level helga should use for process logging
 LOG_LEVEL = 'DEBUG'
