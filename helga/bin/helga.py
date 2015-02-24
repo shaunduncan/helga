@@ -25,6 +25,7 @@ def run():
     smokesignal.emit('started')
 
     factory = comm.Factory()
+
     if settings.SERVER.get('SSL', False):
         reactor.connectSSL(settings.SERVER['HOST'],
                            settings.SERVER['PORT'],
