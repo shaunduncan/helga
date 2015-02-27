@@ -4,11 +4,11 @@ Default settings and configuration utilities
 import os
 import sys
 
-#: Dictionary of IRC connection details. At a minimum this should contain keys
-#: ``HOST`` and ``PORT`` which default to 'localhost' and 6667 respectively.
+#: Dictionary of connection details. At a minimum this should contain keys
+#: ``HOST`` and ``PORT`` which default to 'localhost' and 6667 respectively for irc.
 #: Optionally, you can specify a boolean key ``SSL`` if you require helga to
-#: connect to IRC via SSL. You may also specify keys ``USERNAME`` and ``PASSWORD``
-#: if your IRC server requires authentication. For example::
+#: connect via SSL. You may also specify keys ``USERNAME`` and ``PASSWORD``
+#: if your server requires authentication. For example::
 #:
 #:     SERVER = {
 #:         'HOST': 'localhost',
@@ -17,18 +17,17 @@ import sys
 #:         'USERNAME': 'user',
 #:         'PASSWORD': 'pass',
 #:     }
+#:
+#: Additional, optional keys are supported for different chat backends:
+#:
+#: - TYPE: the backend type to use, 'irc' or 'xmpp'
+#: - MUC_HOST: the MUC group chat domain like 'conference.example.com' for group chat
+#: - JID: A full jabber ID to use instead of USERNAME (xmpp only)
 SERVER = {
     'HOST': 'localhost',
     'PORT': 6667,
+    'TYPE': 'irc',
 }
-
-#: The type of connection to use. Default is 'irc', but could be 'xmpp'
-SERVER_TYPE = 'irc'
-
-
-#: The conference subdomain for XMPP group chat. Defaults to 'conference'
-#: which is prepended on the value of SERVER['HOST']
-XMPP_CONFERENCE_DOMAIN = 'conference'
 
 
 #: A string for the logging level helga should use for process logging
