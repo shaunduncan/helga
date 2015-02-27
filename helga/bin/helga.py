@@ -20,7 +20,7 @@ def run():
     """
     Run the helga process
     """
-    backend = _get_backend(settings.SERVER_TYPE)
+    backend = _get_backend(settings.SERVER.get('TYPE', 'irc'))
     smokesignal.emit('started')
 
     factory = backend.Factory()

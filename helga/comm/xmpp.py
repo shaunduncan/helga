@@ -28,8 +28,11 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
     protocol = xmlstream.XmlStream
 
     def __init__(self):
-        self.jid = jid.JID('{user}@{host}'.format(user=settings.SERVER['USERNAME'],
-                                                  host=settings.SERVER['HOST']))
+        if 'JID' in settings.SERVER:
+            self.jid = jid.JID(settings.SERVER['JID'])
+        else:
+            self.jid = jid.JID('{user}@{host}'.format(user=settings.SERVER['USERNAME'],
+                                                      host=settings.SERVER['HOST']))
         self.auth = client.XMPPAuthenticator(self.jid, settings.SERVER['PASSWORD'])
         XmlStreamFactoryMixin.__init__(self, self.auth)
         self.client = Client(factory=self)
@@ -104,9 +107,10 @@ class Client(object):
         self.stream = None
 
         # Used for formatting and checking group chat
-        self.conference_domain = getattr(settings, 'XMPP_CONFERENCE_DOMAIN', 'conference')
-        self.conference_host = '{conf}.{host}'.format(conf=self.conference_domain,
-                                                      host=settings.SERVER['HOST'])
+        if 'MUC_HOST' in settings.SERVER:
+            self.conference_host = settings.SERVER['MUC_HOST']
+        else:
+            self.conference_host = 'conference.{host}'.format(host=settings.SERVER['HOST'])
 
         # Setup event listeners
         self._bootstrap()
@@ -162,7 +166,7 @@ class Client(object):
         online or available status
         """
         el = domish.Element((None, 'presence'))
-        el.addElement('status').addContent(presence)
+        el.addElement('status', content=presence)
         self.stream.send(el)
 
     def on_authenticated(self, stream):
@@ -371,10 +375,12 @@ class Client(object):
 
         # Create the response <message/> element
         element = domish.Element(('jabber:client', 'message'))
-        element['to'] = resp_channel
-        element['from'] = self.jid.full()
-        element['type'] = resp_type
-        element.addElement('body', 'jabber:client', message)
+        element.attributes = {
+            'to': resp_channel,
+            'from': self.jid.full(),
+            'type': resp_type,
+        }
+        element.addElement('body', content=message)
 
         self.stream.send(element)
 
@@ -420,7 +426,7 @@ class Client(object):
         xpath_query = '/message/x[@xmlns="jabber:x:conference"]'
         details = xpath.queryForNodes(xpath_query, element)[0]
         channel = details.attributes['jid']
-        password = details.attributes.get('password', None)
+        password = xpath.queryForString('/message/x/password', element)
 
         self.join(channel, password=password)
 
@@ -432,9 +438,11 @@ class Client(object):
         :param element: An XML <presence> buddy request
         """
         message = domish.Element(('jabber:client', 'presence'))
-        message['to'] = element['from']
-        message['from'] = self.jid.full()
-        message['type'] = 'subscribed'
+        message.attributes = {
+            'to': element['from'],
+            'from': self.jid.full(),
+            'type': 'subscribed',
+        }
         self.stream.send(message)
 
     def on_user_joined(self, element):
@@ -471,14 +479,17 @@ class Client(object):
         logger.info("Joining channel %s", channel)
 
         element = domish.Element(('jabber:client', 'presence'))
-        element['to'] = '{channel}/{nick}'.format(channel=channel, nick=self.nickname)
-        element['from'] = self.jid.full()
+        element.attributes = {
+            'to': '{channel}/{nick}'.format(channel=channel, nick=self.nickname),
+            'from': self.jid.full(),
+        }
+
+        muc = domish.Element(('http://jabber.org/protocol/muc', 'x'))
 
         if password:
-            ns = 'http://jabber.org/protocol/muc'
-            x = domish.Element((ns, 'x'))
-            x.addElement('password', ns, password)
-            element.addElement(x)
+            muc.addElement('password', content=password)
+
+        element.addChild(muc)
 
         self.stream.send(element)
         self.joined(channel)
@@ -493,9 +504,11 @@ class Client(object):
         """
         logger.info("Leaving channel %s: %s", channel, reason)
         element = domish.Element(('jabber:client', 'presence'))
-        element['to'] = self.format_channel(channel)
-        element['from'] = self.jid.full()
-        element['type'] = 'unavailable'
+        element.attributes = {
+            'to': self.format_channel(channel),
+            'from': self.jid.full(),
+            'type': 'unavailable',
+        }
         self.stream.send(element)
         self.left(channel)
 
@@ -518,5 +531,4 @@ class Client(object):
                 logger.warning('Parsed channel jid %s is invalid', channel_jid.full())
                 return fallback
             else:
-                print "User '%s' host '%s'" % (channel_jid.user, channel_jid.host)
                 return channel_jid.userhost()
