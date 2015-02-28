@@ -183,6 +183,8 @@ class Client(object):
             else:
                 self.join(channel)
 
+        smokesignal.emit('signon', self)
+
     def on_init_failed(self, failure):
         """
         Handler for when client initialization fails. This should end contact with
@@ -291,7 +293,11 @@ class Client(object):
         """
         if xpath.matches('/message/delay', message):
             return u''
-        return xpath.queryForString('/message/body', message)
+        # This is a hack around a unicode bug in twisted queryForString
+        strings = xpath.queryForStringList('/message/body', message)
+        if strings is not None:
+            return strings[0]
+        return u''
 
     def is_public_channel(self, channel):
         """
@@ -380,7 +386,7 @@ class Client(object):
             'from': self.jid.full(),
             'type': resp_type,
         }
-        element.addElement('body', content=message)
+        element.addElement('body', content=encodings.to_unicode(message))
 
         self.stream.send(element)
 
@@ -426,7 +432,12 @@ class Client(object):
         xpath_query = '/message/x[@xmlns="jabber:x:conference"]'
         details = xpath.queryForNodes(xpath_query, element)[0]
         channel = details.attributes['jid']
-        password = xpath.queryForString('/message/x/password', element)
+
+        # This is a hack around a unicode bug in twisted queryForString
+        password = ''
+        strings = xpath.queryForStringList('/message/x/password', element)
+        if strings is not None:
+            password = strings[0]
 
         self.join(channel, password=password)
 
@@ -485,6 +496,11 @@ class Client(object):
         }
 
         muc = domish.Element(('http://jabber.org/protocol/muc', 'x'))
+
+        # Don't include room history
+        hist = domish.Element(('', 'history'))
+        hist.attributes = {'maxchars': '0', 'maxstanzas': '0'}
+        muc.addChild(hist)
 
         if password:
             muc.addElement('password', content=password)

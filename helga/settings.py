@@ -153,7 +153,8 @@ ENABLED_WEBHOOKS = None
 #: sent over IRC. If False, all responses are sent.
 PLUGIN_FIRST_RESPONDER_ONLY = True
 
-#: A boolean, if True, command plugins can be run by asking directly, such as 'helga foo_command'.
+#: If a boolean and True, command plugins can be run by asking directly, such as 'helga foo_command'.
+#: This can also be a string for specifically setting a nick type prefix (such as @NickName for HipChat)
 COMMAND_PREFIX_BOTNICK = True
 
 #: A string char, if non-empty, that can be used to invoke a command without requiring the bot's nick.
