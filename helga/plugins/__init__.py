@@ -479,8 +479,13 @@ class Command(Plugin):
         nick_prefix = ''
 
         # Handle multiple ways to parse this command
-        if getattr(settings, 'COMMAND_PREFIX_BOTNICK', True):
-            nick_prefix = '{0}\W*\s'.format(botnick)
+        prefix_botnick = getattr(settings, 'COMMAND_PREFIX_BOTNICK', None)
+        if prefix_botnick is not None:
+            fmt = '{0}\W*\s'
+            if isinstance(prefix_botnick, basestring):
+                nick_prefix = fmt.format(prefix_botnick)
+            elif prefix_botnick:
+                nick_prefix = fmt.format(botnick)
 
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
