@@ -86,6 +86,15 @@ class ClientTestCase(TestCase):
             self.factory = xmpp.Factory()
             self.client = xmpp.Client(self.factory)
 
+    def _dict_mock(self, **kwargs):
+        """
+        Get a mock that allows __getitem__
+        """
+        item = Mock()
+        item.data = kwargs
+        item.__getitem__ = lambda s, k: s.data[k]
+        return item
+
     def test_default_settings(self):
         assert self.client.factory == self.factory
         assert self.client.jid == self.factory.jid
@@ -95,6 +104,7 @@ class ClientTestCase(TestCase):
         assert self.client.channels == set()
         assert self.client.last_message == {}
         assert self.client.channel_loggers == {}
+        assert self.client._heartbeat is None
 
     def test_uses_custom_muc_host(self):
         with patch.object(xmpp.settings, 'SERVER', {'MUC_HOST': 'my.host.com'}):
@@ -116,21 +126,87 @@ class ClientTestCase(TestCase):
                 call('/presence[@type="unavailable"]', client.on_user_left),
                 call('/presence/x/item[@role!="none"]', client.on_user_joined),
                 call('/presence[@type="subscribe"]', client.on_subscribe),
-                call('/message/x[@xmlns="jabber:x:conference"]', client.on_invite),
-                call('/message/x/invite', client.on_invite),
+                call('/message/x', client.on_invite),
                 call('/presence/error/conflict', client.on_nick_collision),
+                call('/iq/ping', client.on_ping),
             ])
+
+    @patch('helga.comm.xmpp.task')
+    def test_start_heartbeat(self, task):
+        task.LoopingCall.return_value = task
+
+        with patch.object(self.client, '_stop_heartbeat'):
+            self.client._start_heartbeat()
+            assert self.client._heartbeat == task
+            self.client._heartbeat.start.assert_called_with(60, now=False)
+
+    @patch('helga.comm.xmpp.logger')
+    def test_stop_heartbeat_no_active_heartbeat(self, logger):
+        with patch.object(self.client, '_heartbeat', None):
+            self.client._stop_heartbeat()
+            assert not logger.info.called
+
+    def test_stop_heartbeat(self):
+        heartbeat = Mock()
+        with patch.object(self.client, '_heartbeat', heartbeat):
+            self.client._stop_heartbeat()
+            assert self.client._heartbeat is None
+            assert heartbeat.stop.called
+
+    @patch('helga.comm.xmpp.uuid')
+    def test_ping(self, uuid):
+        uuid.uuid4.return_value = 'UUID'
+
+        expected = xmpp.domish.Element(('', 'iq'), attribs={
+            'id': 'UUID',
+            'from': self.client.jid.full(),
+            'to': xmpp.settings.SERVER['HOST'],
+            'type': 'get',
+        })
+        expected.addElement('ping', 'urn:xmpp:ping')
+
+        with patch.object(self.client, 'stream'):
+            self.client.ping()
+            output = self.client.stream.send.call_args[0][0].toXml()
+            assert output == expected.toXml()
+
+            # Either single or double quotes
+            assert ('<ping xmlns="urn:xmpp:ping"' in output or
+                    "<ping xmlns='urn:xmpp:ping'" in output)
+
+    def test_on_ping(self):
+        ping = self._dict_mock(**{
+            'to': 'helga@example.com',
+            'from': 'example.com',
+            'type': 'get',
+            'id': 'unique-ping-id',
+        })
+
+        expected = xmpp.domish.Element(('', 'iq'), attribs={
+            'id': 'unique-ping-id',
+            'to': 'example.com',
+            'from': 'helga@example.com',
+            'type': 'result',
+        })
+
+        with patch.object(self.client, 'stream'):
+            self.client.on_ping(ping)
+            assert self.client.stream.send.call_args[0][0].toXml() == expected.toXml()
 
     def test_on_connect(self):
         stream = Mock()
         self.client.on_connect(stream)
         assert self.client.stream == stream
 
-    @patch('helga.comm.xmpp.logger')
-    def test_on_disconnect(self, logger):
-        # This method doesn't really do anything, but just for testing
-        self.client.on_disconnect(Mock())
-        assert logger.info.called
+    def test_on_connect_starts_heartbeat(self):
+        with patch.object(self.client, '_start_heartbeat'):
+            self.client.on_connect(Mock())
+            assert self.client._start_heartbeat.called
+
+    def test_on_disconnect(self):
+        with patch.object(self.client, '_stop_heartbeat'):
+            self.client.on_disconnect(Mock())
+            assert self.client._stop_heartbeat.called
 
     def test_set_presence(self):
         self.client.stream = Mock()
@@ -217,12 +293,6 @@ class ClientTestCase(TestCase):
             assert channel not in self.client.channels
             signal.emit.assert_called_with('left', self.client, channel)
 
-    def _dict_mock(self, **kwargs):
-        item = Mock()
-        item.data = kwargs
-        item.__getitem__ = lambda s, k: s.data[k]
-        return item
-
     def test_parse_nick_groupchat(self):
         message = self._dict_mock(**{'from': 'room@conference.example.com/nick'})
         assert self.client.parse_nick(message) == 'nick'
@@ -258,6 +328,11 @@ class ClientTestCase(TestCase):
     def test_parse_channel_no_type_is_privmsg(self):
         message = self._dict_mock(**{'from': 'nick@example.com/resource'})
         assert self.client.parse_channel(message) == 'nick'
+
+    def test_parse_channel_presence(self):
+        message = self._dict_mock(**{'from': 'room@example.com/nick'})
+        message.name = 'presence'
+        assert self.client.parse_channel(message) == '#room'
 
     def test_parse_message_ignores_delayed(self):
         element = xmpp.domish.Element((None, 'message'))
@@ -423,7 +498,7 @@ class ClientTestCase(TestCase):
 
     def test_on_invite_direct(self):
         element = xmpp.domish.Element(('', 'message'))
-        x = xmpp.domish.Element(('', 'x'), attribs={
+        x = xmpp.domish.Element(('jabber:x:conference', 'x'), attribs={
             'jid': 'room@conf.example.com'
         })
         element.addChild(x)
@@ -432,9 +507,20 @@ class ClientTestCase(TestCase):
             self.client.on_invite(element)
             self.client.join.assert_called_with('room@conf.example.com', password='')
 
-    def test_on_invite_direct_with_channel_password(self):
+    def test_on_invite_ignores_probably_not_invite(self):
         element = xmpp.domish.Element(('', 'message'))
         x = xmpp.domish.Element(('', 'x'), attribs={
+            'jid': 'room@conf.example.com'
+        })
+        element.addChild(x)
+
+        with patch.object(self.client, 'join'):
+            self.client.on_invite(element)
+            assert not self.client.join.called
+
+    def test_on_invite_direct_with_channel_password(self):
+        element = xmpp.domish.Element(('', 'message'))
+        x = xmpp.domish.Element(('jabber:x:conference', 'x'), attribs={
             'jid': 'room@conf.example.com',
             'password': 'foobar',
         })
