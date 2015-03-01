@@ -141,8 +141,9 @@ class Client(object):
         # Allow users to add the bot to their buddy list
         self.factory.addBootstrap('/presence[@type="subscribe"]', self.on_subscribe)
 
-        # Respond to room invites
+        # Respond to room invites, direct and mediated
         self.factory.addBootstrap('/message/x[@xmlns="jabber:x:conference"]', self.on_invite)
+        self.factory.addBootstrap('/message/x/invite', self.on_invite)
 
         # Handle nick collisions
         self.factory.addBootstrap('/presence/error/conflict', self.on_nick_collision)
@@ -293,9 +294,10 @@ class Client(object):
         """
         if xpath.matches('/message/delay', message):
             return u''
+
         # This is a hack around a unicode bug in twisted queryForString
         strings = xpath.queryForStringList('/message/body', message)
-        if strings is not None:
+        if strings:
             return strings[0]
         return u''
 
@@ -380,12 +382,11 @@ class Client(object):
         resp_channel = '{user}@{host}'.format(user=channel, host=resp_host).lstrip('#')
 
         # Create the response <message/> element
-        element = domish.Element(('jabber:client', 'message'))
-        element.attributes = {
+        element = domish.Element(('jabber:client', 'message'), attribs={
             'to': resp_channel,
             'from': self.jid.full(),
             'type': resp_type,
-        }
+        })
         element.addElement('body', content=encodings.to_unicode(message))
 
         self.stream.send(element)
@@ -416,7 +417,7 @@ class Client(object):
             parts.pop()
 
         base = '_'.join(parts)
-        self.nickname = '{0}_{1}'.join(base, int(time.time()))
+        self.nickname = '{0}_{1}'.format(base, int(time.time()))
 
         # FIXME: Is this broken? What about the password?
         # See http://xmpp.org/extensions/xep-0045.html#enter-conflict
@@ -429,15 +430,29 @@ class Client(object):
 
         :param element: An XML <message> element containing invite information
         """
-        xpath_query = '/message/x[@xmlns="jabber:x:conference"]'
-        details = xpath.queryForNodes(xpath_query, element)[0]
-        channel = details.attributes['jid']
-
-        # This is a hack around a unicode bug in twisted queryForString
+        channel = ''
         password = ''
-        strings = xpath.queryForStringList('/message/x/password', element)
-        if strings is not None:
-            password = strings[0]
+
+        # NOTE: check for either http://xmpp.org/extensions/xep-0045.html#invite
+        # or direct invites http://xmpp.org/extensions/xep-0249.html
+        if xpath.matches('/message/x/invite', element):
+            from_jid = jid.JID(element['from'])
+            to_jid = jid.JID(element['to'])
+
+            if from_jid.host == self.conference_host:
+                channel = from_jid.userhost()
+            else:
+                channel = to_jid.userhost()
+
+            # This is a hack around a unicode bug in twisted queryForString
+            strings = xpath.queryForStringList('/message/x/password', element)
+            if strings:
+                password = strings[0]
+        else:
+            # Direct invite
+            x = xpath.queryForNodes('/message/x', element)[0]
+            channel = x['jid']
+            password = x.attributes.get('password', '')
 
         self.join(channel, password=password)
 
@@ -448,12 +463,11 @@ class Client(object):
 
         :param element: An XML <presence> buddy request
         """
-        message = domish.Element(('jabber:client', 'presence'))
-        message.attributes = {
+        message = domish.Element(('jabber:client', 'presence'), attribs={
             'to': element['from'],
             'from': self.jid.full(),
             'type': 'subscribed',
-        }
+        })
         self.stream.send(message)
 
     def on_user_joined(self, element):
@@ -486,20 +500,21 @@ class Client(object):
         :param str channel: the name of the channel to join
         :param str key: an optional passphrase used to join the given channel
         """
-        channel = self.format_channel(channel.lstrip('#'))
+        channel = self.format_channel(channel)
         logger.info("Joining channel %s", channel)
 
-        element = domish.Element(('jabber:client', 'presence'))
-        element.attributes = {
+        element = domish.Element(('jabber:client', 'presence'), attribs={
             'to': '{channel}/{nick}'.format(channel=channel, nick=self.nickname),
             'from': self.jid.full(),
-        }
+        })
 
         muc = domish.Element(('http://jabber.org/protocol/muc', 'x'))
 
         # Don't include room history
-        hist = domish.Element(('', 'history'))
-        hist.attributes = {'maxchars': '0', 'maxstanzas': '0'}
+        hist = domish.Element(('', 'history'), attribs={
+            'maxchars': '0',
+            'maxstanzas': '0',
+        })
         muc.addChild(hist)
 
         if password:
@@ -519,12 +534,11 @@ class Client(object):
         :param str reason: an optional reason for leaving
         """
         logger.info("Leaving channel %s: %s", channel, reason)
-        element = domish.Element(('jabber:client', 'presence'))
-        element.attributes = {
+        element = domish.Element(('jabber:client', 'presence'), attribs={
             'to': self.format_channel(channel),
             'from': self.jid.full(),
             'type': 'unavailable',
-        }
+        })
         self.stream.send(element)
         self.left(channel)
 
@@ -543,7 +557,7 @@ class Client(object):
         except jid.InvalidFormat:
             return fallback
         else:
-            if channel_jid.user != channel:
+            if not all((channel_jid.user, channel_jid.host)):
                 logger.warning('Parsed channel jid %s is invalid', channel_jid.full())
                 return fallback
             else:
