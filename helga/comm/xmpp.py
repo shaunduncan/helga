@@ -1,8 +1,9 @@
 import time
+import uuid
 
 from collections import defaultdict
 
-from twisted.internet import protocol, reactor
+from twisted.internet import protocol, reactor, task
 from twisted.words.xish import domish, xpath
 from twisted.words.xish.xmlstream import XmlStreamFactoryMixin
 from twisted.words.protocols.jabber import client, jid, xmlstream
@@ -43,7 +44,7 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
         is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT` and
         :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
         """
-        logger.info('Connection to server lost: %s', reason)
+        logger.error('Connection to server lost: %s', reason)
 
         # FIXME: Max retries
         if getattr(settings, 'AUTO_RECONNECT', True):
@@ -119,6 +120,7 @@ class Client(object):
         self.channels = set()
         self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
         self.channel_loggers = {}
+        self._heartbeat = None
 
     def _bootstrap(self):
         """
@@ -141,12 +143,62 @@ class Client(object):
         # Allow users to add the bot to their buddy list
         self.factory.addBootstrap('/presence[@type="subscribe"]', self.on_subscribe)
 
-        # Respond to room invites, direct and mediated
-        self.factory.addBootstrap('/message/x[@xmlns="jabber:x:conference"]', self.on_invite)
-        self.factory.addBootstrap('/message/x/invite', self.on_invite)
+        # Respond to room invites, mediated and direct
+        self.factory.addBootstrap('/message/x', self.on_invite)
 
         # Handle nick collisions
         self.factory.addBootstrap('/presence/error/conflict', self.on_nick_collision)
+
+        # Handle server pings, prevents unexpected disconnects
+        self.factory.addBootstrap('/iq/ping', self.on_ping)
+
+    def _start_heartbeat(self):
+        """
+        Starts a PING looping call that operates as a heartbeat/keepalive mechanism for the client.
+        Effectively sends an IQ PING to the XMPP server once every 60 seconds.
+        """
+        self._stop_heartbeat()
+
+        logger.info('Starting PING heartbeat task')
+        self._heartbeat = task.LoopingCall(self.ping)
+        self._heartbeat .start(60, now=False)
+
+    def _stop_heartbeat(self):
+        """
+        Stops the IQ PING heartbeat service
+        """
+        if self._heartbeat is not None:
+            logger.info('Stopping PING heartbeat task')
+            self._heartbeat.stop()
+            self._heartbeat = None
+
+    def ping(self):
+        """
+        Ping the XMPP host of the connection. Used as a heartbeat keepalive
+        """
+        logger.debug('Sending PING to %s', settings.SERVER['HOST'])
+
+        ping = domish.Element(('', 'iq'), attribs={
+            'id': str(uuid.uuid4()),
+            'from': self.jid.full(),
+            'to': settings.SERVER['HOST'],
+            'type': 'get',
+        })
+        ping.addElement('ping', 'urn:xmpp:ping')
+        self.stream.send(ping)
+
+    def on_ping(self, el):
+        """
+        Handler for server IQ pings. This client will automatically PONG.
+        """
+        logger.debug('Received PING from %s', el['from'])
+        pong = domish.Element(('', 'iq'), attribs={
+            'id': el['id'],
+            'to': el['from'],
+            'from': el['to'],
+            'type': 'result',
+        })
+        self.stream.send(pong)
 
     def on_connect(self, stream):
         """
@@ -154,12 +206,14 @@ class Client(object):
         """
         logger.info('Connection made to %s', settings.SERVER['HOST'])
         self.stream = stream
+        self._start_heartbeat()
 
     def on_disconnect(self, stream):
         """
         Handler for an unexpected disconnect. Simply log and move on
         """
         logger.info('Disconnected from %s', settings.SERVER['HOST'])
+        self._stop_heartbeat()
 
     def set_presence(self, presence):
         """
@@ -277,7 +331,7 @@ class Client(object):
         except KeyError:
             message_type = ''
 
-        if message_type.lower() == 'groupchat':
+        if message_type.lower() == 'groupchat' or message.name == 'presence':
             return '#{0}'.format(from_jid.user)
         elif from_jid.host == self.conference_host:
             return from_jid.resource
@@ -448,11 +502,14 @@ class Client(object):
             strings = xpath.queryForStringList('/message/x/password', element)
             if strings:
                 password = strings[0]
-        else:
+        elif xpath.matches('/message/x[@xmlns="jabber:x:conference"]', element):
             # Direct invite
             x = xpath.queryForNodes('/message/x', element)[0]
             channel = x['jid']
             password = x.attributes.get('password', '')
+        else:
+            # Probably not an invite
+            return
 
         self.join(channel, password=password)
 
@@ -477,8 +534,12 @@ class Client(object):
 
         :param element: An XML <presence> element
         """
+        # NOTE: HipChat might send duplicates here. If this is a problem, ignore
+        # presence stanzas that match /presence/x[@xmlns="http://hipchat.com/protocol/muc#room
+        # or maybe more generally /presence/x/name
         nick = self.parse_nick(element)
         channel = self.parse_channel(element)
+        logger.debug('User %s joined channel %s', nick, channel)
         smokesignal.emit('user_joined', self, nick, channel)
 
     def on_user_left(self, element):
@@ -490,6 +551,7 @@ class Client(object):
         """
         nick = self.parse_nick(element)
         channel = self.parse_channel(element)
+        logger.debug('User %s left channel %s', nick, channel)
         smokesignal.emit('user_left', self, nick, channel)
 
     @encodings.from_unicode_args
