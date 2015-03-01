@@ -120,6 +120,22 @@ class TestRegistry(object):
                 assert things[1].process.called
                 assert things[2].process.called
 
+    def test_process_async_honors_first_response(self):
+        things = [Mock(), Mock(), Mock()]
+
+        # Make the middle one raise
+        things[0].process.side_effect = ResponseNotReady
+        things[1].process.return_value = None
+        things[2].process.return_value = None
+
+        with patch.object(registry, 'prioritized') as prio:
+            with patch.object(settings, 'PLUGIN_FIRST_RESPONDER_ONLY', True):
+                prio.return_value = things
+                assert [] == registry.process(None, '#bots', 'me', 'foobar')
+                assert things[0].process.called
+                assert not things[1].process.called
+                assert not things[2].process.called
+
     def test_process_returns_all_responses(self):
         settings.PLUGIN_FIRST_RESPONDER_ONLY = False
         things = [Mock(), Mock(), Mock()]
@@ -378,6 +394,12 @@ class TestCommand(object):
     def test_parse_handles_char_prefix(self, settings):
         settings.COMMAND_PREFIX_CHAR = '#'
         assert 'foo' == self.cmd.parse('helga', '#foo')[0]
+
+    @patch('helga.plugins.settings')
+    def test_parse_handles_botnick_string(self, settings):
+        settings.COMMAND_PREFIX_BOTNICK = '@helga'
+        settings.COMMAND_PREFIX_CHAR = ''
+        assert 'foo' == self.cmd.parse('helga', '@helga foo')[0]
 
     def test_parse_handles_aliases(self):
         assert 'bar' == self.cmd.parse('helga', 'helga bar')[0]
