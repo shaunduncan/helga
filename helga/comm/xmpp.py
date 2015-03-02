@@ -20,10 +20,28 @@ logger = log.getLogger(__name__)
 
 class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
     """
-    XMPP client factory. following :func:`twisted.words.protocols.jabber.client.XMPPClientFactory`.
+    XMPP client factory. following `twisted.words.protocols.jabber.client.XMPPClientFactory`.
     Ensures that a client is properly created and handles auto reconnect if helga
     is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT`
-    and :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
+    and :data:`~helga.settings.AUTO_RECONNECT_DELAY`).
+
+    By default the Jabber ID is set using the form ``USERNAME@HOST`` from :data:`~helga.settings.SERVER`,
+    but a specific value can be used with the ``JID`` key instead.
+
+    .. attribute:: jid
+
+        The Jabber ID used by the client. Configured directly via ``JID`` in :data:`~helga.settings.SERVER`
+        or indirectly as ``USERNAME@HOST`` from :data:`~helga.settings.SERVER`. An instance of
+        `twisted.words.protocols.jabber.jid.JID`.
+
+    .. attribute:: auth
+
+        An instance of `twisted.words.protocols.jabber.client.XMPPAuthenticator` used for
+        password authentication of the server connection.
+
+    .. attribute:: client
+
+        The client instance of :class:`Client`
     """
 
     protocol = xmlstream.XmlStream
@@ -43,6 +61,10 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
         Handler for when the XMPP connection is lost. Handles auto reconnect if helga
         is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT` and
         :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
+
+        :param connector: The twisted conntector
+        :param reason: A twisted Failure instance
+        :raises: The given reason unless AUTO_RECONNECT is enabled
         """
         logger.error('Connection to server lost: %s', reason)
 
@@ -58,6 +80,10 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
         Handler for when the XMPP connection fails. Handles auto reconnect if helga
         is configured for it (see settings :data:`~helga.settings.AUTO_RECONNECT` and
         :data:`~helga.settings.AUTO_RECONNECT_DELAY`)
+
+        :param connector: The twisted conntector
+        :param reason: A twisted Failure instance
+        :raises: The given reason unless AUTO_RECONNECT is enabled
         """
         logger.warning('Connection to server failed: %s', reason)
 
@@ -71,7 +97,37 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
 
 class Client(object):
     """
-    The XMPP client that has predetermined behavior for certain events.
+    The XMPP client that has predetermined behavior for certain events. This client assumes
+    some default behavior for multi user chat (MUC) by setting the conference host as
+    ``conference.HOST`` using ``HOST`` in :data:`~helga.settings.SERVER`. A specific MUC host
+    can be specified using the key ``MUC_HOST`` in :data:`~helga.settings.SERVER`.
+
+    This client is also a bit opinionated when it comes to chat rooms and how room names and nicks
+    are delivered to plugins. Since helga originally started as an IRC bot, channels are sent
+    to plugins as the user portion of the room JID prefixed with '#'. For example, if a message
+    is received from ``bots@conference.example.com/some_user``, the channel will be ``#bots``.
+    In this instance, plugins would see the user nick as ``some_user``. For private messages,
+    a message received from ``some_user@example.com`` would result in an identical channel and
+    nick ``some_user``.
+
+    .. attribute:: factory
+
+        An instance of :class:`Factory` used to create this client instance.
+
+    .. attribute:: jid
+
+        The Jabber ID used by the client. A copy of the factory ``jid`` attribute.
+
+    .. attribute:: nickname
+
+        The current nickname of the bot. Generally this is the user portion of the ``jid`` attribute,
+        and the resource portion of chat room JIDs, but the value is obtained via the setting
+        :data:`~helga.settings.NICK`. For HipChat support, this should be set to the user account's
+        **Full Name**.
+
+    .. attribute:: stream
+
+        The raw data stream. An instance of `twisted.words.protocols.jabber.xmlstream.XmlStream`
 
     .. attribute:: channels
         :annotation: = set()
@@ -124,7 +180,19 @@ class Client(object):
 
     def _bootstrap(self):
         """
-        Bootstraps the client by adding xpath event listeners
+        Bootstraps the client by adding xpath event listeners. Listeners include
+
+        - on_connect: when the server connection is established and the stream is opened
+        - on_disconnect: when the server connection is terminated and the stream is closed
+        - on_authenticated: when the client is succesfully authenticated
+        - on_init_failed: when a failure occurs initializing the client
+        - on_message: when a private or group chat message is received
+        - on_user_left: when a user has left a chat room
+        - on_user_joined: when a user joins a chat room
+        - on_subscribe: when a user wants to add the bot as a buddy
+        - on_invite: when the bot is invited to a chat room
+        - on_nick_collision: when the server informs the bot of a nick collision in a chat room
+        - on_ping: when the server or another user pings the bot
         """
         self.factory.addBootstrap(xmlstream.STREAM_CONNECTED_EVENT, self.on_connect)
         self.factory.addBootstrap(xmlstream.STREAM_END_EVENT, self.on_disconnect)
@@ -165,7 +233,7 @@ class Client(object):
 
     def _stop_heartbeat(self):
         """
-        Stops the IQ PING heartbeat service
+        Stops the IQ PING heartbeat service if it exists and is running
         """
         if self._heartbeat is not None:
             logger.info('Stopping PING heartbeat task')
@@ -174,7 +242,7 @@ class Client(object):
 
     def ping(self):
         """
-        Ping the XMPP host of the connection. Used as a heartbeat keepalive
+        Sends an IQ PING to the host server. Useful for establishing a heartbeat/keepalive
         """
         logger.debug('Sending PING to %s', settings.SERVER['HOST'])
 
@@ -189,7 +257,9 @@ class Client(object):
 
     def on_ping(self, el):
         """
-        Handler for server IQ pings. This client will automatically PONG.
+        Handler for server IQ pings. Automatically responds back with a PONG.
+
+        :param el: A <iq/> PING message, instance of `twisted.words.xish.domish.Element`
         """
         logger.debug('Received PING from %s', el['from'])
         pong = domish.Element(('', 'iq'), attribs={
@@ -202,7 +272,10 @@ class Client(object):
 
     def on_connect(self, stream):
         """
-        Handler for a successful connection to the server. Sets the client xml stream
+        Handler for a successful connection to the server. Sets the client xml stream and
+        starts the heartbeat service.
+
+        :param stream: An instance of `twisted.words.protocols.jabber.xmlstream.XmlStream`
         """
         logger.info('Connection made to %s', settings.SERVER['HOST'])
         self.stream = stream
@@ -210,15 +283,18 @@ class Client(object):
 
     def on_disconnect(self, stream):
         """
-        Handler for an unexpected disconnect. Simply log and move on
+        Handler for an unexpected disconnect. Logs the disconnect and stops the heartbeat service.
+
+        :param stream: An instance of `twisted.words.protocols.jabber.xmlstream.XmlStream`
         """
         logger.info('Disconnected from %s', settings.SERVER['HOST'])
         self._stop_heartbeat()
 
     def set_presence(self, presence):
         """
-        Sends a presence element to the connected server. Useful for indicating
-        online or available status
+        Sends a <presence/> element to the connected server. Used to indicate online or available status
+
+        :param presence: The presence status string to send to the server
         """
         el = domish.Element((None, 'presence'))
         el.addElement('status', content=presence)
@@ -228,6 +304,8 @@ class Client(object):
         """
         Handler for successful authentication to the XMPP server. Establishes automatically
         joining channels. Sends the ``signon`` signal (see :ref:`plugins.signals`)
+
+        :param stream: An instance of `twisted.words.protocols.jabber.xmlstream.XmlStream`
         """
         # Make presence online
         self.set_presence('Online')
@@ -244,6 +322,8 @@ class Client(object):
         """
         Handler for when client initialization fails. This should end contact with
         the server by sending the xml footer.
+
+        :param failure: The element of the failure
         """
         logger.error('Initialization failed: %s', failure)
         self.stream.sendFooter()
@@ -253,7 +333,8 @@ class Client(object):
         Gets a channel logger, keeping track of previously requested ones.
         (see :ref:`builtin.channel_logging`)
 
-        :param str channel: A channel name
+        :param channel: A channel name
+        :returns: a python logger suitable for channel logging
         """
         if channel not in self.channel_loggers:
             self.channel_loggers[channel] = log.get_channel_logger(channel)
@@ -264,9 +345,9 @@ class Client(object):
         Logs one or more messages by a user on a channel using a channel logger.
         If channel logging is not enabled, nothing happens. (see :ref:`builtin.channel_logging`)
 
-        :param str channel: A channel name
-        :param str nick: The nick of the user sending an IRC message
-        :param str message: The IRC message
+        :param channel: A channel name
+        :param nick: The nick of the user sending an IRC message
+        :param message: The IRC message
         """
         if not settings.CHANNEL_LOGGING:
             return
@@ -278,7 +359,7 @@ class Client(object):
         Called when the client successfully joins a new channel. Adds the channel to the known
         channel list and sends the ``join`` signal (see :ref:`plugins.signals`)
 
-        :param str channel: the channel that has been joined
+        :param channel: the channel that has been joined
         """
         logger.info('Joined %s', channel)
         self.channels.add(channel)
@@ -289,7 +370,7 @@ class Client(object):
         Called when the client successfully leaves a channel. Removes the channel from the known
         channel list and sends the ``left`` signal (see :ref:`plugins.signals`)
 
-        :param str channel: the channel that has been left
+        :param channel: the channel that has been left
         """
         logger.info('Left %s', channel)
         self.channels.discard(channel)
@@ -301,7 +382,7 @@ class Client(object):
         as a user jid or a resource from a room jid. For example from ``me@jabber.local``
         would return ``me`` and ``bots@conference.jabber.local/me`` would return ``me``.
 
-        :param message: A <message/> element, instance of :class:`twisted.words.xish.domish.Element`
+        :param message: A <message/> element, instance of `twisted.words.xish.domish.Element`
         :returns: The nick portion of the XMPP jid
         """
         from_jid = jid.JID(message['from'])
@@ -311,27 +392,28 @@ class Client(object):
         else:
             return from_jid.user
 
-    def parse_channel(self, message):
+    def parse_channel(self, element):
         """
-        Parses a channel name from a message. This follows a few rules to determine the right channel
-        to use. Assuming a 'from' jid of user@host/resource:
+        Parses a channel name from an element. This follows a few rules to determine the right channel
+        to use. Assuming a 'from' jid of ``user@host/resource``:
 
-        * If the type of the message is 'groupchat', the user of the jid is returned with a '#' prefix
-        * If the type of the message is 'chat', but the host is the conference host name, the resource
-          is returned
-        * Otherwise, the user is returned
+        * If the element tag is 'presence', the user portion of the jid is returned with '#' prefix
+        * If the element type is 'groupchat', the user portion of the jid is returned with a '#' prefix
+        * If the element type is 'chat', but the host is the conference host name, the resource
+          portion of the jid is returned
+        * Otherwise, the user portion of the jid is returned
 
-        :param message: A <message/> element, instance of :class:`twisted.words.xish.domish.Element`
+        :param element: An instance of `twisted.words.xish.domish.Element`
         :returns: The channel portion of the XMPP jid, prefixed with '#' if it's a chat room
         """
-        from_jid = jid.JID(message['from'])
+        from_jid = jid.JID(element['from'])
 
         try:
-            message_type = message['type']
+            element_type = element['type']
         except KeyError:
-            message_type = ''
+            element_type = ''
 
-        if message_type.lower() == 'groupchat' or message.name == 'presence':
+        if element_type.lower() == 'groupchat' or element.name == 'presence':
             return '#{0}'.format(from_jid.user)
         elif from_jid.host == self.conference_host:
             return from_jid.resource
@@ -343,7 +425,7 @@ class Client(object):
         Parses the message body from a <message/> element, ignoring any delayed messages.
         If a message is indeed a delayed message, an empty string is returned
 
-        :param message: A <message/> element, instance of :class:`twisted.words.xish.domish.Element`
+        :param message: A <message/> element, instance of `twisted.words.xish.domish.Element`
         :returns: The contents of the message, empty string if the message is delayed
         """
         if xpath.matches('/message/delay', message):
@@ -359,7 +441,7 @@ class Client(object):
         """
         Checks if a given channel is public or not. A channel is public if it starts with '#'
 
-        :param str channel: the channel name to check
+        :param channel: the channel name to check
         """
         return channel.startswith('#')
 
@@ -369,7 +451,7 @@ class Client(object):
         on a public channel) as well as allowing the plugin manager to send the message to all
         registered plugins. Should the plugin manager yield a response, it will be sent back.
 
-        :param message: An XML element for an XMPP <message />
+        :param message: A <message/> element, instance of `twisted.words.xish.domish.Element`
         """
         nick = self.parse_nick(element)
         channel = self.parse_channel(element)
@@ -417,7 +499,8 @@ class Client(object):
     @encodings.from_unicode_args
     def msg(self, channel, message):
         """
-        Send a message over XMPP to the specified channel
+        Send a message over XMPP to the specified channel. Channels prefixed with '#' are assumed
+        to be multi user chat rooms, otherwise, they are assumed to be individual users.
 
         :param channel: The XMPP channel to send the message to. A channel not prefixed by a '#'
                         will be sent as a private message to a user with that nick.
@@ -449,7 +532,8 @@ class Client(object):
     def me(self, channel, message):
         """
         Equivalent to: /me message. This is more compatibility with existing IRC plugins
-        that use this method.
+        that use this method. Channels prefixed with '#' are assumed to be multi user chat
+        rooms, otherwise, they are assumed to be individual users.
 
         :param channel: The XMPP channel to send the message to. A channel not prefixed by a '#'
                         will be sent as a private message to a user with that nick.
@@ -460,9 +544,10 @@ class Client(object):
     def on_nick_collision(self, element):
         """
         Handler called when the server responds of nick collision with the bot. This will
-        generate a new nick containing the preferred nick and the current timestamp.
+        generate a new nick containing the preferred nick and the current timestamp and
+        attempt to rejoin the room it failed to join.
 
-        :param element: An XML <presence> element
+        :param element: A <presence/> element, instance of `twisted.words.xish.domish.Element`
         """
         channel = jid.JID(element['from']).userhost()
 
@@ -482,7 +567,7 @@ class Client(object):
         Handler that responds to channel invites from other users. This will acknowledge
         the request by joining the room indicated in the xml payload.
 
-        :param element: An XML <message> element containing invite information
+        :param element: A <message/> element, instance of `twisted.words.xish.domish.Element`
         """
         channel = ''
         password = ''
@@ -508,7 +593,7 @@ class Client(object):
             channel = x['jid']
             password = x.attributes.get('password', '')
         else:
-            # Probably not an invite
+            # Probably not an invite, but the overly greedy xpath matched it. Ignore.
             return
 
         self.join(channel, password=password)
@@ -518,7 +603,7 @@ class Client(object):
         Handler that responds to 'buddy requests' from other users. This will acknowledge
         the request by approving it.
 
-        :param element: An XML <presence> buddy request
+        :param element: A <presence/> element, instance of `twisted.words.xish.domish.Element`
         """
         message = domish.Element(('jabber:client', 'presence'), attribs={
             'to': element['from'],
@@ -532,7 +617,7 @@ class Client(object):
         Handler called when a user enters a public room. Responsible for sending
         the ``user_joined`` signal (see :ref:`plugins.signals`)
 
-        :param element: An XML <presence> element
+        :param element: A <presence/> element, instance of `twisted.words.xish.domish.Element`
         """
         # NOTE: HipChat might send duplicates here. If this is a problem, ignore
         # presence stanzas that match /presence/x[@xmlns="http://hipchat.com/protocol/muc#room
@@ -547,7 +632,7 @@ class Client(object):
         Handler called when a user leaves a public room. Responsible for sending
         the ``user_left`` signal (see :ref:`plugins.signals`)
 
-        :param element: An XML <presence> element
+        :param element: A <presence/> element, instance of `twisted.words.xish.domish.Element`
         """
         nick = self.parse_nick(element)
         channel = self.parse_channel(element)
@@ -557,10 +642,12 @@ class Client(object):
     @encodings.from_unicode_args
     def join(self, channel, password=None):
         """
-        Join a channel, optionally with a passphrase required to join.
+        Join a channel, optionally with a passphrase required to join. Channels can either
+        be a full, valid JID or a simple channel name like '#bots', which will be expanded
+        into something like `bots@conference.example.com` (see :meth:`~Client.format_channel`)
 
-        :param str channel: the name of the channel to join
-        :param str key: an optional passphrase used to join the given channel
+        :param channel: the name of the channel to join
+        :param key: an optional passphrase used to join the given channel
         """
         channel = self.format_channel(channel)
         logger.info("Joining channel %s", channel)
@@ -592,8 +679,8 @@ class Client(object):
         """
         Leave a channel, optionally with a reason for leaving
 
-        :param str channel: the name of the channel to leave
-        :param str reason: an optional reason for leaving
+        :param channel: the name of the channel to leave
+        :param reason: an optional reason for leaving
         """
         logger.info("Leaving channel %s: %s", channel, reason)
         element = domish.Element(('jabber:client', 'presence'), attribs={
@@ -606,9 +693,23 @@ class Client(object):
 
     def format_channel(self, channel):
         """
-        Format a channel as a JID string. If this channel is already a full
-        JID string, then it is returned in the userhost form. Otherwise,
-        a string in the form ``{chan}@{host}`` is returned
+        Formats a channel as a valid JID string. This will operate with a fallback
+        of ``channel@conference_host`` should any of the following conditions happen:
+
+        - Parsing the channel as a JID fails with `twisted.words.protocols.jabber.jid.InvalidFormat`
+        - Either the ``user`` or ``host`` portion of the parsed JID is empty
+
+        Any prefixed '#' characters are removed. For example, assuming a conference host
+        of 'conf.example.com':
+
+        - `#bots` would return `bots@conf.example.com`
+        - `bots` would return `bots@conf.example.com`
+        - `bots@rooms.example.com` would return `bots@rooms.example.com`
+        - `bots@rooms.example.com/resource` would return `bots@rooms.example.com`
+
+        :param channel: The channel to format as a full JID. Can be a simple string, '#' prefixed string,
+                        or full room JID.
+        :returns: The full user@host JID of the room
         """
         channel = channel.lstrip('#')
         fallback = '{channel}@{host}'.format(channel=channel,

@@ -121,7 +121,7 @@ a route handler can manually set the response status code on the request object:
         request.setResponseCode(404)
         return 'foo is always 404'
 
-In addition to this, route handlers can also raise :exc:`~helga.plugins.webhooks.HttpError`::
+In addition to this, route handlers can also raise :exc:`helga.plugins.webhooks.HttpError`::
 
     from helga.plugins.webhooks import route, HttpError
 
