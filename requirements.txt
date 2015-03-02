@@ -6,10 +6,10 @@
 Twisted==13.1.0
 pymongo==2.5.2
 tweepy==2.1
-pytz==2013b
 pyOpenSSL==0.13
 requests==2.2.1
 smokesignal==0.5
 giphypop==0.2
 pystache==0.5.4
 decorator==3.4.0
+pytz
