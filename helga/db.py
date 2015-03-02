@@ -3,11 +3,11 @@
 
 .. attribute:: client
 
-    A :class:`pymongo.mongo_client.MongoClient` instance, the connection client to MongoDB
+    A `pymongo.mongo_client.MongoClient` instance, the connection client to MongoDB
 
 .. attribute:: db
 
-    A :class:`pymongo.database.Database` instance, the default MongoDB database to use
+    A `pymongo.database.Database` instance, the default MongoDB database to use
 
 
 .. _`pymongo`: http://api.mongodb.org/python/current/
@@ -27,7 +27,7 @@ def connect():
     :data:`~helga.settings.DATABASE`). This will return the MongoDB client as well
     as the default database as configured.
 
-    :returns: A two-tuple of (:class:`pymongo.MongoClient`, :class:`pymongo.database.Database`)
+    :returns: A two-tuple of (`pymongo.MongoClient`, `pymongo.database.Database`)
     """
     db_settings = getattr(settings, 'DATABASE', {})
 

@@ -1,8 +1,24 @@
  _builtin:
 
+
 Builtin Features
 ================
 Helga comes with many builtin plugins, webhooks, and features.
+
+
+.. _builtin.supported_backends:
+
+Supported Backends
+------------------
+
+As of version 1.7.0, helga supports IRC, XMPP, and HipChat out of the box. Note, however, that
+helga originally started as an IRC bot, so much of the terminology will reflect that. The current
+status of XMPP and HipChat support is very limited and somewhat beta. In the future, helga may
+have a much more robust and pluggable backend system to allow connections to any number of chat
+services.
+
+The default configuration assumes that you wish to connect to an IRC server. However, if you wish
+to connect to an XMPP or HipChat server, see :ref:`config.xmpp`.
 
 
 .. _builtin.plugins:
@@ -558,7 +574,7 @@ those wanting to helga to, in addition to any installed plugins, monitor and sav
 occur on any channel in which the bot resides. This is a helga core feature and not managed by a plugin,
 mostly to ensure that channel logging *always* happens with some level of confidence that no
 preprocess plugins have modified the message. Channel logging feature can be either enabled or
-disabled via the setting :data:`~helga.settins.CHANNEL_LOGGING`.
+disabled via the setting :data:`~helga.settings.CHANNEL_LOGGING`.
 
 Channel logs are kept in UTC time and stored in dated logfiles that are rotated automatically. These
 log files are written to disk in a configurable location indicated by :data:`~helga.settings.CHANNEL_LOGGING_DIR`

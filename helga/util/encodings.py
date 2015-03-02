@@ -10,8 +10,8 @@ def to_unicode(bytestr, errors='ignore'):
     This function assumes UTF-8 for byte strings and by default will ignore any decoding errors.
 
     :param bytestr: either a byte string or unicode string
-    :param str errors: a string indicating how decoding errors should be handled
-                       (i.e. 'strict', 'ignore', 'replace')
+    :param errors: a string indicating how decoding errors should be handled
+                   (i.e. 'strict', 'ignore', 'replace')
     """
     if isinstance(bytestr, unicode):
         return bytestr
@@ -24,8 +24,8 @@ def from_unicode(unistr, errors='ignore'):
     encoding. This function assumes UTF-8 for byte strings and by default will ignore any encoding errors.
 
     :param unistr: either unicode or a byte string
-    :param str errors: a string indicating how encoding errors should be handled
-                       (i.e. 'strict', 'ignore', 'replace')
+    :param errors: a string indicating how encoding errors should be handled
+                   (i.e. 'strict', 'ignore', 'replace')
     """
     if not isinstance(unistr, unicode):
         return unistr

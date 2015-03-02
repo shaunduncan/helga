@@ -29,7 +29,7 @@ command plugin behave like this::
 Matches
 ^^^^^^^
 Plugins of this type are intended to be a form of autoresponder that aim to provide some extra meaning
-or context to what a user has said in IRC. For example, a match plugin could provide extra details if
+or context to what a user has said in a chat. For example, a match plugin could provide extra details if
 someone says 'foo'::
 
     <sduncan> I'm talking about foo in this message
@@ -40,7 +40,7 @@ someone says 'foo'::
 
 Preprocessors
 ^^^^^^^^^^^^^
-Plugins of this type generally don't respond over IRC. However, they can modify the original IRC message
+Plugins of this type generally don't respond. However, they can modify the original message
 that will be received by command or match plugins.
 
 (see :ref:`plugins.creating.preprocessors`)
@@ -60,16 +60,16 @@ commands and matches.
 The :mod:`helga.plugins` module has three values that may be useful for indicating the priority
 of a plugin:
 
-* :const:`PRIORITY_LOW <helga.plugins.PRIORITY_LOW>`
-* :const:`PRIORITY_NORMAL <helga.plugins.PRIORITY_NORMAL>`
-* :const:`PRIORITY_HIGH <helga.plugins.PRIORITY_HIGH>`
+* :const:`~helga.plugins.PRIORITY_LOW`
+* :const:`~helga.plugins.PRIORITY_NORMAL`
+* :const:`~helga.plugins.PRIORITY_HIGH`
 
 The actual values of these priorities can be fine tuned via custom settings (see :ref:`config`).
 Unless specifically indicated, each plugin type assumes a default priority:
 
-* Preprocessors have a default priority of :const:`PRIORITY_NORMAL <helga.plugins.PRIORITY_NORMAL>`
-* Commands have a default priority of :const:`PRIORITY_NORMAL <helga.plugins.PRIORITY_NORMAL>`
-* Matches have a default priority of :const:`PRIORITY_LOW <helga.plugins.PRIORITY_LOW>`
+* Preprocessors have a default priority of :const:`~helga.plugins.PRIORITY_NORMAL`
+* Commands have a default priority of :const:`~helga.plugins.PRIORITY_NORMAL`
+* Matches have a default priority of :const:`~helga.plugins.PRIORITY_LOW`
 
 
 .. _plugins.creating:
@@ -111,7 +111,7 @@ whitespace splitting on the argument string. For example, given a command::
 the resulting args list to the command function would be::
 
     ['bar', '"baz', 'qux"']
-    
+
 For some plugins, this may be less than ideal. Therefore, you can optionally pass ``shlex=True``
 to the :func:`@command <helga.plugins.command>` decorator. This changes the behavior in such a way
 that in the previous example, the resulting args list would be::
@@ -131,7 +131,7 @@ in your settings file (see :ref:`config.default.plugins`)
 Match Plugins
 ^^^^^^^^^^^^^
 Match plugins are those that are intended to be a form of autoresponder. They are meant to provide
-some extra meaning or context to what a user has said in IRC. For these types of plugins, you will
+some extra meaning or context to what a user has said in chat. For these types of plugins, you will
 use the :func:`@match <helga.plugins.match>` decorator:
 
 .. autofunction:: helga.plugins.match
@@ -147,8 +147,8 @@ For example::
 
 In most cases, this decorator will have a single regular expression as its argument. However, it
 can also accept a callable. This callable should accept a single argument: the message contents
-received via IRC. There is no explicit return value type, but the return value should be able to
-be evaluated for truthiness. When that return value has truth, then the decorated function
+received from the chat server. There is no explicit return value type, but the return value should
+be able to be evaluated for truthiness. When that return value has truth, then the decorated function
 will be called. For example::
 
     import time
@@ -160,7 +160,7 @@ will be called. For example::
 
     @match(match_even)
     def even(client, channel, nick, message, matches):
-        # Will send 'Match: Even Time!' to IRC
+        # Will send 'Match: Even Time!' to the server
         return u'Match: {0}'.format(matches)
 
 
@@ -168,8 +168,8 @@ will be called. For example::
 
 Preprocessor Plugins
 ^^^^^^^^^^^^^^^^^^^^
-Preprocessor plugins generally don't respond over IRC. Instead, they are intended to potentially
-modify the original IRC message that will be received by command or match plugins. For these
+Preprocessor plugins generally don't respond. Instead, they are intended to potentially
+modify the original chat message that will be received by command or match plugins. For these
 types of plugins, you will use the :func:`@preprocessor <helga.plugins.preprocessor>` decorator:
 
 .. autofunction:: helga.plugins.preprocessor
@@ -240,11 +240,11 @@ Handling Unicode
 ----------------
 Plugins should try to deal exclusively with unicode as much as possible. This is important to keep
 in mind since all plugins that accept string arguments will receive unicode strings specifically
-and not byte strings. Helga's IRC connection assumes a UTF-8 encoding for all incoming messages
-over IRC. Note, though, that plugins that don't explicitly return unicode responses will not fail;
-the internal plugin manager will explicitly convert all responses to UTF-8 encoded byte strings
-before sending them over IRC. There are also useful utilities for dealing with unicode support
-in plugins found in :mod:`helga.util.encodings`:
+and not byte strings. For the most part, helga's client connection assumes a UTF-8 encoding for all
+incoming messages. Note, though, that plugins that don't explicitly return unicode responses will not fail;
+the internal plugin manager will implicitly handle convertng all responses to the correct format
+(unicode or byte strings) needed by the chat server. There are also useful utilities for dealing with
+unicode support in plugins found in :mod:`helga.util.encodings`:
 
 * :func:`from_unicode <helga.util.encodings.from_unicode>`
 * :func:`from_unicode_args <helga.util.encodings.from_unicode_args>`
@@ -306,7 +306,7 @@ Communicating Asynchronously
 In some cases, plugins may need to perform some blocking action such as communicating with an
 external API. If a plugin were to perform this action and directly return a string response,
 this may block other plugins from processing. To get around this concern, plugins can, instead
-of returning a response, raise :exc:`ResponseNotReady <helga.plugins.ResponseNotReady>`.
+of returning a response, raise :exc:`~helga.plugins.ResponseNotReady`.
 This will indicate to helga's plugin manager that a response may be sent at some point in the
 future. In this instance, helga will continue to process other plugins, unless configured to only
 return first response, in which case no other plugins will be processed (see :ref:`config.default.plugins`).
@@ -327,7 +327,7 @@ For example::
 
     def do_something(arg, kwarg=None):
         print arg or kwarg
-        
+
     # Have the event loop run `do_something` in 30 seconds
     reactor.callLater(30, do_something, None, kwarg='foo')
 
@@ -345,12 +345,15 @@ For more details on this see the `Twisted Documentation`_. To revisit the previo
         raise ResonseNotReady
 
 Notice above that the callback function ``foo_async`` takes the client connection as an argument.
-Should a plugin need to respond asynchronously to IRC, it is generally a good idea for deferred
-callbacks to accept at a minimum the IRC client and the channel of the message. In addition, there
-are several useful methods of :class:`helga.comm.Client` that can be used for asynchronous communication:
+Should a plugin need to respond asynchronously to the server, it is generally a good idea for deferred
+callbacks to accept at a minimum the client and the channel of the message. In addition, there
+are several useful methods of both :class:`helga.comm.irc.Client` and :class:`helga.comm.xmpp.Client`
+that can be used for asynchronous communication:
 
-* :meth:`helga.comm.Client.msg`
-* :meth:`helga.comm.Client.me`
+* :meth:`helga.comm.irc.Client.msg`
+* :meth:`helga.comm.irc.Client.me`
+* :meth:`helga.comm.xmpp.Client.msg`
+* :meth:`helga.comm.xmpp.Client.me`
 
 
 .. _plugins.signals:
@@ -366,12 +369,13 @@ signals that fire on given events and provide callbacks with certain arguments:
     Fired when the helga process starts. Callbacks should accept no arguments.
 
 ``signon``
-    Fired when helga successfully connects to IRC. Callbacks should follow:
+    Fired when helga successfully connects to the chat server. Callbacks should follow:
 
     .. function:: func(client)
         :noindex:
 
-        :param client: an instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+                       depending on the server type
 
 ``join``
     Fired when helga joins a channel. Callbacks should follow:
@@ -379,7 +383,8 @@ signals that fire on given events and provide callbacks with certain arguments:
     .. function:: func(client, channel)
         :noindex:
 
-        :param client: an instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+                       depending on the server type
         :param channel: the name of the channel
 
 ``left``
@@ -388,7 +393,8 @@ signals that fire on given events and provide callbacks with certain arguments:
     .. function:: func(client, channel)
         :noindex:
 
-        :param client: an instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+                       depending on the server type
         :param channel: the name of the channel
 
 ``user_joined``
@@ -397,7 +403,8 @@ signals that fire on given events and provide callbacks with certain arguments:
     .. function:: func(client, nick, channel)
         :noindex:
 
-        :param client: an instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+                       depending on the server type
         :param nick: the nick of the user that joined
         :param channel: the name of the channel
 
@@ -407,10 +414,11 @@ signals that fire on given events and provide callbacks with certain arguments:
     .. function:: func(client, nick, channel)
         :noindex:
 
-        :param client: an instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+                       depending on the server type
         :param nick: the nick of the user that left
         :param channel: the name of the channel
-    
+
 
 
 .. _plugins.packaging:
@@ -522,7 +530,7 @@ form::
 
     plugin_name = module.path:decorated_function
 
-The 'plugin_name' portion should be a simple name for the plugin, such as 'my_plugin' in the 
+The 'plugin_name' portion should be a simple name for the plugin, such as 'my_plugin' in the
 'helga_my_plugin' example above. The latter half must be colon delimited containing a module path
 and the function decorated using :func:`@command <helga.plugins.command>`, :func:`@match <helga.plugins.match>`,
 or :func:`@preprocessor <helga.plugins.preprocessor>`. So if a file ``helga_my_plugin.py`` contains::
@@ -708,6 +716,48 @@ plugins, the entry point follows a 'module:function' pattern, class-based plugin
 The respective entry point string might look something like this::
 
     foo = helga_foo:FooCommand
+
+
+
+.. _plugins.xmpp:
+
+Supporting XMPP
+---------------
+You shouldn't need to make any special changes to plugins if you follow the documenation above. However,
+remember that helga was started as an IRC bot, so things work a bit more to that favor. Plugins will
+still receive ``client``, ``channel``, ``nick``, and ``message`` arguments.
+
+Note, though, that values for ``channel`` will **never** be the full JID of a chat room. Instead, they
+will be the ``user`` portion of the room JID, prepended with a '#'. For example::
+
+    bots@conf.example.com
+
+would become a channel named ``#bots`` and private messages from::
+
+    user@host.com
+
+would become a channel named ``user``.
+
+Nick values operate in a similar manner, only using the ``resource`` portion of the JID for group chat.
+For example::
+
+    bots@conf.example.com/foo
+
+would become a nick named::
+
+    foo
+
+and a private message from::
+
+    foo@host.com
+
+would become a nick named::
+
+    foo
+
+For more information about how this works see :meth:`helga.comm.xmpp.Client.parse_channel` and
+:meth:`helga.comm.xmpp.Client.parse_nick`.
+
 
 
 .. _`pymongo`: http://api.mongodb.org/python/current/
