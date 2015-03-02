@@ -37,8 +37,8 @@ def message_max(message, max):
     """
     Returns a given message with a maximum length. Primarily used for additional logging
 
-    :param str message: a message intended to send to twitter
-    :param int max: the maximum length of the message
+    :param message: a message intended to send to twitter
+    :param max: the maximum length of the message
     :returns: the message truncated to a maximum length
     """
     if len(message) > max:
@@ -51,7 +51,7 @@ def message_140(message):
     """
     A wrapper for message_max using 140 as a hard limit
 
-    :param str message: a message intended to send to twitter
+    :param message: a message intended to send to twitter
     :returns: the message truncated to a maximum length of 140 characters
     """
     return message_max(message, 140)
@@ -73,7 +73,7 @@ def tweet(message):
     Sends a tweet using ``tweepy``. Ensures that helga is properly configured for accessing
     twitter and sends a message with a maximum character length of 140 characters.
 
-    :param str message: the message to tweet
+    :param message: the message to tweet
     :returns: a URL string of the posted tweet
     """
     if not is_properly_configured():

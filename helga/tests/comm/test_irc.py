@@ -4,20 +4,20 @@ import re
 from mock import Mock, call, patch
 from unittest import TestCase
 
-from helga import comm
+from helga.comm import irc
 
 
 class FactoryTestCase(TestCase):
 
     def setUp(self):
-        self.factory = comm.Factory()
+        self.factory = irc.Factory()
 
     def test_build_protocol(self):
         client = self.factory.buildProtocol('address')
         assert client.factory == self.factory
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.reactor')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.reactor')
     def test_client_connection_lost_retries(self, reactor, settings):
         settings.AUTO_RECONNECT = True
         settings.AUTO_RECONNECT_DELAY = 1
@@ -25,21 +25,21 @@ class FactoryTestCase(TestCase):
         self.factory.clientConnectionLost(connector, Exception)
         reactor.callLater.assert_called_with(1, connector.connect)
 
-    @patch('helga.comm.settings')
+    @patch('helga.comm.irc.settings')
     def test_client_connection_lost_raises(self, settings):
         settings.AUTO_RECONNECT = False
         connector = Mock()
         self.assertRaises(Exception, self.factory.clientConnectionLost, connector, Exception)
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.reactor')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.reactor')
     def test_client_connection_failed(self, reactor, settings):
         settings.AUTO_RECONNECT = False
         self.factory.clientConnectionFailed(Mock(), reactor)
         assert reactor.stop.called
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.reactor')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.reactor')
     def test_client_connection_failed_retries(self, reactor, settings):
         settings.AUTO_RECONNECT = True
         settings.AUTO_RECONNECT_DELAY = 1
@@ -51,7 +51,7 @@ class FactoryTestCase(TestCase):
 class ClientTestCase(TestCase):
 
     def setUp(self):
-        self.client = comm.Client()
+        self.client = irc.Client()
 
     def test_parse_nick(self):
         nick = self.client.parse_nick('foo!~foobar@localhost')
@@ -61,14 +61,14 @@ class ClientTestCase(TestCase):
         nick = self.client.parse_nick(u'☃!~foobar@localhost')
         assert nick == u'☃'
 
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_me_converts_from_unicode(self, irc):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
         self.client.me('#foo', snowman)
         irc.describe.assert_called_with(self.client, '#foo', bytes)
 
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_msg_sends_byte_string(self, irc):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
@@ -87,8 +87,8 @@ class ClientTestCase(TestCase):
     def test_erroneousNickFallback(self):
         assert re.match(r'^helga_[\d]+$', self.client.erroneousNickFallback)
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.smokesignal')
     def test_signedOn(self, signal, settings):
         snowman = u'☃'
 
@@ -110,14 +110,14 @@ class ClientTestCase(TestCase):
                 call('#test'),
             ]
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.smokesignal')
     def test_signedOn_sends_signal(self, signal, settings):
         settings.CHANNELS = []
         self.client.signedOn()
         signal.emit.assert_called_with('signon', self.client)
 
-    @patch('helga.comm.registry')
+    @patch('helga.comm.irc.registry')
     def test_privmsg_sends_single_string(self, registry):
         self.client.msg = Mock()
         registry.process.return_value = ['line1', 'line2']
@@ -128,7 +128,7 @@ class ClientTestCase(TestCase):
         assert args[0] == '#bots'
         assert args[1] == 'line1\nline2'
 
-    @patch('helga.comm.registry')
+    @patch('helga.comm.irc.registry')
     def test_privmsg_responds_to_user_when_private(self, registry):
         self.client.nickname = 'helga'
         self.client.msg = Mock()
@@ -138,27 +138,27 @@ class ClientTestCase(TestCase):
 
         assert self.client.msg.call_args[0][0] == 'foo'
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_connectionMade(self, irc, settings):
         self.client.connectionMade()
         irc.connectionMade.assert_called_with(self.client)
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_connectionLost(self, irc, settings):
         self.client.connectionLost('an error...')
         irc.connectionLost.assert_called_with(self.client, 'an error...')
 
-    @patch('helga.comm.settings')
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.settings')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_connectionLost_handles_unicode(self, irc, settings):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
         self.client.connectionLost(snowman)
         irc.connectionLost.assert_called_with(self.client, bytes)
 
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.smokesignal')
     def test_joined(self, signal):
         # Test str and unicode
         for channel in ('foo', u'☃'):
@@ -167,7 +167,7 @@ class ClientTestCase(TestCase):
             assert channel in self.client.channels
             signal.emit.assert_called_with('join', self.client, channel)
 
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.smokesignal')
     def test_left(self, signal):
         # Test str and unicode
         for channel in ('foo', u'☃'):
@@ -204,33 +204,33 @@ class ClientTestCase(TestCase):
             self.client.irc_unknown('me', 'SOME_COMMAND', [])
             assert not on_invite.called
 
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.smokesignal')
     def test_userJoined(self, signal):
         user = 'helga!helgabot@127.0.0.1'
         self.client.userJoined(user, '#bots')
         signal.emit.assert_called_with('user_joined', self.client, 'helga', '#bots')
 
-    @patch('helga.comm.smokesignal')
+    @patch('helga.comm.irc.smokesignal')
     def test_userLeft(self, signal):
         user = 'helga!helgabot@127.0.0.1'
         self.client.userLeft(user, '#bots')
         signal.emit.assert_called_with('user_left', self.client, 'helga', '#bots')
 
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_join_converts_from_unicode(self, irc):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
         self.client.join(snowman, snowman)
         irc.join.assert_called_with(self.client, bytes, key=bytes)
 
-    @patch('helga.comm.irc.IRCClient')
+    @patch('helga.comm.irc.irc.IRCClient')
     def test_leave_converts_from_unicode(self, irc):
         snowman = u'☃'
         bytes = '\xe2\x98\x83'
         self.client.leave(snowman, snowman)
         irc.leave.assert_called_with(self.client, bytes, reason=bytes)
 
-    @patch('helga.comm.log')
+    @patch('helga.comm.irc.log')
     def test_get_channel_logger_no_existing_logger(self, log):
         self.client.channel_loggers = {}
         log.get_channel_logger.return_value = 'foo'
@@ -238,7 +238,7 @@ class ClientTestCase(TestCase):
         assert 'foo' == self.client.get_channel_logger('#foo')
         assert '#foo' in self.client.channel_loggers
 
-    @patch('helga.comm.log')
+    @patch('helga.comm.irc.log')
     def test_get_channel_logger_existing_logger(self, log):
         self.client.channel_loggers = {'#foo': 'bar'}
         log.get_channel_logger.return_value = 'foo'
@@ -246,7 +246,7 @@ class ClientTestCase(TestCase):
         assert 'bar' == self.client.get_channel_logger('#foo')
         assert not log.get_channel_logger.called
 
-    @patch('helga.comm.settings')
+    @patch('helga.comm.irc.settings')
     def test_log_channel_message(self, settings):
         settings.CHANNEL_LOGGING = True
         logger = Mock()

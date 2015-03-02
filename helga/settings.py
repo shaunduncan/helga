@@ -4,11 +4,11 @@ Default settings and configuration utilities
 import os
 import sys
 
-#: Dictionary of IRC connection details. At a minimum this should contain keys
-#: ``HOST`` and ``PORT`` which default to 'localhost' and 6667 respectively.
+#: Dictionary of connection details. At a minimum this should contain keys
+#: ``HOST`` and ``PORT`` which default to 'localhost' and 6667 respectively for irc.
 #: Optionally, you can specify a boolean key ``SSL`` if you require helga to
-#: connect to IRC via SSL. You may also specify keys ``USERNAME`` and ``PASSWORD``
-#: if your IRC server requires authentication. For example::
+#: connect via SSL. You may also specify keys ``USERNAME`` and ``PASSWORD``
+#: if your server requires authentication. For example::
 #:
 #:     SERVER = {
 #:         'HOST': 'localhost',
@@ -17,9 +17,16 @@ import sys
 #:         'USERNAME': 'user',
 #:         'PASSWORD': 'pass',
 #:     }
+#:
+#: Additional, optional keys are supported for different chat backends:
+#:
+#: - ``TYPE``: the backend type to use, 'irc' or 'xmpp'
+#: - ``MUC_HOST``: the MUC group chat domain like 'conference.example.com' for group chat
+#: - ``JID``: A full jabber ID to use instead of USERNAME (xmpp only)
 SERVER = {
     'HOST': 'localhost',
     'PORT': 6667,
+    'TYPE': 'irc',
 }
 
 
@@ -53,7 +60,7 @@ CHANNEL_LOGGING_DIR = '.logs'
 #: browsable channel log web ui.
 CHANNEL_LOGGING_HIDE_CHANNELS = []
 
-#: The preferred nick of the bot instance
+#: The preferred nick of the bot instance. For XMPP clients, this will be used when joining rooms.
 NICK = 'helga'
 
 #: A list of channels to automatically join. You can specify either a single channel name
@@ -67,6 +74,11 @@ NICK = 'helga'
 #: Note that this setting is only for hardcoded autojoined channels. Helga also responds
 #: to /INVITE commands as well offers a builtin plugin to configure autojoin channels at
 #: runtime (see :ref:`builtin.plugins.operator`)
+#:
+#: For XMPP/HipChat support, channel names should either be the full room JID in the form
+#: of ``room@host`` or a simple channel name prefixed with a '#' such as ``#room``. Depending
+#: on the configuration, the room JID will be constructed using the ``MUC_HOST`` value of the
+#: ``SERVER`` setting or by prefixing 'conference.' to the ``HOST`` value.
 CHANNELS = [
     ('#bots',),
 ]
@@ -77,12 +89,12 @@ AUTO_RECONNECT = True
 #: An integer for the time, in seconds, to delay between reconnect attempts
 AUTO_RECONNECT_DELAY = 5
 
-#: An integer indicating the rate limit, in seconds, for messages sent over IRC. This may help
-#: to prevent flood, but may degrade the performance of the bot, as it applies to every message
-#: sent to IRC.
+#: IRC Only. An integer indicating the rate limit, in seconds, for messages sent over IRC.
+#: This may help to prevent flood, but may degrade the performance of the bot, as it applies
+#: to every message sent to IRC.
 RATE_LIMIT = None
 
-#: A list of IRC nicks that should be considered operators/administrators
+#: A list of chat nicks that should be considered operators/administrators
 OPERATORS = []
 
 #: A dictionary containing connection info for MongoDB. The minimum settings that should
@@ -143,10 +155,11 @@ ENABLED_PLUGINS = [
 ENABLED_WEBHOOKS = None
 
 #: A boolean, if True, the first response received from a plugin will be the only message
-#: sent over IRC. If False, all responses are sent.
+#: sent back to the chat server. If False, all responses are sent.
 PLUGIN_FIRST_RESPONDER_ONLY = True
 
-#: A boolean, if True, command plugins can be run by asking directly, such as 'helga foo_command'.
+#: If a boolean and True, command plugins can be run by asking directly, such as 'helga foo_command'.
+#: This can also be a string for specifically setting a nick type prefix (such as @NickName for HipChat)
 COMMAND_PREFIX_BOTNICK = True
 
 #: A string char, if non-empty, that can be used to invoke a command without requiring the bot's nick.
@@ -155,7 +168,7 @@ COMMAND_PREFIX_CHAR = '!'
 
 #: A boolean that controls the behavior of argument parsing for command plugins. If False,
 #: command plugin arguments are parsed using a naive whitespace split. If True, they will
-#: be parsed using :func:`shlex.split`. See :ref:`plugins.creating.commands` for more information.
+#: be parsed using `shlex.split`. See :ref:`plugins.creating.commands` for more information.
 #: The default is False, but this shlex parsing will be the only supported means of argument
 #: string parsing in a future version.
 COMMAND_ARGS_SHLEX = False
@@ -192,8 +205,8 @@ def configure(overrides):
     a python import path string like 'foo.bar.baz' or a filesystem path like
     'foo/bar/baz.py'
 
-    :param str overrides: an importable python path string like 'foo.bar' or a filesystem path
-                          to a python file like 'foo/bar.py'
+    :param overrides: an importable python path string like 'foo.bar' or a filesystem path
+                      to a python file like 'foo/bar.py'
     """
     this = sys.modules[__name__]
 
