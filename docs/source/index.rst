@@ -22,8 +22,21 @@ helga
 
 About
 -----
-Helga is a full-featured IRC bot for Python 2.6/2.7 using `Twisted`_. Helga originally started
-as a python fork of a perl-based IRC bot `olga`_, but has grown considerably since then.
+Helga is a full-featured chat bot for Python 2.6/2.7 using `Twisted`_. Helga originally started
+as a python fork of a perl-based IRC bot `olga`_, but has grown considerably since then. Early
+versions limited to support to IRC, but now include other services like XMPP and HipChat.
+
+
+.. _supported_backends:
+
+Supported Backends
+------------------
+
+As of version 1.7.0, helga supports IRC, XMPP, and HipChat out of the box. Note, however, that
+helga originally started as an IRC bot, so much of the terminology will reflect that. The current
+status of XMPP and HipChat support is very limited and somewhat beta. In the future, helga may
+have a much more robust and pluggable backend system to allow connections to any number of chat
+services.
 
 
 .. _features:
@@ -34,6 +47,7 @@ Features
 * HTTP webhooks support and webhook plugins
 * Channel logging and browsable web UI
 * Event driven behavior for plugins
+* Support for IRC, XMPP, and HipChat
 
 
 .. _contributing:

@@ -32,8 +32,8 @@ class Factory(protocol.ClientFactory):
         Build the helga protocol for twisted, or in other words, create the client
         object and return it.
 
-        :param address: an implementation of :class:`twisted.internet.interfaces.IAddress`
-        :returns: an instance of :class:`helga.comm.Client`
+        :param address: an implementation of `twisted.internet.interfaces.IAddress`
+        :returns: an instance of :class:`Client`
         """
         logger.debug('Constructing Helga protocol')
         return self.client
@@ -71,7 +71,7 @@ class Factory(protocol.ClientFactory):
 
 class Client(irc.IRCClient):
     """
-    An implementation of :class:`twisted.words.protocols.irc.IRCClient` with some overrides
+    An implementation of `twisted.words.protocols.irc.IRCClient` with some overrides
     derived from helga settings (see :ref:`config`). Some methods are overridden
     to provide additional functionality.
 
@@ -149,7 +149,8 @@ class Client(irc.IRCClient):
         Gets a channel logger, keeping track of previously requested ones.
         (see :ref:`builtin.channel_logging`)
 
-        :param str channel: A channel name
+        :param channel: A channel name
+        :returns: a python logger suitable for channel logging
         """
         if channel not in self.channel_loggers:
             self.channel_loggers[channel] = log.get_channel_logger(channel)
@@ -160,9 +161,9 @@ class Client(irc.IRCClient):
         Logs one or more messages by a user on a channel using a channel logger.
         If channel logging is not enabled, nothing happens. (see :ref:`builtin.channel_logging`)
 
-        :param str channel: A channel name
-        :param str nick: The nick of the user sending an IRC message
-        :param str message: The IRC message
+        :param channel: A channel name
+        :param nick: The nick of the user sending an IRC message
+        :param message: The IRC message
         """
         if not settings.CHANNEL_LOGGING:
             return
@@ -196,7 +197,7 @@ class Client(irc.IRCClient):
         Called when the client successfully joins a new channel. Adds the channel to the known
         channel list and sends the ``join`` signal (see :ref:`plugins.signals`)
 
-        :param str channel: the channel that has been joined
+        :param channel: the channel that has been joined
         """
         logger.info('Joined %s', channel)
         self.channels.add(channel)
@@ -207,7 +208,7 @@ class Client(irc.IRCClient):
         Called when the client successfully leaves a channel. Removes the channel from the known
         channel list and sends the ``left`` signal (see :ref:`plugins.signals`)
 
-        :param str channel: the channel that has been left
+        :param channel: the channel that has been left
         """
         logger.info('Left %s', channel)
         self.channels.discard(channel)
@@ -218,7 +219,7 @@ class Client(irc.IRCClient):
         Parses a nick from a full IRC user string. For example from ``me!~myuser@localhost``
         would return ``me``.
 
-        :param str full_nick: the full IRC user string of the form ``{nick}!~{user}@{host}``
+        :param full_nick: the full IRC user string of the form ``{nick}!~{user}@{host}``
         :returns: The nick portion of the IRC user string
         """
         return full_nick.split('!')[0]
@@ -228,7 +229,7 @@ class Client(irc.IRCClient):
         Checks if a given channel is public or not. A channel is public if it starts with
         '#' and is not the bot's nickname (which occurs when a private message is received)
 
-        :param str channel: the channel name to check
+        :param channel: the channel name to check
         """
         return self.nickname != channel and channel.startswith('#')
 
@@ -240,9 +241,9 @@ class Client(irc.IRCClient):
         registered plugins. Should the plugin manager yield a response, it will be sent back
         over IRC.
 
-        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
-        :param str channel: the channel from which the message came
-        :param str message: the message contents
+        :param user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param channel: the channel from which the message came
+        :param message: the message contents
         """
         user = self.parse_nick(user)
         message = message.strip()
@@ -283,7 +284,7 @@ class Client(irc.IRCClient):
         Called when the both has a nickname collision. This will generate a new nick
         containing the perferred nick and the current timestamp.
 
-        :param str nickname: the nickname that was already taken
+        :param nickname: the nickname that was already taken
         """
         logger.info('Nick %s already taken', nickname)
 
@@ -316,9 +317,9 @@ class Client(irc.IRCClient):
         """
         Handler for /INVITE commands. If the invitee is the bot, it will join the requested channel.
 
-        :param str inviter: IRC user string of the form ``{nick}!~{user}@{host}``
-        :param str invitee: the nick of the user receiving the invite
-        :param str channel: the channel to which invitee has been invited
+        :param inviter: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param invitee: the nick of the user receiving the invite
+        :param channel: the channel to which invitee has been invited
         """
         nick = self.parse_nick(inviter)
         if invitee == self.nickname:
@@ -329,9 +330,9 @@ class Client(irc.IRCClient):
         """
         Handler for any unknown IRC commands. Currently handles /INVITE commands
 
-        :param str prefix: any command prefix, such as the IRC user
-        :param str command: the IRC command received
-        :param list params: list of parameters for the given command
+        :param prefix: any command prefix, such as the IRC user
+        :param command: the IRC command received
+        :param params: list of parameters for the given command
         """
         if command.lower() == 'invite':
             self.on_invite(prefix, params[0], params[1])
@@ -353,8 +354,8 @@ class Client(irc.IRCClient):
         Called when a user joins a channel in which the bot resides. Responsible for sending
         the ``user_joined`` signal (see :ref:`plugins.signals`)
 
-        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
-        :param str channel: the channel in which the event occurred
+        :param user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param channel: the channel in which the event occurred
         """
         nick = self.parse_nick(user)
         smokesignal.emit('user_joined', self, nick, channel)
@@ -364,8 +365,8 @@ class Client(irc.IRCClient):
         Called when a user leaves a channel in which the bot resides. Responsible for sending
         the ``user_left`` signal (see :ref:`plugins.signals`)
 
-        :param str user: IRC user string of the form ``{nick}!~{user}@{host}``
-        :param str channel: the channel in which the event occurred
+        :param user: IRC user string of the form ``{nick}!~{user}@{host}``
+        :param channel: the channel in which the event occurred
         """
         nick = self.parse_nick(user)
         smokesignal.emit('user_left', self, nick, channel)
@@ -375,8 +376,8 @@ class Client(irc.IRCClient):
         """
         Join a channel, optionally with a passphrase required to join.
 
-        :param str channel: the name of the channel to join
-        :param str key: an optional passphrase used to join the given channel
+        :param channel: the name of the channel to join
+        :param key: an optional passphrase used to join the given channel
         """
         logger.info("Joining channel %s", channel)
         irc.IRCClient.join(self, channel, key=key)
@@ -386,8 +387,8 @@ class Client(irc.IRCClient):
         """
         Leave a channel, optionally with a reason for leaving
 
-        :param str channel: the name of the channel to leave
-        :param str reason: an optional reason for leaving
+        :param channel: the name of the channel to leave
+        :param reason: an optional reason for leaving
         """
         logger.info("Leaving channel %s: %s", channel, reason)
         irc.IRCClient.leave(self, channel, reason=reason)
