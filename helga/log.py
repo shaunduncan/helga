@@ -14,9 +14,9 @@ def getLogger(name):
     """
     Obtains a named logger and ensures that it is configured according to helga's log settings
     (see :ref:`helga.settings.logging`). Use of this is generally intended to mimic
-    :func:`logging.getLogger` with the exception that it takes care of formatters and handlers.
+    `logging.getLogger` with the exception that it takes care of formatters and handlers.
 
-    :param str name: The name of the logger to get
+    :param name: The name of the logger to get
     """
     level = settings.LOG_LEVEL
 
@@ -47,7 +47,7 @@ def get_channel_logger(channel):
     """
     Obtains a python logger configured to operate as a channel logger.
 
-    :param str channel: the channel name for the desired logger
+    :param channel: the channel name for the desired logger
     """
     logger = logging.getLogger(u'channel_logger/{0}'.format(channel))
     logger.setLevel(logging.INFO)
@@ -78,7 +78,7 @@ class UTCTimeLogFilter(logging.Filter):
         """
         Filter the log record and add two attributes:
 
-        * ``utcnow``: the value of :func:`datetime.datetime.utcnow`
+        * ``utcnow``: the value of `datetime.datetime.utcnow`
         * ``utctime``: the time formatted string of ``utcnow`` in the form ``HH:MM:SS``
         """
         record.utcnow = datetime.datetime.utcnow()
