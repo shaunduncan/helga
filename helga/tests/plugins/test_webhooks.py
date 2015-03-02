@@ -225,7 +225,7 @@ class WebhookRootTestCase(TestCase):
         self.root.routes['/path/to/resource'] = (['GET'], mock_fn)
 
         assert 'foo' == self.root.render(request)
-        mock_fn.assert_called_with(request, self.root.irc_client)
+        mock_fn.assert_called_with(request, self.root.chat_client)
         request.setHeader.assert_called_with('Server', 'helga')
 
     def test_reunder_handles_http_error(self):

@@ -96,7 +96,7 @@ class Registry(object):
     def __new__(cls, *args, **kwargs):
         """
         Only here so we only maintain one registry for the life of the application. There
-        is some state-specific things that shouldn't be lost in the event the IRC client
+        is some state-specific things that shouldn't be lost in the event the chat client
         loses the connection to the server
         """
         if cls.__instance is None:
@@ -117,10 +117,10 @@ class Registry(object):
         """
         Register a decorated plugin function or :class:`Plugin` subclass with a given name
 
-        :param str name: the name of the plugin
+        :param name: the name of the plugin
         :param fn_or_cls: a decorated plugin function or :class:`Plugin` subclass
-        :raises TypeError: if the ``fn_or_cls`` argument is not a decorated plugin function or
-                           :class:`Plugin` subclass
+        :raises: TypeError if the ``fn_or_cls`` argument is not a decorated plugin function or
+                 :class:`Plugin` subclass
         """
         # Make sure we're working with an instance
         try:
@@ -146,7 +146,7 @@ class Registry(object):
         """
         Get a plugin by name
 
-        :param str name: the name of the plugin
+        :param name: the name of the plugin
         :returns: a plugin implementation (decorated function or :class:`Plugin` sublclass)
         """
         return self.plugins.get(name, None)
@@ -155,7 +155,7 @@ class Registry(object):
         """
         Disable a plugin or plugins on a desired channel
 
-        :param str channel: the desired IRC channel
+        :param channel: the desired chat channel
         :param \*plugins: a list of plugin names to disable
         """
         self.enabled_plugins[channel] = self.enabled_plugins[channel].difference(set(plugins))
@@ -164,7 +164,7 @@ class Registry(object):
         """
         Enable a plugin or plugins on a desired channel
 
-        :param str channel: the desired IRC channel
+        :param channel: the desired chat channel
         :param \*plugins: a list of plugin names to enable
         """
         self.enabled_plugins[channel] = self.enabled_plugins[channel].union(set(plugins))
@@ -194,7 +194,7 @@ class Registry(object):
         Reloads a plugin with a given name. This is equivalent to finding the registered
         entry point module and using the python builtin ``reload()``.
 
-        :param str name: the desired plugin to reload
+        :param name: the desired plugin to reload
         :returns: True if reloaded, False if an exception occurred
         """
         if name not in self.plugins:
@@ -220,8 +220,8 @@ class Registry(object):
         (see :ref:`plugins.priorities`). The default action is to return a list ordered from most
         important to least important.
 
-        :param str channel: the IRC channel for the enabled plugin list
-        :param bool high_to_low: priority ordering, True for most important to least important.
+        :param channel: the chat channel for the enabled plugin list
+        :param high_to_low: priority ordering, True for most important to least important.
         """
         plugins = []
         for name in self.enabled_plugins[channel]:
@@ -242,10 +242,10 @@ class Registry(object):
         Invoke the ``preprocess`` method for each plugin on a given channel according to plugin priority.
         Any exceptions from plugins will be suppressed and logged.
 
-        :param client: an instance of :class:`helga.comm.Client`
-        :param str channel: the channel from which the message came
-        :param str nick: the nick of the user sending the message
-        :param str message: the original message received
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+        :param channel: the channel from which the message came
+        :param nick: the nick of the user sending the message
+        :param message: the original message received
         :returns: a three-tuple (channel, nick, message) containing modifications all preprocessor
                   plugins have made
         """
@@ -264,14 +264,14 @@ class Registry(object):
         Any exceptions from plugins will be suppressed and logged. All return values from plugin
         ``process`` methods are collected unless the setting
         :data:`~helga.settings.PLUGIN_FIRST_RESPONDER_ONLY` is set to True or a plugin raises
-        :exc:`ResponseNotReady`, in which case the first plugin to return a response or raise
-        :exc:`ResponseNotReady` will prevent others from processing. All response strings are explicitly
-        converted to unicode.
+        :exc:`~helga.plugins.ResponseNotReady`, in which case the first plugin to return a response or raise
+        :exc:`~helga.plugins.ResponseNotReady` will prevent others from processing. All response strings are
+        explicitly converted to unicode.
 
-        :param client: an instance of :class:`helga.comm.Client`
-        :param str channel: the channel from which the message came
-        :param str nick: the nick of the user sending the message
-        :param str message: the original message received
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
+        :param channel: the channel from which the message came
+        :param nick: the nick of the user sending the message
+        :param message: the original message received
         :returns: a list of non-empty unicode response strings
         """
         responses = []
@@ -321,7 +321,7 @@ class Plugin(object):
 
     ``process``
 
-    Run by the plugin registry to allow a plugin to process an IRC message. This is
+    Run by the plugin registry to allow a plugin to process a chat message. This is
     the primary entry point for plugins according to the plugin manager, so it should either return
     a response or not.
 
@@ -344,16 +344,16 @@ class Plugin(object):
         actual work for the plugin should occur. Subclasses should implement this method.
 
         A return value of None, an empty string, or empty list implies that no response should be
-        sent over IRC. A non-empty string, list of strings, or raised :exc:`ResponseNotReady` implies
-        a response to be sent.
+        sent via chat. A non-empty string, list of strings, or raised :exc:`~helga.plugins.ResponseNotReady`
+        implies a response to be sent.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
-        :returns: None if no response is to be sent back over IRC, a non-empty string or list
+        :param message: The full message string received from the server
+        :returns: None if no response is to be sent back to the server, a non-empty string or list
                   of strings if a response is to be returned
         """
         return None  # pragma: no cover
@@ -364,12 +364,12 @@ class Plugin(object):
         message prior to that message being handled by this plugin's or other plugin's
         ``process`` method.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :returns: a three-tuple (channel, nick, message) containing any modifications
         """
         return channel, nick, message  # pragma: no cover
@@ -377,16 +377,16 @@ class Plugin(object):
     def process(self, client, channel, nick, message):
         """
         This method of a plugin is called by helga's plugin registry to process an incoming
-        IRC message. This should determine whether or not the plugin ``run`` method should be
+        chat message. This should determine whether or not the plugin ``run`` method should be
         called. If so, it should return whatever return value ``run`` generates. If not, ``None``
         should be returned.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :returns: None if the plugin should not run, otherwise the return value of the ``run`` method
         """
         return self.run(client, channel, nick, message)
@@ -407,7 +407,7 @@ class Plugin(object):
             assert p in my_plugin._plugins
 
         :param fn: function to decorate
-        :param bool preprocessor: True if the function should be decorated as a preprocessor
+        :param preprocessor: True if the function should be decorated as a preprocessor
         """
         if preprocessor:
             self.preprocess = fn
@@ -431,7 +431,7 @@ class Plugin(object):
 class Command(Plugin):
     """
     A subclass of :class:`Plugin` for command type plugins (see :ref:`plugins.types`). Command
-    plugins have a default priority of :data:`PRIORITY_NORMAL`
+    plugins have a default priority of :data:`~helga.plugins.PRIORITY_NORMAL`
     """
 
     #: The command string, i.e. 'search' for a command 'helga search foo'
@@ -466,7 +466,7 @@ class Command(Plugin):
         Generally, this does not need to be implemented by subclasses
 
         :param botnick: the current bot nickname
-        :param message: the incoming IRC message
+        :param message: the incoming chat message
         :returns: two-tuple consisting of the string of parsed command, and an argument list of
                   strings either whitespace delimited or shlex split.
         """
@@ -479,8 +479,13 @@ class Command(Plugin):
         nick_prefix = ''
 
         # Handle multiple ways to parse this command
-        if getattr(settings, 'COMMAND_PREFIX_BOTNICK', True):
-            nick_prefix = '{0}\W*\s'.format(botnick)
+        prefix_botnick = getattr(settings, 'COMMAND_PREFIX_BOTNICK', None)
+        if prefix_botnick is not None:
+            fmt = '{0}\W*\s'
+            if isinstance(prefix_botnick, basestring):
+                nick_prefix = fmt.format(prefix_botnick)
+            elif prefix_botnick:
+                nick_prefix = fmt.format(botnick)
 
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
@@ -526,20 +531,20 @@ class Command(Plugin):
         actual work for the plugin should occur. Subclasses should implement this method.
 
         A return value of None, an empty string, or empty list implies that no response should be
-        sent over IRC. A non-empty string, list of strings, or raised :exc:`ResponseNotReady` implies
-        a response to be sent.
+        sent via chat. A non-empty string, list of strings, or raised :exc:`~helga.plugins.ResponseNotReady`
+        implies a response to be sent.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :param cmd: The parsed command string which could be the registered command or one of the
                     command aliases
         :param args: The parsed command arguments as a list, i.e. any content following the command.
                      For example: ``helga foo bar baz`` would be ``['bar', 'baz']``
-        :returns: String or list of strings to return over IRC. None or empty string or list for no response
+        :returns: String or list of strings to return via chat. None or empty string or list for no response
         """
         return None  # pragma: no cover
 
@@ -548,12 +553,12 @@ class Command(Plugin):
         Parses the incoming message and determins if this command should run (i.e. if the primary
         command or one of the aliases match).
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :returns: None if the plugin should not run, otherwise the return value of the ``run`` method
         """
         command, args = self.parse(client.nickname, message)
@@ -572,10 +577,10 @@ class Command(Plugin):
 class Match(Plugin):
     """
     A subclass of :class:`Plugin` for match type plugins (see :ref:`plugins.types`). Matches
-    have a default priority of :data:`PRIORITY_LOW`
+    have a default priority of :data:`~helga.plugins.PRIORITY_LOW`
     """
-    #: A regular expression string used to match against an IRC message. Optionally, this attribute can
-    #: be a callable that accepts an IRC message string as its only argument and returns a value that
+    #: A regular expression string used to match against a chat message. Optionally, this attribute can
+    #: be a callable that accepts a chat message string as its only argument and returns a value that
     #: can be evaluated for truthiness.
     pattern = ''
 
@@ -590,18 +595,18 @@ class Match(Plugin):
         actual work for the plugin should occur. Subclasses should implement this method.
 
         A return value of None, an empty string, or empty list implies that no response should be
-        sent over IRC. A non-empty string, list of strings, or raised :exc:`ResponseNotReady` implies
-        a response to be sent.
+        sent via chat. A non-empty string, list of strings, or raised :exc:`~helga.plugins.ResponseNotReady`
+        implies a response to be sent.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :param matches: The result of ``re.findall`` if decorated with a regular expression, otherwise
                         the return value of the callable passed to :func:`helga.plugins.match`
-        :returns: String or list of strings to return over IRC. None or empty string or list for no response
+        :returns: String or list of strings to return via chat. None or empty string or list for no response
         """
         return None  # pragma: no cover
 
@@ -612,7 +617,7 @@ class Match(Plugin):
         Otherwise, the pattern attribute is used as a regular expression string argument to
         ``re.findall`` and that value is returned.
 
-        :param message: the message received over IRC
+        :param message: the message received from the server
         :returns: the result of ``re.findall`` if pattern is a string, otherwise the return value of
                   calling the ``pattern`` attribute with the message as a parameter
         """
@@ -634,12 +639,12 @@ class Match(Plugin):
         be evaluated for truth. Generally, subclasses should not have to worry about this method, and
         instead, should focus on the implementation of ``run``.
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :returns: None if the plugin should not run, otherwise the return value of the ``run`` method
         """
         matches = self.match(message)
@@ -653,30 +658,30 @@ def command(command, aliases=None, help='', priority=PRIORITY_NORMAL, shlex=Fals
     """
     A decorator for creating command plugins
 
-    :param str command: The command string, i.e. 'search' for a command 'helga search foo'
-    :param list aliases: A list of command aliases. If a command 'search' has an alias list
-                         ['s'], then 'helga search foo' and 'helga s foo' will both run the command.
-    :param str help: An optional help string for the command. This is used by the builtin help plugin.
-    :param int priority: The priority of the plugin. Default is :data:`PRIORITY_NORMAL`.
-    :param bool shlex: A boolean indicating whether to use shlex arg string parsing rather than naive
-                       whitespace splitting.
+    :param command: The command string, i.e. 'search' for a command 'helga search foo'
+    :param aliases: A list of command aliases. If a command 'search' has an alias list
+                    ['s'], then 'helga search foo' and 'helga s foo' will both run the command.
+    :param help: An optional help string for the command. This is used by the builtin help plugin.
+    :param priority: The priority of the plugin. Default is :data:`~helga.plugins.PRIORITY_NORMAL`.
+    :param shlex: A boolean indicating whether to use shlex arg string parsing rather than naive
+                  whitespace splitting.
 
     Decorated functions should follow this pattern:
 
     .. function:: func(client, channel, nick, message, cmd, args)
         :noindex:
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :param cmd: The parsed command string which could be the registered command or one of the
                     command aliases
         :param args: The parsed command arguments as a list, i.e. any content following the command.
                      For example: ``helga foo bar baz`` would be ``['bar', 'baz']``
-        :returns: String or list of strings to return over IRC. None or empty string or list
+        :returns: String or list of strings to return via chat. None or empty string or list
                   for no response
     """
     return Command(command, aliases=aliases, help=help, priority=priority, shlex=shlex).decorate
@@ -686,25 +691,25 @@ def match(pattern, priority=PRIORITY_LOW):
     """
     A decorator for creating match plugins
 
-    :param pattern: A regular expression string used to match against an IRC message. Optionally,
-                    this argument can be a callable that accepts an IRC message string as its only
+    :param pattern: A regular expression string used to match against a chat message. Optionally,
+                    this argument can be a callable that accepts a chat message string as its only
                     argument and returns a value that can be evaluated for truthiness.
-    :param int priority: The priority of the plugin. Default is :data:`PRIORITY_LOW`
+    :param priority: The priority of the plugin. Default is :data:`~helga.plugins.PRIORITY_LOW`
 
     Decorated match functions should follow this pattern:
 
     .. function:: func(client, channel, nick, message, matches)
         :noindex:
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :param matches: The result of ``re.findall`` if decorated with a regular expression, otherwise
                         the return value of the callable passed
-        :returns: String or list of strings to return over IRC. None or empty string or list for no response
+        :returns: String or list of strings to return via chat. None or empty string or list for no response
     """
     return Match(pattern, priority=priority).decorate
 
@@ -713,19 +718,19 @@ def preprocessor(priority=PRIORITY_NORMAL):
     """
     A decorator for creating preprocessor plugins
 
-    :param int priority: The priority of the plugin. Default is :data:`PRIORITY_NORMAL`
+    :param priority: The priority of the plugin. Default is :data:`~helga.plugins.PRIORITY_NORMAL`
 
     Decorated preprocessor functions should follow this pattern:
 
     .. function:: func(client, channel, nick, message, matches)
         :noindex:
 
-        :param client: The IRC client connection. An instance of :class:`helga.comm.Client`
+        :param client: an instance of :class:`helga.comm.irc.Client` or :class:`helga.comm.xmpp.Client`
         :param channel: The channel from which the message was received. This could be a public
                         channel like '#foo', or in the event of a private message, could be the
                         nick of the user sending the message
         :param nick: The nick of the user sending the message
-        :param message: The full message string received from IRC
+        :param message: The full message string received from the server
         :returns: a three-tuple (channel, nick, message) containing any modifications
     """
     # This happens if not using a priority argument, but just decorating

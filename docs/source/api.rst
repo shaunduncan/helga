@@ -3,10 +3,16 @@
 API Documentation
 =================
 
-:mod:`helga.comm`
------------------
-.. automodule:: helga.comm
+:mod:`helga.comm.irc`
+---------------------
+.. automodule:: helga.comm.irc
     :synopsis: Twisted protocol and communication implementations for IRC
+    :members:
+
+:mod:`helga.comm.xmpp`
+----------------------
+.. automodule:: helga.comm.xmpp
+    :synopsis: Twisted protocol and communication implementations for XMPP/HipChat
     :members:
 
 
@@ -49,11 +55,11 @@ API Documentation
     :members: configure
 
 
-    .. _helga.settings.irc:
+    .. _helga.settings.chat:
 
-    IRC Settings
-    """"""""""""
-    Settings that pertain to how helga operates with and connects to IRC
+    Chat Settings
+    """""""""""""
+    Settings that pertain to how helga operates with and connects to a chat server
 
     .. autodata:: NICK
     .. autodata:: CHANNELS

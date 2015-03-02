@@ -10,21 +10,21 @@ from twisted.internet import reactor, ssl
 from helga import settings
 
 
-def _get_comm():  # pragma: no cover
-    # XXX: This is here ONLY to make patching eaiser. We have to delay the import
-    # of comm so that settings are properly overridden for any class attributes
-    from helga import comm
-    return comm
+def _get_backend(name):  # pragma: no cover
+    name = name.lower()
+    module = __import__('helga.comm', globals(), locals(), [name], 0)
+    return getattr(module, name)
 
 
 def run():
     """
     Run the helga process
     """
-    comm = _get_comm()
+    backend = _get_backend(settings.SERVER.get('TYPE', 'irc'))
     smokesignal.emit('started')
 
-    factory = comm.Factory()
+    factory = backend.Factory()
+
     if settings.SERVER.get('SSL', False):
         reactor.connectSSL(settings.SERVER['HOST'],
                            settings.SERVER['PORT'],
