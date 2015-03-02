@@ -1,10 +1,16 @@
 CHANGELOG
 =========
 
+1.7.0
+-----
+- Added beta version of XMPP/HipChat support and updated documentation
+
+
 1.6.7
 -----
 - Fixed #140 - Allow simple string channel names for CHANNELS setting
 - Merged PR #138 - Fix shell oneliner response
+
 
 1.6.6
 -----
