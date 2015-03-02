@@ -171,6 +171,27 @@ respectively. In this instance, the specific JID is used to authenticate and use
         'MUC_HOST': 'chat.example.com',
     }
 
+Also, just like IRC support, helga can automatically join chat rooms configured in the setting
+:data:`~helga.settings.CHANNELS`. You can configure this a couple of different ways, the easiest
+being a shorthand version of the room name, prefixed with a '#'. For example, given a room with
+a JID of ``bots@conf.example.com``, the setting might look like::
+
+    CHANNELS = [
+        '#bots',
+    ]
+
+Alternatively, you *can* specify the full JID::
+
+    CHANNELS = [
+        'bots@conf.example.com',
+    ]
+
+Just like IRC, you can specify a room password using a two-tuple::
+
+    CHANNELS = [
+        ('#bots', 'room_password'),
+    ]
+
 
 .. _config.xmpp.hipchat:
 
@@ -205,14 +226,16 @@ For example, if the @ mention name is 'HelgaBot'::
     COMMAND_PREFIX_BOTNICK = '@?HelgaBot'
 
 Finally, HipChat does not require that room members have unique JID values. Considering a user in a room
-might have a JID of ``room@host/user_nick``, the default XMPP backend assumes that ``user_nick`` is the
-correct nick of the user. This doesn't work all that well for HipChat users that might be expecting
-@ mentions to specific users when the bot replies. To enable @ mentions for bot replies, you should
-install the `hipchat_nicks`_ plugin and add ``HIPCHAT_API_TOKEN`` to your settings file:
+might have a JID of ``room@host/user_nick``, the default XMPP backend assumes that ``user_nick`` is unique.
+HipChat does something a little different and assumes that the resource portion of the JID is the user's
+full name like ``room@host/Jane Smith``, which may not be unique. This means that replies from the bot
+that include a nick will say 'Jane Smith' rather than an @ mention like '@JaneSmith'. To enable @ mentions
+for bot replies, you should install the `hipchat_nicks`_ plugin and add ``HIPCHAT_API_TOKEN`` to your settings file:
 
 .. code-block:: bash
 
     $ pip install helga-hipchat-nicks
+    $ echo 'HIPCHAT_API_TOKEN = "your_token"' >> path/to/your/settings.py
 
 
 
