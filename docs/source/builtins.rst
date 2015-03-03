@@ -354,6 +354,15 @@ Each subcommand acts as follows:
 
 .. _builtin.plugins.poems:
 
+ping
+^^^^
+A simple command plugin to ping the bot, which will always respond with 'pong'. Usage::
+
+    helga ping
+
+
+.. _builtin.plugins.poems:
+
 poems
 ^^^^^
 .. important::
