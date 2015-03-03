@@ -5,6 +5,7 @@ from itertools import ifilter, imap
 import pytz
 import smokesignal
 
+from bson import objectid
 from twisted.internet import reactor
 
 from helga import log, settings
@@ -44,10 +45,6 @@ def init_reminders(client):
     logger.info("Initializing any scheduled reminders")
 
     for reminder in db.reminders.find():
-        # Update the record to ensure a hash
-        if 'hash' not in reminder or reminder['hash'] != str(reminder['_id'])[:6]:
-            db.reminders.update({'_id': reminder['_id']}, {'$set': {'hash': str(reminder['_id'])[:6]}})
-
         if reminder['_id'] in _scheduled:
             continue
 
@@ -214,9 +211,6 @@ def in_reminder(client, channel, nick, args):
         'creator': nick,
     })
 
-    # Update the record to ensure a hash
-    db.reminders.update({'_id': id}, {'$set': {'hash': str(id)[:6]}})
-
     _scheduled.add(id)
     reactor.callLater(seconds, _do_reminder, id, client)
     return u'Reminder set for {0} from now'.format(readable_time_delta(seconds))
@@ -318,9 +312,6 @@ def at_reminder(client, channel, nick, args):
 
     id = db.reminders.insert(reminder)
 
-    # Update the record to ensure a hash
-    db.reminders.update({'_id': id}, {'$set': {'hash': str(id)[:6]}})
-
     diff = reminder['when'] - now
     delay = (diff.days * 24 * 3600) + diff.seconds
 
@@ -334,11 +325,9 @@ def list_reminders(client, nick, channel):
 
     for reminder in db.reminders.find({'channel': channel}):
         about = u"[{0}] At {1}: '{2}'"
-
-        hash = str(reminder['_id'])[:6]
         when = reminder['when'].strftime('%m/%d/%y %H:%M UTC')
 
-        about = about.format(hash, when, reminder['message'])
+        about = about.format(str(reminder['_id']), when, reminder['message'])
 
         if 'repeat' in reminder:
             days = [days_of_week_lookup[value] for value in reminder['repeat']]
@@ -353,14 +342,19 @@ def list_reminders(client, nick, channel):
         client.msg(nick, '\n'.join(reminders))
 
 
-def delete_reminder(channel, hash):
-    rec = db.reminders.find_one({'hash': hash})
+def delete_reminder(channel, id):
+    try:
+        id = objectid.ObjectId(id)
+    except objectid.InvalidId:
+        return u"Invalid ID format '{0}'".format(id)
+
+    rec = db.reminders.find_one({'_id': id})
 
     if rec is not None:
         db.reminders.remove(rec['_id'])
         return random_ack()
     else:
-        return u"No reminder found with hash '{0}'".format(hash)
+        return u"No reminder found with id '{0}'".format(id)
 
 
 @command('reminders', aliases=['in', 'at'],
@@ -368,7 +362,7 @@ def delete_reminder(channel, hash):
               "in ##(m|h|d) [on <channel>] <message>|"
               "at <HH>:<MM> [<timezone>] [on <channel>] <message> [repeat <days_of_week]|"
               "list [channel]|"
-              "delete <hash>). "
+              "delete <id>). "
               "Ex: 'helga in 12h take out the trash' or 'helga at 13:00 EST standup time repeat MTuWThF'")
 def reminders(client, channel, nick, message, cmd, args):
     if cmd == 'in':
