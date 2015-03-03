@@ -53,6 +53,10 @@ class WebhookPlugin(Command):
     Both ``start`` and ``stop`` are privileged actions and can start and stop the HTTP listener for
     webhooks respectively. To use them, a user must be configured as an operator. The ``routes``
     subcommand will list all of the URL routes known to the webhook listener.
+
+    Webhook routes are generally loaded automatically if they are installed. There are whitelist
+    and blacklist controls to limit loading webhook routes (see :data:`~helga.settings.ENABLED_WEBHOOKS`
+    and :data:`~helga.settings.DISABLED_WEBHOOKS`)
     """
     command = 'webhooks'
     help = ('HTTP service for interacting with helga. Command options usage: '
@@ -70,23 +74,51 @@ class WebhookPlugin(Command):
         self.site = server.Site(self.root)
         self.port = getattr(settings, 'WEBHOOKS_PORT', 8080)
 
+        self.webhook_names = set(ep.name for ep in pkg_resources.iter_entry_points('helga_webhooks'))
+
+        self.whitelist_webhooks = self._create_webhook_list('ENABLED_WEBHOOKS', default=True)
+        self.blacklist_webhooks = self._create_webhook_list('DISABLED_WEBHOOKS', default=True)
+
         @smokesignal.on('signon')
         def setup(client):  # pragma: no cover
             self._start(client)
             self._init_routes()
 
+    def _create_webhook_list(self, setting_name, default):
+        """
+        Used to get either webhook whitelists or blacklists
+
+        :param setting_name: either ENABLED_WEBHOOKS or DISABLED_WEBHOOKS
+        :param default: the default value to use if the setting does not exist
+        """
+        webhooks = getattr(settings, setting_name, default)
+        if isinstance(webhooks, bool):
+            return self.webhook_names if webhooks else set()
+        else:
+            return set(webhooks or [])
+
     def _init_routes(self):
-        enabled = settings.ENABLED_WEBHOOKS
+        """
+        Initialize all webhook routes by loading entry points while honoring both
+        webhook whitelist and blacklist
+        """
+        if not self.whitelist_webhooks:
+            logger.debug('Webhook whitelist was empty, none, or false. Skipping')
+            return
 
         for entry_point in pkg_resources.iter_entry_points(group='helga_webhooks'):
-            if enabled is not None and entry_point.name not in enabled:
-                logger.info('Skipping disabled webhook %s', entry_point.name)
+            if entry_point.name in self.blacklist_webhooks:
+                logger.info('Skipping blacklisted webhook %s', entry_point.name)
+                continue
+
+            if entry_point.name not in self.whitelist_webhooks:
+                logger.info('Skipping non-whitelisted webhook %s', entry_point.name)
                 continue
 
             try:
                 logger.info('Loading webhook %s', entry_point.name)
                 entry_point.load()
-            except:  # pragma: no cover
+            except:
                 logger.exception('Error loading webhook %s', entry_point)
 
     def _start(self, client=None):

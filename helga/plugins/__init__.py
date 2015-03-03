@@ -159,7 +159,6 @@ class Registry(object):
         if not (isinstance(fn_or_cls, Plugin) or hasattr(fn_or_cls, '_plugins')):
             raise TypeError(u"Plugin {0} must be a subclass of Plugin, or a decorated function".format(name))
 
-        logger.info('Registered plugin %s', name)
         self.plugins[name] = fn_or_cls
 
     @property
@@ -214,20 +213,21 @@ class Registry(object):
         it is not loaded.
         """
         if not self.whitelist_plugins:
-            logger.debug('Plugin whitelist was empty, none, or false. Skipping.')
+            logger.warning('Plugin whitelist was empty, none, or false. Skipping.')
             smokesignal.emit('plugins_loaded')
+            return
 
         for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
             if entry_point.name in self.blacklist_plugins:
-                logger.debug('Skipping blacklisted plugin %s', entry_point.name)
+                logger.info('Skipping blacklisted plugin %s', entry_point.name)
                 continue
 
             if entry_point.name not in self.whitelist_plugins:
-                logger.debug('Skipping non-whitelisted plugin %s', entry_point.name)
+                logger.info('Skipping non-whitelisted plugin %s', entry_point.name)
                 continue
 
             try:
-                logger.debug('Loading plugin %s', entry_point.name)
+                logger.info('Loading and registering plugin %s', entry_point.name)
                 self.register(entry_point.name, entry_point.load())
             except:
                 logger.exception('Error initializing plugin %s', entry_point)

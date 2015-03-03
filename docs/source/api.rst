@@ -110,6 +110,7 @@ API Documentation
     .. autodata:: DISABLED_PLUGINS
     .. autodata:: DEFAULT_CHANNEL_PLUGINS
     .. autodata:: ENABLED_WEBHOOKS
+    .. autodata:: DISABLED_WEBHOOKS
     .. autodata:: PLUGIN_PRIORITY_LOW
     .. autodata:: PLUGIN_PRIORITY_NORMAL
     .. autodata:: PLUGIN_PRIORITY_HIGH
