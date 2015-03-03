@@ -5,6 +5,7 @@ CHANGELOG
 -----
 - Added beta version of XMPP/HipChat support and updated documentation
 - Fixed #136: improve plugin whitelist/blacklist functionality and clarity
+- Fixed #118: Removed hash attribute of reminders and used the full ObjectId
 
 
 1.6.8
