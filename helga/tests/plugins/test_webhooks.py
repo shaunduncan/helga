@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from unittest import TestCase
+import pytest
 
 from mock import Mock, patch, call
 
@@ -56,15 +56,69 @@ def test_authenticated_fails_when_called(settings):
     request.setResponseCode.assert_called_with(401)
 
 
-class WebhookPluginTestCase(TestCase):
+class TestWebhookPlugin(object):
 
-    def setUp(self):
+    def setup(self):
         self.plugin = webhooks.WebhookPlugin()
 
     def test_initializes_root_and_site(self):
         plugin = webhooks.WebhookPlugin()
         assert isinstance(plugin.root, webhooks.WebhookRoot)
         assert isinstance(plugin.site, webhooks.server.Site)
+
+    def _make_mock(self, **attrs):
+        m = Mock()
+        for k, v in attrs.iteritems():
+            setattr(m, k, v)
+        return m
+
+    @pytest.mark.parametrize('setting,expected', [
+        (True, set(('foo', 'bar', 'baz'))),
+        (False, set()),
+        (None, set()),
+        (['foo', 'bar'], set(('foo', 'bar'))),
+    ])
+    def test_whitelist_setup(self, setting, expected):
+        entry_points = [
+            self._make_mock(name='foo'),
+            self._make_mock(name='bar'),
+            self._make_mock(name='baz'),
+        ]
+
+        with patch('helga.plugins.webhooks.pkg_resources') as pkg_resources:
+            with patch('helga.plugins.webhooks.settings') as settings:
+                settings.ENABLED_WEBHOOKS = setting
+                settings.DISABLED_WEBHOOKS = False
+
+                pkg_resources.iter_entry_points.return_value = entry_points
+
+                plugin = webhooks.WebhookPlugin()
+
+                assert plugin.whitelist_webhooks == expected
+
+    @pytest.mark.parametrize('setting,expected', [
+        (True, set(('foo', 'bar', 'baz'))),
+        (False, set()),
+        (None, set()),
+        (['foo', 'bar'], set(('foo', 'bar'))),
+    ])
+    def test_blacklist_setup(self, setting, expected):
+        entry_points = [
+            self._make_mock(name='foo'),
+            self._make_mock(name='bar'),
+            self._make_mock(name='baz'),
+        ]
+
+        with patch('helga.plugins.webhooks.pkg_resources') as pkg_resources:
+            with patch('helga.plugins.webhooks.settings') as settings:
+                settings.ENABLED_WEBHOOKS = True
+                settings.DISABLED_WEBHOOKS = setting
+
+                pkg_resources.iter_entry_points.return_value = entry_points
+
+                plugin = webhooks.WebhookPlugin()
+
+                assert plugin.blacklist_webhooks == expected
 
     @patch('helga.plugins.webhooks.settings')
     def test_custom_port(self, settings):
@@ -73,27 +127,63 @@ class WebhookPluginTestCase(TestCase):
         assert self.plugin.port == 8080
         assert plugin.port == 1337
 
-    @patch('helga.plugins.webhooks.settings')
     @patch('helga.plugins.webhooks.pkg_resources')
-    def test_init_routes(self, pkg_resources, settings):
-        settings.ENABLED_WEBHOOKS = None
+    def test_init_routes(self, pkg_resources):
         entry_points = [Mock()]
-        pkg_resources.iter_entry_points.return_value = entry_points
-        self.plugin._init_routes()
-        pkg_resources.iter_entry_points.assert_called_with(group='helga_webhooks')
-        assert entry_points[0].load.called
-
-    @patch('helga.plugins.webhooks.settings')
-    @patch('helga.plugins.webhooks.pkg_resources')
-    def test_init_routes_ignores_not_enabled(self, pkg_resources, settings):
-        settings.ENABLED_WEBHOOKS = ['foo']
-        entry_points = [Mock(), Mock()]
         entry_points[0].name = 'foo'
-        entry_points[1].name = 'bar'
         pkg_resources.iter_entry_points.return_value = entry_points
-        self.plugin._init_routes()
-        assert entry_points[0].load.called
-        assert not entry_points[1].load.called
+
+        with patch.multiple(self.plugin, whitelist_webhooks=['foo'], blacklist_webhooks=[]):
+            self.plugin._init_routes()
+            pkg_resources.iter_entry_points.assert_called_with(group='helga_webhooks')
+            assert entry_points[0].load.called
+
+    @patch('helga.plugins.webhooks.pkg_resources')
+    def test_init_routes_no_whitelist(self, pkg_resources):
+        entry_points = [Mock()]
+        entry_points[0].name = 'foo'
+        pkg_resources.iter_entry_points.return_value = entry_points
+
+        with patch.multiple(self.plugin, whitelist_webhooks=[], blacklist_webhooks=[]):
+            self.plugin._init_routes()
+            assert not pkg_resources.iter_entry_points.called
+
+    @patch('helga.plugins.webhooks.pkg_resources')
+    def test_init_routes_skips_blacklisted(self, pkg_resources):
+        entry_points = [Mock()]
+        entry_points[0].name = 'foo'
+        pkg_resources.iter_entry_points.return_value = entry_points
+
+        with patch.multiple(self.plugin, whitelist_webhooks=['foo'], blacklist_webhooks=['foo']):
+            self.plugin._init_routes()
+            pkg_resources.iter_entry_points.assert_called_with(group='helga_webhooks')
+            assert not entry_points[0].load.called
+
+    @patch('helga.plugins.webhooks.pkg_resources')
+    def test_init_routes_skips_non_whitelisted(self, pkg_resources):
+        entry_points = [Mock()]
+        entry_points[0].name = 'foo'
+        pkg_resources.iter_entry_points.return_value = entry_points
+
+        with patch.multiple(self.plugin, whitelist_webhooks=['bar'], blacklist_webhooks=[]):
+            self.plugin._init_routes()
+            pkg_resources.iter_entry_points.assert_called_with(group='helga_webhooks')
+            assert not entry_points[0].load.called
+
+    @patch('helga.plugins.webhooks.pkg_resources')
+    def test_init_routes_catches_load_exception(self, pkg_resources):
+        entry_points = [
+            self._make_mock(name='foo'),
+            self._make_mock(name='bar'),
+        ]
+
+        entry_points[0].load.side_effect = Exception
+        pkg_resources.iter_entry_points.return_value = entry_points
+
+        with patch.multiple(self.plugin, whitelist_webhooks=['foo', 'bar'], blacklist_webhooks=[]):
+            self.plugin._init_routes()
+            assert entry_points[0].load.called
+            assert entry_points[1].load.called
 
     @patch('helga.plugins.webhooks.reactor')
     def test_start(self, reactor):
@@ -197,9 +287,9 @@ class WebhookPluginTestCase(TestCase):
             control.assert_called_with('stop')
 
 
-class WebhookRootTestCase(TestCase):
+class TestWebhookRoot(object):
 
-    def setUp(self):
+    def setup(self):
         self.client = Mock()
         self.root = webhooks.WebhookRoot(self.client)
 

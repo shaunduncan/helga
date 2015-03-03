@@ -162,10 +162,15 @@ DEFAULT_CHANNEL_PLUGINS = [
     # 'no_more_olga',
 ]
 
-#: A list of webhook names that should be loaded and enabled on process startup. If this value
-#: is None, then all webhooks available are loaded and made available. An empty list implies
+#: A list of whitelisted webhook names that should be loaded and enabled on process startup. If this value
+#: is True, then all webhooks available are loaded and made available. An empty list or None implies
 #: that no webhooks will be made available. See :ref:`webhooks` for more details.
-ENABLED_WEBHOOKS = None
+ENABLED_WEBHOOKS = True
+
+#: A list of blacklisted webhook names that should NOT be loaded and enabled on process startup. If this value
+#: is True, then all webhooks available are loaded and made available. An empty list or None implies
+#: that no webhooks will be made available. See :ref:`webhooks` for more details.
+DISABLED_WEBHOOKS = None
 
 #: A boolean, if True, the first response received from a plugin will be the only message
 #: sent back to the chat server. If False, all responses are sent.
