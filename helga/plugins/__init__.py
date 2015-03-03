@@ -77,9 +77,11 @@ class ResponseNotReady(Exception):
 class Registry(object):
     """
     Simple plugin registry that handles dispatching messages to registered plugins.
-    Plugins can be disabled or enabled per channel. By default, plugins are loaded, but not
-    enabled on a channel unless it exists in :data:`~helga.settings.ENABLED_PLUGINS`. This is done so that
-    potentially annoying plugins can be enabled on-demand
+    Plugins can be disabled or enabled per channel. By default, all plugins are loaded, but not
+    enabled on a channel unless it exists in :data:`~helga.settings.DEFAULT_CHANNEL_PLUGINS`.
+    This is done so that potentially annoying plugins can be enabled on-demand. Plugin loading
+    can be limited to a whitelist via :data:`~helga.settings.ENABLED_PLUGINS` or restricted
+    to a blacklist via :data:`~helga.settings.DISABLED_PLUGINS`.
 
     .. attribute:: plugins
         :annotation: = {}
@@ -107,11 +109,36 @@ class Registry(object):
         if not hasattr(self, 'plugins'):
             self.plugins = {}
 
+        self.plugin_names = set(ep.name for ep in pkg_resources.iter_entry_points('helga_plugins'))
+
+        # Plugins whitelist/blacklist
+        self.whitelist_plugins = self._create_plugin_list('ENABLED_PLUGINS', default=True)
+        self.blacklist_plugins = self._create_plugin_list('DISABLED_PLUGINS', default=set())
+
+        # Figure out default channel plugins using the whitelist and blacklist
+        self.default_channel_plugins = set(getattr(settings, 'DEFAULT_CHANNEL_PLUGINS', []))
+        self.default_channel_plugins = (
+            (self.default_channel_plugins & self.whitelist_plugins) - self.blacklist_plugins
+        )
+
         if not hasattr(self, 'enabled_plugins'):
             # Enabled plugins is a dict: channel -> set()
-            self.enabled_plugins = defaultdict(lambda: set(getattr(settings, 'ENABLED_PLUGINS', [])))
+            self.enabled_plugins = defaultdict(lambda: self.default_channel_plugins)
 
         smokesignal.on('started', self.load)
+
+    def _create_plugin_list(self, setting_name, default):
+        """
+        Used to get either plugin whitelists or blacklists
+
+        :param setting_name: either ENABLED_PLUGINS or DISABLED_PLUGINS
+        :param default: the default value to use if the setting does not exist
+        """
+        plugins = getattr(settings, setting_name, default)
+        if isinstance(plugins, bool):
+            return self.plugin_names if plugins else set()
+        else:
+            return set(plugins or [])
 
     def register(self, name, fn_or_cls):
         """
@@ -180,13 +207,31 @@ class Registry(object):
                 ],
             }
 
+        Note that this loading honors plugin whitelists and blacklists from the settings
+        :data:`~helga.settings.ENABLED_PLUGINS` and :data:`~helga.settings.DISABLED_PLUGINS`
+        respectively. If there are no whitelisted plugins, nothing is loaded. If a plugin
+        is in the blacklist, it is not loaded. If a plugin is not listed in the whitelist,
+        it is not loaded.
         """
+        if not self.whitelist_plugins:
+            logger.debug('Plugin whitelist was empty, none, or false. Skipping.')
+            smokesignal.emit('plugins_loaded')
+
         for entry_point in pkg_resources.iter_entry_points(group='helga_plugins'):
+            if entry_point.name in self.blacklist_plugins:
+                logger.debug('Skipping blacklisted plugin %s', entry_point.name)
+                continue
+
+            if entry_point.name not in self.whitelist_plugins:
+                logger.debug('Skipping non-whitelisted plugin %s', entry_point.name)
+                continue
+
             try:
-                logger.debug('Loading entry_point %s', entry_point.name)
+                logger.debug('Loading plugin %s', entry_point.name)
                 self.register(entry_point.name, entry_point.load())
             except:
                 logger.exception('Error initializing plugin %s', entry_point)
+
         smokesignal.emit('plugins_loaded')
 
     def reload(self, name):

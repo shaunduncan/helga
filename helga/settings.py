@@ -125,6 +125,13 @@ TIMEZONE = 'US/Eastern'
 #: See :ref:`plugins` for more information.
 ENABLED_PLUGINS = True
 
+#: A list of plugin names that should NOT be loaded by the plugin manager. This effectively serves
+#: as a mechanism for explicitly excluding plugins that have been installed on the system.
+#: If this value is True, the plugin manager will NOT load any plugin configured with an entry
+#: point. If it is None, or an empty list, no plugins will be blacklisted.
+#: See :ref:`plugins` for more information.
+DISABLED_PLUGINS = []
+
 #: A list of plugin names that should be enabled automatically for any channel. If this value
 #: is True, all plugins installed will be enabled by default. If this value is None, or an empty
 #: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
