@@ -592,7 +592,8 @@ work:
     $ python setup.py develop
 
 Note, that installing a plugin will mean that it will be loaded when helga starts unless it is
-not included in the plugins whitelist :ref:`ENABLED_PLUGINS <helga.settings.plugins_and_webhooks>`.
+not included in the plugins whitelist :ref:`ENABLED_PLUGINS <helga.settings.plugins_and_webhooks>`
+or it is listed in the plugins blacklist :ref:`DISABLED_PLUGINS <helga.settings.plugins_and_webooks>`.
 The default behavior is that all plugins installed on the system are loaded and made available
 for use in IRC.
 
