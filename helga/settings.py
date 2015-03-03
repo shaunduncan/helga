@@ -118,11 +118,24 @@ DATABASE = {
 #: The default timezone for the bot instance
 TIMEZONE = 'US/Eastern'
 
-#: A list of plugin names that should be enabled automatically for any channel. Note that this
-#: does not mean plugins that are loaded. By default, any plugin that has been installed will
-#: be loaded and made available. This should be a list of the entry point names defined by each
-#: plugin. See :ref:`plugins` for more information.
-ENABLED_PLUGINS = [
+#: A list of plugin names that should be loaded by the plugin manager. This effectively serves
+#: as a mechanism for explicitly including plugins that have been installed on the system.
+#: If this value is True, the plugin manager will load any plugin configured with an entry
+#: point and make it available for use. If it is None, or an empty list, no plugins will be loaded.
+#: See :ref:`plugins` for more information.
+ENABLED_PLUGINS = True
+
+#: A list of plugin names that should NOT be loaded by the plugin manager. This effectively serves
+#: as a mechanism for explicitly excluding plugins that have been installed on the system.
+#: If this value is True, the plugin manager will NOT load any plugin configured with an entry
+#: point. If it is None, or an empty list, no plugins will be blacklisted.
+#: See :ref:`plugins` for more information.
+DISABLED_PLUGINS = []
+
+#: A list of plugin names that should be enabled automatically for any channel. If this value
+#: is True, all plugins installed will be enabled by default. If this value is None, or an empty
+#: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
+DEFAULT_CHANNEL_PLUGINS = [
     'dubstep',
     'facts',
     'help',
@@ -149,10 +162,15 @@ ENABLED_PLUGINS = [
     # 'no_more_olga',
 ]
 
-#: A list of webhook names that should be enabled on process startup. If this value is None,
-#: then all webhooks available are loaded and made available. An empty list implies that no
-#: webhooks will be made available. See :ref:`webhooks` for more details.
-ENABLED_WEBHOOKS = None
+#: A list of whitelisted webhook names that should be loaded and enabled on process startup. If this value
+#: is True, then all webhooks available are loaded and made available. An empty list or None implies
+#: that no webhooks will be made available. See :ref:`webhooks` for more details.
+ENABLED_WEBHOOKS = True
+
+#: A list of blacklisted webhook names that should NOT be loaded and enabled on process startup. If this value
+#: is True, then all webhooks available are loaded and made available. An empty list or None implies
+#: that no webhooks will be made available. See :ref:`webhooks` for more details.
+DISABLED_WEBHOOKS = None
 
 #: A boolean, if True, the first response received from a plugin will be the only message
 #: sent back to the chat server. If False, all responses are sent.
