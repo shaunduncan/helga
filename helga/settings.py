@@ -145,6 +145,7 @@ DEFAULT_CHANNEL_PLUGINS = [
     'meant_to_say',
     'oneliner',
     'operator',
+    'ping',
     'poems',
     'reminders',
     'reviewboard',
