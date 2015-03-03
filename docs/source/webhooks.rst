@@ -191,8 +191,10 @@ point section named ``helga_webhooks``. For example::
 Installing Webhooks
 -------------------
 Webhooks are installed in the same manner that plugins are installed (see plugin :ref:`plugins.installing`).
-And much like plugins, there is a settings list to control the webhooks that are enabled by default.
-New webhooks must be added to the setting :data:`~helga.settings.ENABLED_WEBHOOKS` in order to be used.
+And much like plugins, there are settings to control both a whitelist and blacklist for loading webhook
+routes (see :data:`~helga.settings.ENABLED_PLUGINS` and :data:`~helga.settings.DISABLED_PLUGINS`). To
+explicitly whitelist webhook routes to be loaded, use :data:`~helga.settings.ENABLED_WEBHOOKS`. To
+explicitly blacklist webhook routes from being loaded, use :data:`~helga.settings.DISABLED_WEBHOOKS`.
 
 
 .. _`flask`: http://flask.pocoo.org/

@@ -591,10 +591,17 @@ work:
     $ cd src/helga-my-plugin
     $ python setup.py develop
 
-Even though all installed plugins are loaded when helga starts, they are not immediately made for
-use on all channels. Helga maintains a global list of plugins that are enabled for any channel
-via the setting ``ENABLED_PLUGINS``. Plugins can also be enabled on a per-channel basis by using
-the :ref:`builtin.plugins.manager` plugin::
+Note, that installing a plugin will mean that it will be loaded when helga starts unless it is
+not included in the plugins whitelist :ref:`ENABLED_PLUGINS <helga.settings.plugins_and_webhooks>`
+or it is listed in the plugins blacklist :ref:`DISABLED_PLUGINS <helga.settings.plugins_and_webooks>`.
+The default behavior is that all plugins installed on the system are loaded and made available
+for use in IRC.
+
+With this in mind, installed plugins are available for use, but they may not immediately be so.
+Helga maintains a list of plugin names that indicate which plugins should be enabled by default
+in a channel, which is configured via :ref:`DEFAULT_CHANNEL_PLUGINS <helga.settings.plugins_and_webhooks>`.
+If a plugin name does not appear in this list, a user in a channel will not be able to use it until
+it is enabled with the :ref:`builtin.plugins.manager` plugin::
 
     <sduncan> !plugins enable my_plugin
 
