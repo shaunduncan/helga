@@ -3,9 +3,10 @@ CHANGELOG
 
 1.7.0
 -----
-- Added beta version of XMPP/HipChat support and updated documentation
 - Fixed #136: improve plugin whitelist/blacklist functionality and clarity
 - Fixed #118: Removed hash attribute of reminders and used the full ObjectId
+- Added beta version of XMPP/HipChat support and updated documentation
+- Added a simple ping command plugin that responds with 'pong'
 
 
 1.6.8
