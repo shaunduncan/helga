@@ -7,6 +7,12 @@ CHANGELOG
 - Fixed #136: improve plugin whitelist/blacklist functionality and clarity
 
 
+1.6.8
+-----
+- Merge #141 - Unpin pytz to fix broken dependency
+- Fix broken "at" reminder code with pytz update
+
+
 1.6.7
 -----
 - Fixed #140 - Allow simple string channel names for CHANNELS setting

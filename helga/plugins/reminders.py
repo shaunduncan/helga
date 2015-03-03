@@ -254,7 +254,6 @@ def at_reminder(client, channel, nick, args):
 
     # Parse the time it should go off, and the minute offset of the day
     hh, mm = map(int, args[0].split(':'))
-    next = now.replace(hour=hh, minute=mm)
 
     # Strip time from args
     args = args[1:]
@@ -271,9 +270,8 @@ def at_reminder(client, channel, nick, args):
         # If so, remove it from args
         args = args[1:]
 
-    # Now is already UTC current, so just adjust. Next is set without a timezone
     local_now = now.astimezone(timezone)
-    local_next = next.replace(tzinfo=timezone)
+    local_next = local_now.replace(hour=hh, minute=mm)
 
     if local_next <= local_now:
         local_next += datetime.timedelta(days=1)
