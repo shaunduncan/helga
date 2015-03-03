@@ -4,6 +4,7 @@ CHANGELOG
 1.7.0
 -----
 - Added beta version of XMPP/HipChat support and updated documentation
+- Fixed #136: improve plugin whitelist/blacklist functionality and clarity
 
 
 1.6.7
