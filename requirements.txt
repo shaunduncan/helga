@@ -3,11 +3,9 @@
 # libssl-dev
 # mongodb
 
-Twisted==13.1.0
+decorator==3.4.0
 pymongo==2.5.2
 pyOpenSSL==0.13
-requests==2.2.1
-smokesignal==0.5
 pystache==0.5.4
-decorator==3.4.0
-pytz
+smokesignal==0.5
+Twisted==13.1.0
