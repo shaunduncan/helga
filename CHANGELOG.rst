@@ -9,6 +9,7 @@ CHANGELOG
 - Added a simple ping command plugin that responds with 'pong'
 - Removed dubstep plugin. Now at https://github.com/shaunduncan/helga-dubstep (pypi helga-dubstep)
 - Removed giphy plugin. Now at https://github.com/shaunduncan/helga-giphy (pypi helga-giphy)
+- Removed icanhazascii plugin. Now at https://github.com/shaunduncan/helga-icanhazascii (pypi helga-icanhazascii)
 - Removed no_more_olga plugin. Now at https://github.com/shaunduncan/helga-no-more-olga (pypi helga-no-more-olga)
 - Removed wiki_whois plugin. Now at https://github.com/shaunduncan/helga-wiki-whois (pypi helga-wiki-whois)
 

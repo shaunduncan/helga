@@ -86,7 +86,6 @@ setup(name=helga.__title__,
           helga_plugins=[
               'facts        = helga.plugins.facts:facts',
               'help         = helga.plugins.help:help',
-              'icanhazascii = helga.plugins.icanhazascii:icanhazascii',
               'jira         = helga.plugins.jira:jira',
               'loljava      = helga.plugins.loljava:make_bullshit_java_thing',
               'manager      = helga.plugins.manager:manager',
