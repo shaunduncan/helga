@@ -85,7 +85,6 @@ setup(name=helga.__title__,
       entry_points=dict(
           helga_plugins=[
               'help         = helga.plugins.help:help',
-              'jira         = helga.plugins.jira:jira',
               'manager      = helga.plugins.manager:manager',
               'meant_to_say = helga.plugins.meant_to_say:meant_to_say',
               'operator     = helga.plugins.operator:operator',
