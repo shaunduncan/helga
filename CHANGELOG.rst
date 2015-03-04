@@ -3,24 +3,25 @@ CHANGELOG
 
 1.7.0
 -----
-- Fixed #136: improve plugin whitelist/blacklist functionality and clarity
 - Fixed #118: Removed hash attribute of reminders and used the full ObjectId
+- Fixed #136: improve plugin whitelist/blacklist functionality and clarity
+- Fixed #142: Split out non-essential plugins into their own repos
+    - Removed dubstep plugin. Now at https://github.com/shaunduncan/helga-dubstep (pypi helga-dubstep)
+    - Removed facts plugin. Now at https://github.com/shaunduncan/helga-facts (pypi helga-facts)
+    - Removed giphy plugin. Now at https://github.com/shaunduncan/helga-giphy (pypi helga-giphy)
+    - Removed icanhazascii plugin. Now at https://github.com/shaunduncan/helga-icanhazascii (pypi helga-icanhazascii)
+    - Removed jira plugin. Now at https://github.com/shaunduncan/helga-jira (pypi helga-jira)
+    - Removed loljava plugin. Now at https://github.com/shaunduncan/helga-loljava (pypi helga-loljava)
+    - Removed meant_to_say plugin. Now at https://github.com/shaunduncan/helga-meant-to-say (pypi helga-meant-to-say)
+    - Removed no_more_olga plugin. Now at https://github.com/shaunduncan/helga-no-more-olga (pypi helga-no-more-olga)
+    - Removed oneliner plugin. Now at https://github.com/shaunduncan/helga-oneliner (pypi helga-onliner)
+    - Removed poems plugin. Now at https://github.com/shaunduncan/helga-poems (pypi helga-poems)
+    - Removed reminders plugin. Now at https://github.com/shaunduncan/helga-reminders (pypi helga-reminders)
+    - Removed reviewboard plugin. Now at https://github.com/shaunduncan/helga-reviewboard (pypi helga-reviewboard)
+    - Removed stfu plugin. Now at https://github.com/shaunduncan/helga-stfu (pypi helga-stfu)
+    - Removed wiki_whois plugin. Now at https://github.com/shaunduncan/helga-wiki-whois (pypi helga-wiki-whois)
 - Added beta version of XMPP/HipChat support and updated documentation
 - Added a simple ping command plugin that responds with 'pong'
-- Removed dubstep plugin. Now at https://github.com/shaunduncan/helga-dubstep (pypi helga-dubstep)
-- Removed facts plugin. Now at https://github.com/shaunduncan/helga-facts (pypi helga-facts)
-- Removed giphy plugin. Now at https://github.com/shaunduncan/helga-giphy (pypi helga-giphy)
-- Removed icanhazascii plugin. Now at https://github.com/shaunduncan/helga-icanhazascii (pypi helga-icanhazascii)
-- Removed jira plugin. Now at https://github.com/shaunduncan/helga-jira (pypi helga-jira)
-- Removed loljava plugin. Now at https://github.com/shaunduncan/helga-loljava (pypi helga-loljava)
-- Removed meant_to_say plugin. Now at https://github.com/shaunduncan/helga-meant-to-say (pypi helga-meant-to-say)
-- Removed no_more_olga plugin. Now at https://github.com/shaunduncan/helga-no-more-olga (pypi helga-no-more-olga)
-- Removed oneliner plugin. Now at https://github.com/shaunduncan/helga-oneliner (pypi helga-onliner)
-- Removed poems plugin. Now at https://github.com/shaunduncan/helga-poems (pypi helga-poems)
-- Removed reminders plugin. Now at https://github.com/shaunduncan/helga-reminders (pypi helga-reminders)
-- Removed reviewboard plugin. Now at https://github.com/shaunduncan/helga-reviewboard (pypi helga-reviewboard)
-- Removed stfu plugin. Now at https://github.com/shaunduncan/helga-stfu (pypi helga-stfu)
-- Removed wiki_whois plugin. Now at https://github.com/shaunduncan/helga-wiki-whois (pypi helga-wiki-whois)
 
 
 1.6.8
