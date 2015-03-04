@@ -302,20 +302,6 @@ This plugin will match replacement syntax like 's/foo/bar/', much like using sed
     <helga> sduncan meant to say: bar is bar
 
 
-.. _builtin.plugins.no_more_olga:
-
-no_more_olga
-^^^^^^^^^^^^
-A match plugin that aided in the early days of helga when the bot `olga`_ was still in use. Since helga
-started as a python fork of olga, many users were used to asking olga for certain actions. This would
-respond with a reminder that they should use helga instead.
-
-.. note::
-
-    Future development of this plugin will be maintained elsewhere. It will be removed as a builtin
-    plugin in a future version.
-
-
 .. _builtin.plugins.oneliner:
 
 oneliner
@@ -518,24 +504,6 @@ webhooks respectively. To use them, a user must be configured as an operator. Th
 subcommand will list all of the URL routes known to the webhook listener.
 
 
-.. _builtin.plugins.wiki_whois:
-
-wiki_whois
-^^^^^^^^^^
-A command plugin to generate a confluence-type URL for a user, assuming that the nick given
-is a valid confluence user. If given a nick 'foo', the end result this command produces is
-something like ``http://example.com/~foo``. Usage::
-
-    helga (showme|whois|whothehellis) <nick>
-
-This requires a setting ``WIKI_URL`` (see :ref:`config.default.plugins.wiki_whois`).
-
-.. note::
-
-    Future development of this plugin will be maintained elsewhere. It will be removed as a builtin
-    plugin in a future version.
-
-
 .. _builtin.webhooks:
 
 Builtin Webhooks
@@ -597,6 +565,3 @@ webhook :ref:`builtin.webhooks.logger`.
 
     Non-public channels (i.e. those not beginning with a '#') will be ignored by helga's channel
     logger. No conversations via private messages will be logged.
-
-
-.. _`olga`: https://github.com/thepeopleseason/olga

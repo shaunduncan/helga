@@ -7,6 +7,8 @@ CHANGELOG
 - Fixed #118: Removed hash attribute of reminders and used the full ObjectId
 - Added beta version of XMPP/HipChat support and updated documentation
 - Added a simple ping command plugin that responds with 'pong'
+- Removed wiki_whois. Now maintaned at https://github.com/shaunduncan/helga-wiki-whois (pypi helga-wiki-whois)
+- Removed no_more_olga. Now maintaned at https://github.com/shaunduncan/helga-no-more-olga (pypi helga-no-more-olga)
 
 
 1.6.8

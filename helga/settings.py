@@ -151,16 +151,12 @@ DEFAULT_CHANNEL_PLUGINS = [
     'reviewboard',
     'stfu',
     'webhooks',
-    'wiki_whois',
 
     # Sometimes, giphy may give back a gif of questionable content
     # 'giphy',
 
     # These can get super annoying in public channels
     # 'icanhazascii',
-
-    # Generally, olga isn't being used
-    # 'no_more_olga',
 ]
 
 #: A list of whitelisted webhook names that should be loaded and enabled on process startup. If this value
@@ -209,7 +205,6 @@ JIRA_SHOW_FULL_DESCRIPTION = False
 JIRA_AUTH = ('', '')
 
 REVIEWBOARD_URL = 'http://localhost/{review}'
-WIKI_URL = 'http://localhost/{user}'
 
 #: The integer port the webhooks plugin should listen for http requests.
 WEBHOOKS_PORT = 8080
