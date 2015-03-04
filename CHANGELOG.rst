@@ -8,6 +8,7 @@ CHANGELOG
 - Added beta version of XMPP/HipChat support and updated documentation
 - Added a simple ping command plugin that responds with 'pong'
 - Removed dubstep plugin. Now at https://github.com/shaunduncan/helga-dubstep (pypi helga-dubstep)
+- Removed facts plugin. Now at https://github.com/shaunduncan/helga-facts (pypi helga-facts)
 - Removed giphy plugin. Now at https://github.com/shaunduncan/helga-giphy (pypi helga-giphy)
 - Removed icanhazascii plugin. Now at https://github.com/shaunduncan/helga-icanhazascii (pypi helga-icanhazascii)
 - Removed loljava plugin. Now at https://github.com/shaunduncan/helga-loljava (pypi helga-loljava)

@@ -64,17 +64,6 @@ Builtin Plugin Settings
 Some builtin helga plugins utilize settings for configuration, as listed below.
 
 
-.. _config.default.plugins.facts:
-
-Facts Plugin
-""""""""""""
-See :ref:`builtin.plugins.facts`
-
-``FACTS_REQUIRE_NICKNAME``
-    A boolean, if True, would require the bot's nick to show a stored fact. For example, if True,
-    'foo?' could only be shown with 'helga foo?'. (default: False)
-
-
 .. _config.default.plugins.jira:
 
 JIRA Plugin
