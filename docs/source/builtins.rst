@@ -164,15 +164,6 @@ This plugin will match replacement syntax like 's/foo/bar/', much like using sed
     <helga> sduncan meant to say: bar is bar
 
 
-.. _builtin.plugins.oneliner:
-
-oneliner
-^^^^^^^^
-A match plugin with a large amount of canned responses for a variety of regular expressions. For the
-full list, see the `source code <https://github.com/shaunduncan/helga/blob/master/helga/plugins/oneliner.py>`
-for this plugin.
-
-
 .. _builtin.plugins.operator:
 
 operator
