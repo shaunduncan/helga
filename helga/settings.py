@@ -150,9 +150,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'reviewboard',
     'stfu',
     'webhooks',
-
-    # These can get super annoying in public channels
-    # 'icanhazascii',
 ]
 
 #: A list of whitelisted webhook names that should be loaded and enabled on process startup. If this value
