@@ -102,7 +102,7 @@ API Documentation
 
     .. _helga.settings.plugins_and_webhooks:
 
-    Plugin and Webhook Settings   
+    Plugin and Webhook Settings
     """""""""""""""""""""""""""
     Settings that control plugin and/or webhook behaviors. See :ref:`plugins` or :ref:`webhooks`
 
@@ -127,9 +127,3 @@ API Documentation
 .. automodule:: helga.util.encodings
     :synopsis: Utilities for working with unicode and/or byte strings
     :members:
-
-
-:mod:`helga.util.twitter`
--------------------------
-.. automodule:: helga.util.twitter
-   :members:

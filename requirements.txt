@@ -5,7 +5,6 @@
 
 Twisted==13.1.0
 pymongo==2.5.2
-tweepy==2.1
 pyOpenSSL==0.13
 requests==2.2.1
 smokesignal==0.5
