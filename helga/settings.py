@@ -139,7 +139,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'facts',
     'help',
     'jira',
-    'loljava',
     'manager',
     'meant_to_say',
     'oneliner',
