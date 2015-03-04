@@ -132,13 +132,7 @@ DISABLED_PLUGINS = []
 #: A list of plugin names that should be enabled automatically for any channel. If this value
 #: is True, all plugins installed will be enabled by default. If this value is None, or an empty
 #: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
-DEFAULT_CHANNEL_PLUGINS = [
-    'help',
-    'manager',
-    'operator',
-    'ping',
-    'webhooks',
-]
+DEFAULT_CHANNEL_PLUGINS = True
 
 #: A list of whitelisted webhook names that should be loaded and enabled on process startup. If this value
 #: is True, then all webhooks available are loaded and made available. An empty list or None implies
