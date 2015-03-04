@@ -84,7 +84,6 @@ setup(name=helga.__title__,
       cmdclass={'test': PyTest},
       entry_points=dict(
           helga_plugins=[
-              'facts        = helga.plugins.facts:facts',
               'help         = helga.plugins.help:help',
               'jira         = helga.plugins.jira:jira',
               'manager      = helga.plugins.manager:manager',

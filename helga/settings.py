@@ -136,7 +136,6 @@ DISABLED_PLUGINS = []
 #: is True, all plugins installed will be enabled by default. If this value is None, or an empty
 #: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
 DEFAULT_CHANNEL_PLUGINS = [
-    'facts',
     'help',
     'jira',
     'manager',
@@ -181,9 +180,6 @@ COMMAND_ARGS_SHLEX = False
 #: A boolean on whether commands should be treated with case insensitivity. For example,
 #: a command 'foo' will respond to 'FOO', 'Foo', 'foo', etc.
 COMMAND_IGNORECASE = False
-
-# MISC PLUGIN SETTINGS
-FACTS_REQUIRE_NICKNAME = False
 
 # Jira settings. If JIRA_SHOW_FULL_DESCRIPTION is false, only links to the Jira
 # ticket will be shown. Otherwise, the ticket title will be pulled and shown.
