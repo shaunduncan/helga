@@ -116,10 +116,10 @@ class Registry(object):
         self.blacklist_plugins = self._create_plugin_list('DISABLED_PLUGINS', default=set())
 
         # Figure out default channel plugins using the whitelist and blacklist
-        self.default_channel_plugins = set(getattr(settings, 'DEFAULT_CHANNEL_PLUGINS', []))
-        self.default_channel_plugins = (
-            (self.default_channel_plugins & self.whitelist_plugins) - self.blacklist_plugins
-        )
+        default = self._create_plugin_list('DEFAULT_CHANNEL_PLUGINS', default=set())
+
+        # Make sure to exclude extras
+        self.default_channel_plugins = (default & self.whitelist_plugins) - self.blacklist_plugins
 
         if not hasattr(self, 'enabled_plugins'):
             # Enabled plugins is a dict: channel -> set()
