@@ -89,8 +89,6 @@ setup(name=helga.__title__,
               'meant_to_say = helga.plugins.meant_to_say:meant_to_say',
               'operator     = helga.plugins.operator:operator',
               'ping         = helga.plugins.ping:ping',
-              'reminders    = helga.plugins.reminders:reminders',
-              'stfu         = helga.plugins.stfu:stfu',
               'webhooks     = helga.plugins.webhooks:WebhookPlugin',
           ],
           helga_webhooks=[

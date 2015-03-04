@@ -77,7 +77,6 @@ API Documentation
 
     .. autodata:: OPERATORS
     .. autodata:: DATABASE
-    .. autodata:: TIMEZONE
 
 
     .. _helga.settings.logging:
