@@ -135,7 +135,6 @@ DISABLED_PLUGINS = []
 DEFAULT_CHANNEL_PLUGINS = [
     'help',
     'manager',
-    'meant_to_say',
     'operator',
     'ping',
     'webhooks',
