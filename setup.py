@@ -84,7 +84,6 @@ setup(name=helga.__title__,
       cmdclass={'test': PyTest},
       entry_points=dict(
           helga_plugins=[
-              'dubstep      = helga.plugins.dubstep:dubstep',
               'facts        = helga.plugins.facts:facts',
               'giphy        = helga.plugins.giphy:giphy',
               'help         = helga.plugins.help:help',

@@ -36,13 +36,6 @@ either not useful as core plugins or would require more maintenance for helga co
     moved and maintained elsewhere as independent plugins.
 
 
-.. _builtin.plugins.dubstep:
-
-dubstep
-^^^^^^^
-A match plugin that will respond with vaiable length 'wubwubwub' when someone mentions the word 'dubstep'.
-
-
 .. _builtin.plugins.facts:
 
 facts

@@ -136,7 +136,6 @@ DISABLED_PLUGINS = []
 #: is True, all plugins installed will be enabled by default. If this value is None, or an empty
 #: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
 DEFAULT_CHANNEL_PLUGINS = [
-    'dubstep',
     'facts',
     'help',
     'jira',
