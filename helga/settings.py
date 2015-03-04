@@ -142,7 +142,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'operator',
     'ping',
     'reminders',
-    'reviewboard',
     'stfu',
     'webhooks',
 ]
@@ -179,8 +178,6 @@ COMMAND_ARGS_SHLEX = False
 #: A boolean on whether commands should be treated with case insensitivity. For example,
 #: a command 'foo' will respond to 'FOO', 'Foo', 'foo', etc.
 COMMAND_IGNORECASE = False
-
-REVIEWBOARD_URL = 'http://localhost/{review}'
 
 #: The integer port the webhooks plugin should listen for http requests.
 WEBHOOKS_PORT = 8080
