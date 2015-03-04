@@ -56,26 +56,6 @@ assumes that you are wishing to connect to an IRC server. For a full list of the
 see :mod:`helga.settings`.
 
 
-.. _config.default.plugins:
-
-Builtin Plugin Settings
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Some builtin helga plugins utilize settings for configuration, as listed below.
-
-
-.. _config.default.plugins.reviewboard:
-
-Reviewboard Plugin
-""""""""""""""""""
-
-See :ref:`builtin.plugins.reviewboard`
-
-``REVIEWBOARD_URL``
-    A URL string format for showing ReviewBoard links. This should contain a format parameter
-    '{review}'. (default: 'http://localhost/{review}')
-
-
 
 .. _config.xmpp:
 

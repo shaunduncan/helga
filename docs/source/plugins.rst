@@ -119,7 +119,7 @@ that in the previous example, the resulting args list would be::
     ['bar', 'baz qux']
 
 This behavior can also be configured globally by configuring ``COMMAND_ARGS_SHLEX = True``
-in your settings file (see :ref:`config.default.plugins`)
+in your settings file (see :ref:`config.default`)
 
 .. important::
 
@@ -309,7 +309,7 @@ this may block other plugins from processing. To get around this concern, plugin
 of returning a response, raise :exc:`~helga.plugins.ResponseNotReady`.
 This will indicate to helga's plugin manager that a response may be sent at some point in the
 future. In this instance, helga will continue to process other plugins, unless configured to only
-return first response, in which case no other plugins will be processed (see :ref:`config.default.plugins`).
+return first response, in which case no other plugins will be processed (see :ref:`config.default`).
 For example::
 
     from helga.plugins import command, ResponseNotReady
