@@ -84,12 +84,11 @@ setup(name=helga.__title__,
       cmdclass={'test': PyTest},
       entry_points=dict(
           helga_plugins=[
-              'help         = helga.plugins.help:help',
-              'manager      = helga.plugins.manager:manager',
-              'meant_to_say = helga.plugins.meant_to_say:meant_to_say',
-              'operator     = helga.plugins.operator:operator',
-              'ping         = helga.plugins.ping:ping',
-              'webhooks     = helga.plugins.webhooks:WebhookPlugin',
+              'help     = helga.plugins.help:help',
+              'manager  = helga.plugins.manager:manager',
+              'operator = helga.plugins.operator:operator',
+              'ping     = helga.plugins.ping:ping',
+              'webhooks = helga.plugins.webhooks:WebhookPlugin',
           ],
           helga_webhooks=[
               'announcements = helga.webhooks.announcements:announce',

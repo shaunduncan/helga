@@ -13,6 +13,7 @@ CHANGELOG
 - Removed icanhazascii plugin. Now at https://github.com/shaunduncan/helga-icanhazascii (pypi helga-icanhazascii)
 - Removed jira plugin. Now at https://github.com/shaunduncan/helga-jira (pypi helga-jira)
 - Removed loljava plugin. Now at https://github.com/shaunduncan/helga-loljava (pypi helga-loljava)
+- Removed meant_to_say plugin. Now at https://github.com/shaunduncan/helga-meant-to-say (pypi helga-meant-to-say)
 - Removed no_more_olga plugin. Now at https://github.com/shaunduncan/helga-no-more-olga (pypi helga-no-more-olga)
 - Removed oneliner plugin. Now at https://github.com/shaunduncan/helga-oneliner (pypi helga-onliner)
 - Removed poems plugin. Now at https://github.com/shaunduncan/helga-poems (pypi helga-poems)

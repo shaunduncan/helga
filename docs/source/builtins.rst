@@ -77,18 +77,6 @@ plugins as either automatically enabled for the current channel or not. For exam
     <helga> Disabled plugins: baz
 
 
-.. _builtin.plugins.meant_to_say:
-
-meant_to_say
-^^^^^^^^^^^^
-A match plugin for users to indicate that they meant to say something differnent from what they did.
-This plugin will match replacement syntax like 's/foo/bar/', much like using sed. For example::
-
-    <sduncan> foo is bar
-    <sduncan> s/foo/bar/
-    <helga> sduncan meant to say: bar is bar
-
-
 .. _builtin.plugins.operator:
 
 operator
