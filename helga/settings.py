@@ -137,7 +137,6 @@ DISABLED_PLUGINS = []
 #: list, no plugins will be enabled on channels by default. See :ref:`plugins` for more information.
 DEFAULT_CHANNEL_PLUGINS = [
     'help',
-    'jira',
     'manager',
     'meant_to_say',
     'operator',
@@ -180,15 +179,6 @@ COMMAND_ARGS_SHLEX = False
 #: A boolean on whether commands should be treated with case insensitivity. For example,
 #: a command 'foo' will respond to 'FOO', 'Foo', 'foo', etc.
 COMMAND_IGNORECASE = False
-
-# Jira settings. If JIRA_SHOW_FULL_DESCRIPTION is false, only links to the Jira
-# ticket will be shown. Otherwise, the ticket title will be pulled and shown.
-# Full descriptions require JIRA_REST_API to be set.
-# JIRA_USERNAME and JIRA_PASSWORD are optional if authentication is required
-JIRA_URL = 'http://localhost/{ticket}'
-JIRA_REST_API = ''
-JIRA_SHOW_FULL_DESCRIPTION = False
-JIRA_AUTH = ('', '')
 
 REVIEWBOARD_URL = 'http://localhost/{review}'
 

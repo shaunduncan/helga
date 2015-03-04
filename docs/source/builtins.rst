@@ -47,46 +47,6 @@ A command plugin to show help strings for any installed command plugin. Usage::
 With no arguments, all command plugin help strings are returned to the requesting user in a private message.
 
 
-.. _builtin.plugins.jira:
-
-jira
-^^^^
-.. important::
-
-    This plugin requires database access
-
-A configurable match plugin for providing links and/or descriptions of JIRA tickets. For example::
-
-    <sduncan> can you look at API-123
-    <helga> sduncan might be talking about JIRA ticket http://example.com/API-123
-
-Regular expressions for this plugin are stored as the project key without any numbers. So in the
-example above, the regular expression for 'API-123' is stored as 'API'. This plugin also responds
-with multiple tickets should they be found::
-
-    <sduncan> i'm working on API-123 and API-456
-    <helga> sduncan might be talking about JIRA ticket http://example.com/API-123, http://example.com/API-456
-
-Optionally, this plugin can use JIRA's REST API in order to show full ticket descriptions if the
-setting ``JIRA_REST_API`` is set and ``JIRA_SHOW_FULL_DESCRIPTIONS`` is set to True::
-
-    <sduncan> can you look at API-123
-    <helga> [API-123] Make a new version of the API
-
-For all configuration options, see :ref:`config.default.plugins.jira`. This plugin also includes
-a command for adding or removing JIRA ticket patterns. Usage::
-
-    helga jira (add_re|remove_re) <pattern>
-
-For example::
-
-    <sduncan> !jira add_re API
-    <sduncan> API-123
-    <helga> sduncan might be talking about JIRA ticket http://example.com/API-123
-    <sduncan> !jira remove_re API
-    <sduncan> API-123
-
-
 .. _builtin.plugins.manager:
 
 manager
