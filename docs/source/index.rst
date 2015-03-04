@@ -58,6 +58,8 @@ Contributions are **always** welcomed, whether they be in the form of bug fixes,
 or just bug reports. To report any issues, please create a ticket on `github`_. For code
 changes, please note that any pull request will be denied a merge if the test suite fails.
 
+If you are looking to get help with helga, join the #helgabot IRC channel on freenode.
+
 
 .. _license:
 
