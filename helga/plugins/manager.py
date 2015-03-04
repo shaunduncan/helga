@@ -14,6 +14,10 @@ logger = log.getLogger(__name__)
 
 @smokesignal.on('signon')
 def auto_enable_plugins(*args):
+    if db is None:
+        logger.warning('Cannot auto enable plugins. No database connection')
+        return
+
     pred = lambda rec: rec['plugin'] in registry.all_plugins
 
     for rec in ifilter(pred, db.auto_enabled_plugins.find()):
