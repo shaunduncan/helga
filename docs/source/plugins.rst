@@ -770,7 +770,6 @@ For more information about how this works see :meth:`helga.comm.xmpp.Client.pars
 .. _`pymongo`: http://api.mongodb.org/python/current/
 .. _`MongoClient`: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient
 .. _`Database`: http://api.mongodb.org/python/current/api/pymongo/database.html#pymongo.database.Database
-.. _`giphy`: http://giphy.com/
 .. _`tox`: https://tox.readthedocs.org/en/latest/
 .. _`entry_points`: https://pythonhosted.org/setuptools/setuptools.html#dynamic-discovery-of-services-and-plugins
 .. _`cookiecutter`: http://cookiecutter.readthedocs.org/en/latest/

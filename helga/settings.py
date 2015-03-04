@@ -151,9 +151,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'stfu',
     'webhooks',
 
-    # Sometimes, giphy may give back a gif of questionable content
-    # 'giphy',
-
     # These can get super annoying in public channels
     # 'icanhazascii',
 ]

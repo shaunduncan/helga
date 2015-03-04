@@ -71,18 +71,6 @@ to show a stored fact (see :ref:`config.default.plugins.facts`)::
     <helga> bar
 
 
-.. _builtin.plugins.giphy:
-
-giphy
-^^^^^
-A command plugin to search `giphy`_ for an anmiated gif. Usage::
-
-    helga (gif|gifme) <search term>
-
-An optional setting ``GIPHY_API_KEY`` can be set for API access, but will default to giphy's public
-API key (see :ref:`config.default.plugins.giphy`).
-
-
 .. _builtin.plugins.help:
 
 help
