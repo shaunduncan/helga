@@ -41,6 +41,10 @@ _scheduled = set()
 def init_reminders(client):
     global _scheduled
 
+    if db is None:
+        logger.warning('Cannot auto schedule reminders. No database connection')
+        return
+
     now = datetime.datetime.utcnow()
     logger.info("Initializing any scheduled reminders")
 

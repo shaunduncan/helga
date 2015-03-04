@@ -30,6 +30,7 @@ def init_jira_patterns(*args, **kwargs):
 
     if db is None:  # pragma: no cover
         logger.warning('Cannot initialize JIRA patterns. No database connection')
+        return
 
     JIRA_PATTERNS = set(item['re'] for item in db.jira.find())
 
