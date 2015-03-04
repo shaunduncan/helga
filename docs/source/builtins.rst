@@ -122,14 +122,6 @@ For example::
     <sduncan> API-123
 
 
-.. _builtin.plugins.loljava:
-
-loljava
-^^^^^^^
-A match plugin that will respond with a silly generated Java class name when someone mentions
-the word 'java'.
-
-
 .. _builtin.plugins.manager:
 
 manager
