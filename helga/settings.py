@@ -115,9 +115,6 @@ DATABASE = {
     'DB': 'helga',
 }
 
-#: The default timezone for the bot instance
-TIMEZONE = 'US/Eastern'
-
 #: A list of plugin names that should be loaded by the plugin manager. This effectively serves
 #: as a mechanism for explicitly including plugins that have been installed on the system.
 #: If this value is True, the plugin manager will load any plugin configured with an entry
@@ -141,8 +138,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'meant_to_say',
     'operator',
     'ping',
-    'reminders',
-    'stfu',
     'webhooks',
 ]
 
