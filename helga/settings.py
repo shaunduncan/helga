@@ -141,7 +141,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'jira',
     'manager',
     'meant_to_say',
-    'oneliner',
     'operator',
     'ping',
     'poems',
