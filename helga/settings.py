@@ -143,7 +143,6 @@ DEFAULT_CHANNEL_PLUGINS = [
     'meant_to_say',
     'operator',
     'ping',
-    'poems',
     'reminders',
     'reviewboard',
     'stfu',
