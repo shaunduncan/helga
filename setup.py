@@ -85,7 +85,6 @@ setup(name=helga.__title__,
       entry_points=dict(
           helga_plugins=[
               'facts        = helga.plugins.facts:facts',
-              'giphy        = helga.plugins.giphy:giphy',
               'help         = helga.plugins.help:help',
               'icanhazascii = helga.plugins.icanhazascii:icanhazascii',
               'jira         = helga.plugins.jira:jira',

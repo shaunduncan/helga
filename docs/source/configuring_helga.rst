@@ -75,17 +75,6 @@ See :ref:`builtin.plugins.facts`
     'foo?' could only be shown with 'helga foo?'. (default: False)
 
 
-.. _config.default.plugins.giphy:
-
-Giphy Plugin
-""""""""""""
-
-See :ref:`builtin.plugins.giphy`
-
-``GIPHY_API_KEY``
-    Access key for the `giphy`_ API endpoint. Default is giphy's public API key.
-
-
 .. _config.default.plugins.jira:
 
 JIRA Plugin
@@ -123,18 +112,6 @@ See :ref:`builtin.plugins.reviewboard`
 ``REVIEWBOARD_URL``
     A URL string format for showing ReviewBoard links. This should contain a format parameter
     '{review}'. (default: 'http://localhost/{review}')
-
-
-.. _config.default.plugins.wiki_whois:
-
-Wiki WHOIS Plugin
-"""""""""""""""""
-
-See :ref:`builtin.plugins.wiki_whois`
-
-``WIKI_URL``
-    A URL string format for showing user pages on a wiki, such as example.com/^user. This should
-    contian a format parameter '{user}'. (default: 'http://localhost/{user}')
 
 
 
@@ -239,7 +216,6 @@ for bot replies, you should install the `hipchat_nicks`_ plugin and add ``HIPCHA
 
 
 
-.. _`giphy`: http://giphy.com/
 .. _`HipChat`: https://www.hipchat.com/
 .. _`HipChat XMPP Settings`: https://hipchat.com/account/xmpp
 .. _`hipchat_nicks`: https://github.com/shaunduncan/helga-hipchat-nicks
