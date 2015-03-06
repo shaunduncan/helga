@@ -88,6 +88,7 @@ setup(name=helga.__title__,
               'manager  = helga.plugins.manager:manager',
               'operator = helga.plugins.operator:operator',
               'ping     = helga.plugins.ping:ping',
+              'version  = helga.plugins.version:version',
               'webhooks = helga.plugins.webhooks:WebhookPlugin',
           ],
           helga_webhooks=[
