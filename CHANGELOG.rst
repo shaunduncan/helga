@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.7.1
+-----
+- Fixed #145: XMPP client doesn't have operators attribute
+- Added a simple version check plugin that responds with the current helga version
+
+
 1.7.0
 -----
 - Fixed #118: Removed hash attribute of reminders and used the full ObjectId
