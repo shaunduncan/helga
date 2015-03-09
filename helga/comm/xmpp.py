@@ -172,6 +172,9 @@ class Client(object):
         # Setup event listeners
         self._bootstrap()
 
+        # Pre-configured helga admins
+        self.operators = set(getattr(settings, 'OPERATORS', []))
+
         # Things to keep track of
         self.channels = set()
         self.last_message = defaultdict(dict)  # Dict of x[channel][nick]

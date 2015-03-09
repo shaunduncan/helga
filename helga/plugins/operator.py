@@ -20,7 +20,7 @@ nopes = [
 
 @smokesignal.on('signon')
 def join_autojoined_channels(client):
-    if db is None:
+    if db is None:  # pragma: no cover
         logger.warning('Cannot autojoin channels. No database connection')
         return
 
