@@ -14,7 +14,7 @@ logger = log.getLogger(__name__)
 
 @smokesignal.on('signon')
 def auto_enable_plugins(*args):
-    if db is None:
+    if db is None:  # pragma: no cover
         logger.warning('Cannot auto enable plugins. No database connection')
         return
 

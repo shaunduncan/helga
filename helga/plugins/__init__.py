@@ -328,7 +328,7 @@ class Registry(object):
             except ResponseNotReady:
                 if first_responder:
                     break
-                continue
+                continue  # pragma: no cover Python == 2.7
             except:
                 logger.exception('Calling process on plugin %s failed', plugin)
                 continue
