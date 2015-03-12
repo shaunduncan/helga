@@ -281,7 +281,7 @@ class Client(irc.IRCClient):
 
     def alterCollidedNick(self, nickname):
         """
-        Called when the both has a nickname collision. This will generate a new nick
+        Called when the bot has a nickname collision. This will generate a new nick
         containing the perferred nick and the current timestamp.
 
         :param nickname: the nickname that was already taken
