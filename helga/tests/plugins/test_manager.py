@@ -131,6 +131,7 @@ def test_manager_plugin(list, enable, disable):
     enable.return_value = 'enable'
     disable.return_value = 'disable'
 
+    assert 'list' == manager.manager('client', '#bots', 'me', 'message', 'plugins', [])
     assert 'list' == manager.manager('client', '#bots', 'me', 'message', 'plugins', ['list'])
     assert 'enable' == manager.manager('client', '#bots', 'me', 'message', 'plugins', ['enable'])
     assert 'disable' == manager.manager('client', '#bots', 'me', 'message', 'plugins', ['disable'])
