@@ -81,7 +81,10 @@ def manager(client, channel, nick, message, cmd, args):
     """
     Manages listing plugins, or enabling and disabling them
     """
-    subcmd = args[0]
+    if len(args) < 1:
+        subcmd = 'list'
+    else:
+        subcmd = args[0]
 
     if subcmd == 'list':
         return list_plugins(client, channel)
