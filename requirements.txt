@@ -5,7 +5,7 @@
 
 decorator==3.4.0
 pymongo==2.5.2
-pyOpenSSL==0.13
+pyOpenSSL==0.14
 pystache==0.5.4
 smokesignal==0.5
 Twisted==13.1.0
