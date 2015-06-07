@@ -9,8 +9,10 @@ Getting Started
 Requirements
 ------------
 All python requirements for running helga are listed in ``requirements.txt``. Helga
-supports SSL connections to a chat server (currently IRC, XMPP, and HipChat), and for this reason,
-you will need to install both ``openssl`` and ``libssl-dev`` in order to compile SSL support.
+supports SSL connections to a chat server (currently IRC, XMPP, and HipChat); in order to compile
+SSL support, you will need to install both ``openssl`` and ``libssl-dev`` packages, as well as
+``libffi6`` and ``libffi-dev`` (the latter are required for ``cffi``, needed by ``pyOpenSSL``
+version 0.14 or later).
 
 Optionally, you can have Helga configured to connect to a MongoDB server. Although
 this is not strictly required, many plugins require a connection to operate, so it
