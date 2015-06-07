@@ -22,10 +22,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network :private_network, ip: "192.168.10.101"
 
   config.vm.provision "shell", inline: <<EOF
-
 # Update and install system dependencies
 apt-get update -qq
 apt-get install -qqy --force-yes \
+  git \
   mongodb \
   ngircd \
   openssl \
@@ -33,7 +33,9 @@ apt-get install -qqy --force-yes \
   python-dev \
   python-pip \
   python-setuptools \
-  python-virtualenv
+  python-virtualenv \
+  libffi6 \
+  libffi-dev
 
 # Allow external mongo connections
 sed -i -s 's/^bind_ip = 127.0.0.1/#bind_ip = 127.0.0.1/' /etc/mongodb.conf
@@ -42,12 +44,15 @@ service mongodb restart
 # Create a virtualenv for helga and install
 sudo -u vagrant virtualenv /home/vagrant/helga_venv
 pushd /vagrant
+# upgrade pip from the archaic 1.1
+sudo -u vagrant /home/vagrant/helga_venv/bin/pip install --upgrade pip
+# install helga
 sudo -u vagrant /home/vagrant/helga_venv/bin/python setup.py develop
 popd
 
 # Make sure the default profile activates the venv
 sudo -u vagrant echo "#!/bin/bash" > /home/vagrant/.profile
-sudo -u vagrant echo "source /home/vagrant/helga_venv/bin/active" >> /home/vagrant/.profile
+sudo -u vagrant echo "source /home/vagrant/helga_venv/bin/activate" >> /home/vagrant/.profile
 sudo -u vagrant echo "cd /vagrant/" >> /home/vagrant/.profile
 
 EOF
