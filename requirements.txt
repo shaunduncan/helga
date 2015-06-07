@@ -2,7 +2,11 @@
 # openssl
 # libssl-dev
 # mongodb
+#   for cffi==1.1.0, required by pyOpenSSL>=0.14:
+# libffi6
+# libffi-dev
 
+cffi==1.1.0
 decorator==3.4.0
 pymongo==2.5.2
 pyOpenSSL==0.14
