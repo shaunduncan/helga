@@ -138,6 +138,18 @@ class ClientTestCase(TestCase):
 
         assert self.client.msg.call_args[0][0] == 'foo'
 
+    @patch('helga.comm.irc.registry')
+    def test_action(self, registry):
+        self.client.msg = Mock()
+        registry.process.return_value = ['eats the snack']
+
+        self.client.action('foo!~bar@baz', '#bots', 'offers helga a snack')
+
+        args = self.client.msg.call_args[0]
+        assert args[0] == '#bots'
+        assert args[1] == 'eats the snack'
+
+
     @patch('helga.comm.irc.settings')
     @patch('helga.comm.irc.irc.IRCClient')
     def test_connectionMade(self, irc, settings):

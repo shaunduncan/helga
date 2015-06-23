@@ -279,6 +279,11 @@ class Client(irc.IRCClient):
         # Update last message
         self.last_message[channel][user] = message
 
+    """
+    Handle IRC "/me" messages the same as regular IRC messages.
+    """
+    action = privmsg
+
     def alterCollidedNick(self, nickname):
         """
         Called when the bot has a nickname collision. This will generate a new nick
