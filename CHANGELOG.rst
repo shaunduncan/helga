@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.7.2
+-----
+- Merged #147: Track /me messages sent over chat
+- Merged #149: Allow "!plugins" with no argument to list known plugins
+- Merged #151: Upgrade OpenSSL dependency
+
 1.7.1
 -----
 - Fixed #145: XMPP client doesn't have operators attribute
