@@ -6,6 +6,7 @@
 # libffi6
 # libffi-dev
 
+autobahn
 cffi
 decorator==3.4.0
 pymongo
