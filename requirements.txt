@@ -13,4 +13,4 @@ pymongo
 pyOpenSSL
 pystache==0.5.4
 smokesignal==0.5
-Twisted==13.1.0
+Twisted
