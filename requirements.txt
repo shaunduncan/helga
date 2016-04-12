@@ -6,10 +6,10 @@
 # libffi6
 # libffi-dev
 
-cffi==1.1.0
+cffi
 decorator==3.4.0
-pymongo==2.5.2
-pyOpenSSL==0.14
+pymongo
+pyOpenSSL
 pystache==0.5.4
 smokesignal==0.5
 Twisted==13.1.0
