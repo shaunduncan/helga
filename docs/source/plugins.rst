@@ -317,7 +317,7 @@ For example::
     @command('foo')
     def foo(client, channel, nick, message, cmd, args):
         # Run some async action
-        raise ResonseNotReady
+        raise ResponseNotReady
 
 In order to actually invoke some asynchronous action, most plugins can and should utilize the
 fact that helga is built using `Twisted`_ by calling ``twisted.internet.reactor.callLater``.
@@ -342,7 +342,7 @@ For more details on this see the `Twisted Documentation`_. To revisit the previo
     @command('foo')
     def foo(client, channel, nick, message, cmd, args):
         reactor.callLater(5, foo_async, client, channel, args)
-        raise ResonseNotReady
+        raise ResponseNotReady
 
 Notice above that the callback function ``foo_async`` takes the client connection as an argument.
 Should a plugin need to respond asynchronously to the server, it is generally a good idea for deferred
