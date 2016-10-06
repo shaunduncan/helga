@@ -40,6 +40,35 @@ Note, that if you follow the development instructions below and wish to install 
 you will need to activate it prior to installing helga using pip. In the future, there may be a collection
 of .rpm or .deb packages for specific systems, but for now, pip is the only supported means of install.
 
+.. _getting_started.docker:
+
+Deploying with Docker
+---------------------
+Helga can now be run in docker. In this you'll build the docker image yourself, then run it using the docker
+command. It is recommended that you only use this method if you are already familiar with docker.
+
+.. code-block:: bash
+
+    $ docker build -t <image:tag> .
+    $ docker run -d [opts] <image:tag> [opts]
+
+The opts you can choose in the run command are standard options for running docker. If you want to use a 
+settings file that is non-standard, or a persistant datbase, you'll want to use the -v option to mount those
+volumes. Additionally, you may add opts to the helga command after specifying the image you're building. 
+
+Some gotchas:
+If you're mounting a volume with -v you will need to specify the full path to the directory containing the
+files you want shared.
+
+If you're using an altenative settings file you'll need to add the --settings=/path/to/file.py opt to the run command.
+
+If you are using an local mongodb, you'll need to mount it like below, and make sure your settings file reflects the
+mounted file.
+
+.. code-block:: bash
+
+    $ docker run -d -v /home/settings:/opt/settings helga:16.04 --settings=/opt/settings/my_settings.py
+    $ docker run -d -v /path/to/mongodb:/opt/mongodb helga:16.04
 
 .. _getting_started.development:
 
