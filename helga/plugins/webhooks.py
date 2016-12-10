@@ -251,7 +251,7 @@ class WebhookRoot(resource.Resource):
             # Explicitly return a byte string. Twisted expects this
             return from_unicode(fn(request, self.chat_client, **match.groupdict()))
         except HttpError as e:
-            request.setResponseCode(e.status)
+            request.setResponseCode(int(e.status))
             return e.message or e.response
 
 

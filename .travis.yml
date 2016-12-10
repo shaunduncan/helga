@@ -4,7 +4,8 @@ install:
   - pip install coveralls
 script: tox
 env:
-  - TOXENV=py26
   - TOXENV=py27
 after_success:
   coveralls
+services:
+  - mongodb
