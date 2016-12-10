@@ -38,3 +38,10 @@ my_settings.py
 
 # Default helga channel logs
 .logs
+
+# Virtual environment and test related
+.cache
+.eggs
+/venv
+/env
+.env
