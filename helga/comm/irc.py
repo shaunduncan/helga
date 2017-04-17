@@ -201,6 +201,7 @@ class Client(irc.IRCClient):
         """
         logger.info('Joined %s', channel)
         self.channels.add(channel)
+        self.sendLine("NAMES %s" % (channel,))
         smokesignal.emit('join', self, channel)
 
     def left(self, channel):
@@ -397,3 +398,15 @@ class Client(irc.IRCClient):
         """
         logger.info("Leaving channel %s: %s", channel, reason)
         irc.IRCClient.leave(self, channel, reason=reason)
+
+    def userRenamed(self, oldname, newname):
+        """
+        :param oldname: the nick of the user before the rename
+        :param newname: the nick of the user after the rename
+        """
+
+        smokesignal.emit('user_rename', self, oldname, newname)
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        nicks = params[3].split()
+        smokesignal.emit('names_reply', self, nicks)
