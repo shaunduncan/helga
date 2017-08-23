@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.7.6
+-----
+- Added support for IRC NAMES with a signal callback: names_reply
+
+
 1.7.2
 -----
 - Merged #147: Track /me messages sent over chat
