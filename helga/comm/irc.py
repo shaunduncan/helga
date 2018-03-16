@@ -135,6 +135,7 @@ class Client(irc.IRCClient):
         self.username = settings.SERVER.get('USERNAME', None)
         self.password = settings.SERVER.get('PASSWORD', None)
         self.lineRate = getattr(settings, 'RATE_LIMIT', None)
+        self._use_sasl = settings.SERVER.get('SASL', True)
 
         # Pre-configured helga admins
         self.operators = set(getattr(settings, 'OPERATORS', []))
@@ -172,7 +173,25 @@ class Client(irc.IRCClient):
 
     def connectionMade(self):
         logger.info('Connection made to %s', settings.SERVER['HOST'])
+        if self._use_sasl:
+            self._reallySendLine('CAP REQ :sasl')
         irc.IRCClient.connectionMade(self)
+
+    def irc_CAP(self, prefix, params):
+        if params[1] != 'ACK' or params[2].split() != ['sasl']:
+            logger.info('SASL is not available!')
+            self.quit('')
+        sasl = ('{0}\0{0}\0{1}'.format(self.username, self.password)).encode('base64').strip()
+        self.sendLine('AUTHENTICATE PLAIN')
+        self.sendLine('AUTHENTICATE ' + sasl)
+
+    def irc_903(self, prefix, params):
+        self.sendLine('CAP END')
+
+    def irc_904(self, prefix, params):
+        logger.info('SASL auth failed: %s', params)
+        self.quit('')
+    irc_905 = irc_904
 
     @encodings.from_unicode_args
     def connectionLost(self, reason):
@@ -184,12 +203,14 @@ class Client(irc.IRCClient):
         Called when the client has successfully signed on to IRC. Establishes automatically
         joining channels. Sends the ``signon`` signal (see :ref:`plugins.signals`)
         """
+
         for channel in settings.CHANNELS:
             # If channel is more than one item tuple, second value is password
             if isinstance(channel, (tuple, list)):
                 self.join(*channel)
             else:
                 self.join(channel)
+
         smokesignal.emit('signon', self)
 
     def joined(self, channel):
