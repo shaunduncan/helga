@@ -5,8 +5,7 @@
 VAGRANTFILE_API_VERSION = '2'.freeze
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = 'precise64'
-  config.vm.box_url = 'http://files.vagrantup.com/precise64.box'
+  config.vm.box = 'ubuntu/xenial64'
 
   # Forward keys from SSH agent rather than copypasta
   config.ssh.forward_agent = true
@@ -28,7 +27,7 @@ echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/
 
 # Update and install system dependencies
 apt-get update -qq
-apt-get install -qqy --force-yes \
+apt-get install -qqy \
   git \
   mongodb-org \
   ngircd \
@@ -42,10 +41,9 @@ apt-get install -qqy --force-yes \
   libffi-dev \
   irssi
 
-
 # Allow external mongo connections
-sed -i -s 's/^bind_ip = 127.0.0.1/#bind_ip = 127.0.0.1/' /etc/mongodb.conf
-service mongodb restart
+sed -i -s 's/bindIp: 127.0.0.1/#bindIp: 127.0.0.1/' /etc/mongod.conf
+systemctl restart mongod
 
 # Create a virtualenv for helga and install
 sudo -u vagrant virtualenv /home/vagrant/helga_venv
