@@ -10,13 +10,10 @@ helga
 .. image:: https://img.shields.io/pypi/v/helga.svg
     :target: https://pypi.python.org/pypi/helga
 
-.. image:: https://img.shields.io/pypi/dm/helga.svg
-    :target: https://pypi.python.org/pypi/helga
-
 
 About
 -----
-Helga is a full-featured chat bot for Python 2.6/2.7 using `Twisted`_. Helga originally started
+Helga is a full-featured chat bot for Python 2.7 using `Twisted`_. Helga originally started
 as a python fork of a perl-based IRC bot `olga`_, but has grown considerably since then. Early
 versions limited to support to IRC, but now include other services like XMPP and HipChat.
 Full documentation can be found at http://helga.readthedocs.org.
