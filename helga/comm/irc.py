@@ -135,7 +135,7 @@ class Client(irc.IRCClient):
         self.username = settings.SERVER.get('USERNAME', None)
         self.password = settings.SERVER.get('PASSWORD', None)
         self.lineRate = getattr(settings, 'RATE_LIMIT', None)
-        self._use_sasl = settings.SERVER.get('SASL', True)
+        self._use_sasl = settings.SERVER.get('SASL', False)
 
         # Pre-configured helga admins
         self.operators = set(getattr(settings, 'OPERATORS', []))

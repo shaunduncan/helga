@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.7.7
+-----
+- Added support for IRC SASL authentication
+
 1.7.6
 -----
 - Added support for IRC NAMES with a signal callback: names_reply
