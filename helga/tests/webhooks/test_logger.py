@@ -27,7 +27,7 @@ class TestIndexView(object):
 
         try:
             retval = list(self.view.channels())
-        except:
+        except Exception:
             pytest.fail('Should not have raised an Exception')
         else:
             assert retval == []

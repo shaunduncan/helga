@@ -149,7 +149,6 @@ class ClientTestCase(TestCase):
         assert args[0] == '#bots'
         assert args[1] == 'eats the snack'
 
-
     @patch('helga.comm.irc.settings')
     @patch('helga.comm.irc.irc.IRCClient')
     def test_connectionMade(self, irc, settings):
@@ -173,11 +172,12 @@ class ClientTestCase(TestCase):
     @patch('helga.comm.irc.smokesignal')
     def test_joined(self, signal):
         # Test str and unicode
-        for channel in ('foo', u'☃'):
-            assert channel not in self.client.channels
-            self.client.joined(channel)
-            assert channel in self.client.channels
-            signal.emit.assert_called_with('join', self.client, channel)
+        with patch.object(self.client, 'sendLine'):  # patch this away since we have no active conn
+            for channel in ('foo', u'☃'):
+                assert channel not in self.client.channels
+                self.client.joined(channel)
+                assert channel in self.client.channels
+                signal.emit.assert_called_with('join', self.client, channel)
 
     @patch('helga.comm.irc.smokesignal')
     def test_left(self, signal):

@@ -27,7 +27,7 @@ def join_autojoined_channels(client):
     for channel in db.autojoin.find():
         try:
             client.join(channel['channel'])
-        except:  # pragma: no cover
+        except Exception:  # pragma: no cover
             logger.exception('Could not autojoin %s', channel['channel'])
 
 
