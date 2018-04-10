@@ -45,3 +45,6 @@ my_settings.py
 /venv
 /env
 .env
+
+/*.log
+/.pytest_cache
