@@ -47,3 +47,4 @@ my_settings.py
 .env
 
 /*.log
+/.pytest_cache

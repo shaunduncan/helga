@@ -214,13 +214,15 @@ class ClientTestCase(TestCase):
         element = self.client.stream.send.call_args[0][0]
         assert element.toXml() == '<presence><status>online</status></presence>'
 
-    def test_on_authenticated_sets_online_presence(self):
+    @patch('helga.comm.xmpp.smokesignal')
+    def test_on_authenticated_sets_online_presence(self, signal):
         with patch.object(self.client, 'set_presence'):
             with patch.object(xmpp.settings, 'CHANNELS', []):
                 self.client.on_authenticated(Mock())
                 self.client.set_presence.assert_called_with('Online')
 
-    def test_on_authenticated_auto_joins_channels(self):
+    @patch('helga.comm.xmpp.smokesignal')
+    def test_on_authenticated_auto_joins_channels(self, signal):
         channels = [('#bots',), ('#all',)]
 
         with patch.multiple(self.client, set_presence=Mock(), join=Mock()):
@@ -228,7 +230,8 @@ class ClientTestCase(TestCase):
                 self.client.on_authenticated(Mock())
                 self.client.join.assert_has_calls([call('#bots'), call('#all')])
 
-    def test_on_authenticated_auto_joins_channels_as_strings(self):
+    @patch('helga.comm.xmpp.smokesignal')
+    def test_on_authenticated_auto_joins_channels_as_strings(self, signal):
         channels = ['#bots', '#all']
 
         with patch.multiple(self.client, set_presence=Mock(), join=Mock()):
