@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.7.8
+-----
+- Upgraded development Vagrantfile to Xenial
+- Fixed some tests to get CI feedback working again
+
 1.7.7
 -----
 - Added support for IRC SASL authentication
