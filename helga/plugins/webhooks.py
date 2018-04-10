@@ -118,7 +118,7 @@ class WebhookPlugin(Command):
             try:
                 logger.info('Loading webhook %s', entry_point.name)
                 entry_point.load()
-            except:
+            except Exception:
                 logger.exception('Error loading webhook %s', entry_point)
 
     def _start(self, client=None):

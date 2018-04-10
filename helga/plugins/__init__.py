@@ -229,7 +229,7 @@ class Registry(object):
             try:
                 logger.info('Loading and registering plugin %s', entry_point.name)
                 self.register(entry_point.name, entry_point.load())
-            except:
+            except Exception:
                 logger.exception('Error initializing plugin %s', entry_point)
 
         smokesignal.emit('plugins_loaded')
@@ -255,7 +255,7 @@ class Registry(object):
                 reload(sys.modules[entry_point.module_name])
                 self.register(entry_point.name, entry_point.load())
                 return True
-            except:
+            except Exception:
                 logger.exception('Failed to reload plugin %s', entry_point)
                 return False
 
@@ -297,7 +297,7 @@ class Registry(object):
         for plugin in self.prioritized(channel):
             try:
                 channel, nick, message = plugin.preprocess(client, channel, nick, message)
-            except:
+            except Exception:
                 logger.exception('Calling preprocess on plugin %s failed', plugin)
                 continue
 
@@ -329,7 +329,7 @@ class Registry(object):
                 if first_responder:
                     break
                 continue  # pragma: no cover Python == 2.7
-            except:
+            except Exception:
                 logger.exception('Calling process on plugin %s failed', plugin)
                 continue
 
