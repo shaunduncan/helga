@@ -157,7 +157,26 @@ for bot replies, you should install the `hipchat_nicks`_ plugin and add ``HIPCHA
     $ echo 'HIPCHAT_API_TOKEN = "your_token"' >> path/to/your/settings.py
 
 
+.. _config.slack:
+
+Slack Support
+^^^^^^^^^^^^^
+`Slack`_ supports rich formatting for messaging, and Helga includes a connector
+for Slack's APIs. A configuration for connecting to Slack might look like::
+
+    SERVER = {
+        'TYPE': 'slack',
+        'API_KEY': 'xoxb-12345678901-A1b2C3deFgHiJkLmNoPqRsTu',
+    }
+
+When you set up a new bot API key, Slack will prompt you to configure the bot's
+username. This will be Helga's nickname, and Helga will figure it out
+automatically, so do not specify :data:`~helga.settings.NICK` in your
+configuration. Similarly, Slack uses the "@ mentions" syntax for addressing
+nicks, and the connector has support for this, so you should not set
+:data:`~helga.settings.COMMAND_PREFIX_BOTNICK` in your configuration.
 
 .. _`HipChat`: https://www.hipchat.com/
 .. _`HipChat XMPP Settings`: https://hipchat.com/account/xmpp
 .. _`hipchat_nicks`: https://github.com/shaunduncan/helga-hipchat-nicks
+.. _`Slack`: https://www.slack.com/

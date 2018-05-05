@@ -14,6 +14,9 @@ def parse_requirements(filename):
                 continue
             yield line
 
+if sys.version_info[1:2] < (3, 3):
+    extra_requires = ['backports.functools_lru_cache']
+
 
 class PyTest(TestCommand):
     def finalize_options(self):
