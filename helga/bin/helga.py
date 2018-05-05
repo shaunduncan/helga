@@ -6,6 +6,7 @@ import os
 import smokesignal
 
 from twisted.internet import reactor, ssl
+from autobahn.twisted.websocket import connectWS
 
 from helga import settings
 
@@ -25,7 +26,9 @@ def run():
 
     factory = backend.Factory()
 
-    if settings.SERVER.get('SSL', False):
+    if settings.SERVER.get('TYPE', False) == 'slack':
+        connectWS(factory=factory)
+    elif settings.SERVER.get('SSL', False):
         reactor.connectSSL(settings.SERVER['HOST'],
                            settings.SERVER['PORT'],
                            factory,
