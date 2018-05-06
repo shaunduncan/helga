@@ -14,3 +14,4 @@ pyOpenSSL
 pystache==0.5.4
 smokesignal==0.5
 Twisted
+requests

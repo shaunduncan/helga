@@ -49,7 +49,7 @@ def test_operator_handles_subcmd(add_autojoin, remove_autojoin, reload_plugin):
     # Client commands
     for cmd in ('join', 'leave'):
         client.reset_mock()
-        assert operator.operator(*(args + [[cmd, '#foo']])) is None
+        operator.operator(*(args + [[cmd, '#foo']]))
         getattr(client, cmd).assert_called_with('#foo')
 
     # Autojoin add/remove
