@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.7.10
+------
+- Updated packaging metadata to present a more informative landing page on PyPI
+
 1.7.9
 -----
 - Introduced BETA rollout of native slack integration (Many, many thanks to @ktdreyer!)

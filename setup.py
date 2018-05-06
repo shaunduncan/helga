@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -14,6 +15,7 @@ def parse_requirements(filename):
                 continue
             yield line
 
+
 if sys.version_info[1:2] < (3, 3):
     extra_requires = ['backports.functools_lru_cache']
 
@@ -28,9 +30,15 @@ class PyTest(TestCommand):
         return subprocess.call('tox')
 
 
+# Get the long description
+with open(os.path.join(os.path.dirname(__file__), 'README.rst'), 'r') as f:
+    long_description = f.read()
+
+
 setup(name=helga.__title__,
       version=helga.__version__,
       description=helga.__description__,
+      long_description=long_description,
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
