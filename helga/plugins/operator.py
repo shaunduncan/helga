@@ -75,7 +75,7 @@ def operator(client, channel, nick, message, cmd, args):
     if subcmd in ('join', 'leave'):
         channel = args[1]
         if channel.startswith('#'):
-            getattr(client, subcmd)(channel)
+            return getattr(client, subcmd)(channel)
 
     elif subcmd == 'autojoin':
         op, channel = args[1], args[2]

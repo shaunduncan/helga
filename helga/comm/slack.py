@@ -12,23 +12,43 @@ Twisted protocol and communication implementations for Slack.com
 #   Twisted reactor (maybe even create a "txslackclient" library in the distant
 #   future?)
 
-from collections import defaultdict
 import json
 import re
+import uuid
+
+from functools import partial
 
 import smokesignal
 import requests
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from autobahn.twisted.websocket import WebSocketClientFactory
 from autobahn.twisted.websocket import WebSocketClientProtocol
-from sys import maxint
 
 from helga import settings, log
+from helga.comm.base import BaseClient
 from helga.plugins import registry
 
 
 logger = log.getLogger(__name__)
+
+SLACK_API_BASE = 'https://slack.com/api/'
+
+
+def api(action, **data):
+    logger.debug('Slack API request: /%s -> %s', action, data)
+
+    # Slack API key, eg xoxb-12345678901-A1b2C3deFgHiJkLmNoPqRsTu
+    data.update({'token': settings.SERVER['API_KEY']})
+
+    response = requests.post(SLACK_API_BASE + action, data=data)
+
+    data = response.json()
+
+    if not data['ok']:
+        raise SlackError(api=action, error=data['error'])
+
+    return data
 
 
 class Factory(WebSocketClientFactory):
@@ -37,19 +57,14 @@ class Factory(WebSocketClientFactory):
     Kill the reactor when the connection to the Slack RTM server drops.
     """
     def __init__(self):
-        # Slack API key, eg xoxb-12345678901-A1b2C3deFgHiJkLmNoPqRsTu
-        self.api_key = settings.SERVER['API_KEY']
-
         logger.info('Initiating Slack RTM start request')
-        API_URL = 'https://slack.com/api/rtm.start'
-        response = requests.post(API_URL, data={'token': self.api_key})
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='rtm.start', error=data['error'])
+        data = api('rtm.start', no_latest=1)
 
-        self.protocol = Client
+        # Make the protocol a partial so that we can send the full info from rtm.start
+        self.protocol = partial(Client, data)
 
-        logger.info('creating WebSocketClientFactory with %s' % data['url'])
+        logger.info('creating WebSocketClientFactory with %s', data['url'])
+
         return WebSocketClientFactory.__init__(self, url=data['url'])
 
     def clientConnectionLost(self, connector, reason):
@@ -62,8 +77,8 @@ class Factory(WebSocketClientFactory):
         NOTE: this approach needs more work, because it seems to fire even when
         the main helga process receives SIGINT (ctrl-c).
         """
+        # FIXME: need to handle auto reconnects
         logger.info('Connection to server lost: %s', reason)
-        reactor.stop()
         raise reason
 
     def clientConnectionFailed(self, connector, reason):
@@ -78,27 +93,53 @@ class Factory(WebSocketClientFactory):
         reactor.stop()
 
 
-class Client(WebSocketClientProtocol):
+class Client(WebSocketClientProtocol, BaseClient):
 
-    def __init__(self, *a, **kw):
-        # Slack API key, eg xoxb-12345678901-A1b2C3deFgHiJkLmNoPqRsTu
-        self.api_key = settings.SERVER['API_KEY']
+    def __init__(self, rtm_start_data, *a, **kw):
+        BaseClient.__init__(self)
 
         # Slack prompts users to set up a bot account's name when setting up
         # the API key. So the bot's name is already defined server-side, and we
         # just have to look it up. In fact, we ignore settings.NICK.
-        self.nickname = self._get_self_name()
+        self.nickname = rtm_start_data['self']['name']
 
         # Additionally, it is just simpler to override the user's
         # COMMAND_PREFIX_BOTNICK setting here, so to reduce the need for manual
         # configuration.
         settings.COMMAND_PREFIX_BOTNICK = '@?' + self.nickname
 
-        # logger.debug('My user name in Slack is "%s".' % self.nickname)
+        # Maps of channel/user id -> name
+        channels = (
+            (rtm_start_data.get('channels') or []) +
+            (rtm_start_data.get('mpims') or []) +
+            (rtm_start_data.get('ims') or []) +
+            (rtm_start_data.get('groups') or [])
+        )
 
-        self.last_message = defaultdict(dict)   # Dict of x[channel][nick]
-        self._channel_names = {} # Map channel IDs to names
-        self._user_names = {}    # Map user IDs to names
+        users = rtm_start_data.get('users') or []
+
+        self._cache_all_channel_names(channels)
+        self._cache_all_user_names(users)
+
+        # FIXME: setup reactor recurring tasks to refresh the list of channels/users
+        self.refresh_channels = task.LoopingCall(self._cache_all_channel_names)
+        self.refresh_users = task.LoopingCall(self._cache_all_user_names)
+
+        self.refresh_channels.start(10, now=False)
+        self.refresh_users.start(10, now=False)
+
+        # Check if i'm a bot
+        self._i_am_bot = False
+
+        for user in users:
+            if user['name'] == self.nickname:
+                self._i_am_bot = user['is_bot']
+                break
+
+        # With websockets, we'll get replies to messages we attempt to send.
+        # Keep track of them in a map of request-id -> message
+        self._requests = {}
+
         return WebSocketClientProtocol.__init__(self, *a, **kw)
 
     def onMessage(self, msg, binary):
@@ -114,11 +155,41 @@ class Client(WebSocketClientProtocol):
         except ValueError as e:
             logger.error('Error parsing WebSocket message %s : %s' % (msg, e))
             return
-        if data.get('type', None) is not None:
-            method_name = 'slack_' + data['type']
-            method = getattr(self, method_name, False)
-            if hasattr(method, '__call__'):
-                method(data)
+
+        # Is this a response to a previous message?
+        if 'reply_to' in data:
+            return self.onMessageAck(int(data['reply_to']), data)
+
+        if 'type' not in data:
+            # Don't know how to handle this
+            return
+
+        # Actions we'll never handle and reduce log noise
+        if data['type'] in ('desktop_notification', 'user_typing'):
+            return
+
+        logger.info('onMessage %s', data)
+
+        method_name = 'slack_{}'.format(data['type'])
+
+        if 'subtype' in data:
+            method_name = '{}_{}'.format(method_name, data['subtype'])
+
+        try:
+            getattr(self, method_name)(data)
+        except AttributeError:
+            logger.info('No implementation for %r', method_name)
+
+    def onMessageAck(self, request_id, response):
+        logger.info('onMessageAck %s %s', request_id, response)
+
+        # We're ACK'ing the request, so pop from the request map
+        request = self._requests.pop(request_id, None)
+
+        if not request:
+            logger.error('Received response for unknown message ID %s: %s', request_id, response)
+        elif not response['ok']:
+            logger.error('WebSocket request %s received error %s', request_id, response.get('error', ''))
 
     def slack_hello(self, data):
         """
@@ -127,12 +198,17 @@ class Client(WebSocketClientProtocol):
 
         :param data: dict from JSON received in WebSocket message
         """
-        self._next_message_id = 1
-        # Might as well cache all channel and user names to save individual
-        # lookups later.
-        self._cache_all_channel_names()
-        self._cache_all_user_names()
         smokesignal.emit('signon', self)
+
+    def slack_message_channel_join(self, data):
+        user = self._get_user_name(data['user'])
+        channel = self._get_channel_name(data['channel'])
+        smokesignal.emit('user_joined', self, user, channel)
+
+    def slack_message_channel_leave(self, data):
+        user = self._get_user_name(data['user'])
+        channel = self._get_channel_name(data['channel'])
+        smokesignal.emit('user_left', self, user, channel)
 
     def slack_message(self, data):
         """
@@ -142,18 +218,18 @@ class Client(WebSocketClientProtocol):
 
         :param data: dict from JSON received in WebSocket message
         """
-        # If this was a "message_changed" edit, process that message instead.
-        # TODO: we probably want to avoid the cases where Slack itself edits a
-        # message, eg when unfurling a link or media?
-        if data.get('subtype', None) == 'message_changed':
-            data['message']['channel'] = data['channel']
-            data = data['message']
-
         # Look up the human-readable name for this user ID.
         user = self._get_user_name(data['user'])
 
-        # Get a SlackChannel object for this channel ID.
-        channel = self._get_slack_channel(id_=data['channel'])
+        # If we don't ignore this, we'll get infinite replies
+        if user == self.nickname:
+            return
+
+        channel = self._get_channel_name(data['channel'])
+
+        if channel:
+            # If this was a legit channel, prefix it with a hash for later consistency
+            channel = '#{}'.format(channel)
 
         # I'm not sure if 100% of all messages have a "text" value. Use a blank
         # string fallback to be safe.
@@ -164,22 +240,9 @@ class Client(WebSocketClientProtocol):
         # Log the incoming message
         logger.debug('[<--] %s/%s - %s', channel, user, message)
 
-        # Emit "user_joined" or "user_left" smokesignals
-        if data.get('subtype', None) == 'channel_join':
-            logger.info('smokesignal user_joined(%s, %s)', user, channel)
-            smokesignal.emit('user_joined', self, user, channel)
-        if data.get('subtype', None) == 'channel_leave':
-            logger.info('smokesignal user_left(%s, %s)', user, channel)
-            smokesignal.emit('user_left', self, user, channel)
-
-        # If we don't ignore this, we'll get infinite replies
-        if user == self.nickname:
-            return
-
         # Some things should go first
         try:
-            channel, user, message = registry.preprocess(self, channel,
-                                                         user, message)
+            channel, user, message = registry.preprocess(self, channel, user, message)
         except (TypeError, ValueError):
             pass
 
@@ -203,26 +266,12 @@ class Client(WebSocketClientProtocol):
         :param message: The message to send (string)
         :type  message: ``str``
         """
-        # Slack does not support "/me" commands via the API, so we do the next
-        # best thing: prepend our nickname to the message.
-        return self.msg(channel, '@%s %s' % (self.nickname, message))
+        logger.debug('[-->] %s - /me %s', channel, message)
+        return self._send_message(channel, message, subtype='me_message')
 
     def msg(self, channel, message):
         """
         Send a message over Slack to the specified channel.
-
-        If the message is a JSON string, this function will parse it into a
-        dict and use the Slack Web API to send the message data, so you can
-        specify attachments and formatting. The JSON must be a dict that
-        contains a key named "text". For example, {"text": "this is my
-        message"}. Optionally, you can specify an "attachments" key as well,
-        and the value for "attachments" should follow the Slack API
-        documentation.
-
-        If the message is not a valid JSON string, this function will assume it
-        is simply a plaintext message, and will use the Slack WebSocket
-        connection to send it (which only supports plaintext messages, no
-        attachments or formatting)
 
         :param channel: The Slack channel to send the message to (eg
                         "general").
@@ -230,181 +279,67 @@ class Client(WebSocketClientProtocol):
         :param message: The message to send (plain string, or JSON)
         :type  message: ``str``
         """
-        try:
-            # SlackChannel object?
-            channel_id = channel.id_
-        except AttributeError:
-            if str(channel).startswith('#'):
-                # It's a human-readable channel name, like "#general".
-                channel = self._get_slack_channel(name=channel[1:])
-            else:
-                # It's a individual's username.
-                channel = self._get_slack_im(channel)
+        # First, sanitize the message
         message = self._sanitize(message)
-        try:
-            message_data = json.loads(message)
-        except ValueError:
-            # The plugin response was not valid JSON. Assume it's just a
-            # plaintext message string.
-            logger.debug('[-->] %s - %s', channel, message)
-            return self._send_command({
-                'type': 'message',
-                'channel': channel.id_,
-                'text': message,
-            })
 
-        attachments = message_data.get('attachments', None)
+        logger.debug('[-->] %s - %s', channel, message)
 
-        # TODO: log the "fallback" text for every attachment, rather than the
-        # too-general "+attachments" string here.
-        logger.debug('[-->] %s - %s (+attachments)', channel, text)
-
-        API_URL = 'https://slack.com/api/chat.postMessage'
-        response = requests.post(API_URL, data={
-                                                'token': self.api_key,
-                                                'channel': channel.id_,
-                                                'text': text,
-                                                'as_user': True,
-                                                'attachments': attachments,
-                                               })
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='chat.postMessage', error=data['error'])
-
-    def _get_slack_channel(self, id_=None, name=None):
-        """
-        Get a SlackChannel object by name or ID.
-
-        :param id_: channel ID, for example "C123456" (or "D123456" or
-                    "G123456").
-        :type  id_: ``str``
-
-        :param name: channel name, for example "general"
-        :type  name: ``str``
-
-        :rtype: ``SlackChannel``
-        :raises: SlackError: If Web API request fails, for example if the
-                             channel could not be found.
-        """
-        if id_ is None and name is None:
-            raise ValueError('must specify an id_ or name parameter')
-        if id_ is not None and name is not None:
-            raise ValueError('specify only an id_ or a name parameter')
-        if id_ is not None:
-            return self._get_slack_channel_by_id(id_)
+        if channel.startswith('#'):
+            return self._send_message(channel, message)
         else:
-            return self._get_slack_channel_by_name(name)
+            # In this case we need to fiddle with the API, do this async
+            maybe_channel = self._get_channel_id(self._get_user_id(channel))
 
-    def _get_slack_channel_by_id(self, id_):
-        """
-        Get a SlackChannel object by a channel ID.
+            if maybe_channel:
+                return self._send_message(maybe_channel, message)
+            else:
+                reactor.callLater(0, self._async_msg_user, channel, message)
 
-        :param id_: channel ID, for example "C123456" (or "D123456" or
-                    "G123456")
-        :type  id_: ``str``
+        # TODO: support better/more complex response types using chat.postMessage
 
-        :rtype: ``SlackChannel``
-        :raises: SlackError: If Web API request fails, for example if the
-                             channel could not be found.
-        """
-        channel = SlackChannel(id_=id_)
-        if id_.startswith('D') or id_.startswith('G'):
-            # No friendly name, just return our object with id_.
-            channel.name = id_
-            return channel
-        # Assume we have a "C" channel with a name to look up.
-        try: # check cache first
-            channel.name = self._channel_names[id_]
-            return channel
-        except KeyError:
-            pass
-        # Hit the Web API
-        API_URL = 'https://slack.com/api/channels.info'
-        response = requests.post(API_URL, data={
-                                                'token': self.api_key,
-                                                'channel': id_,
-                                               })
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='channels.info', error=data['error'])
-        # Cache this name and return it
-        channel.name = data['channel']['name']
-        self._channel_names[channel_id] = channel.name
-        return channel
-
-    def _get_slack_channel_by_name(self, name):
-        """
-        Get a SlackChannel object by a channel name.
-
-        :param name: channel name, for example "general"
-        :type  name: ``str``
-
-        :rtype: ``SlackChannel``
-        :raises: RuntimeError: If the requested channel could not be found.
-        """
-        # check if we need to refresh the cache
-        if name not in self._channel_names.values():
-            self._cache_all_channel_names()
-
-        for c_id, c_name in self._channel_names.iteritems():
-            if c_name == name:
-                return SlackChannel(id_=c_id, name=c_name)
-        raise RuntimeError('Could not find channel ID for "%s"', name)
-
-    def _cache_all_channel_names(self):
-        """
-        Hit the Web API and store all channel id/name pairs in
-        self._channel_names.
-
-        :raises: SlackError: If Web API request fails
-        """
-        API_URL = 'https://slack.com/api/channels.list'
-        response = requests.post(API_URL, data={'token': self.api_key})
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='channels.list', error=data['error'])
-        self._channel_names = {}
-        for c in data['channels']:
-            self._channel_names[c['id']] = c['name']
-
-    def _cache_all_user_names(self):
-        """
-        Hit the Web API and store all user id/name pairs in
-        self._user_names.
-
-        :raises: SlackError: If Web API request fails
-        """
-        API_URL = 'https://slack.com/api/users.list'
-        response = requests.post(API_URL, data={'token': self.api_key})
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='users.list', error=data['error'])
-        self._user_names = {}
-        for user in data['members']:
-            self._user_names[user['id']] = user['name']
-
-    def _get_slack_im(self, user):
-        """
-        Get a SlackChannel object by a user's name.
-
-        :param user: username, for example "kdreyer".
-        :type  user: ``str``
-
-        :rtype: ``SlackChannel``
-        :raises: SlackError: If Web API request fails, for example if the
-                             user could not be found.
-        """
+    def _async_msg_user(self, user, message):
         user_id = self._get_user_id(user)
+
         # Hit the Web API
-        API_URL = 'https://slack.com/api/im.open'
-        response = requests.post(API_URL, data={
-                                                'token': self.api_key,
-                                                'user': user_id,
-                                               })
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='im.open', error=data['error'])
-        return SlackChannel(id_=data['channel']['id'])
+        data = api('im.open', user=user_id)
+        channel_id = data['channel']['id']
+
+        # Update our internal cache if we don't know about it
+        if not data.get('already_open', False):
+            channel_name = data['channel']['name']
+            self._channel_names[channel_id] = channel_name
+
+        self._send_message(self._get_channel_name(channel_id), message)
+
+    def leave(self, channel, *args, **kwargs):
+        channel = self._get_channel_id(channel)
+
+        if self._i_am_bot:
+            msg = 'Bots cannot leave channels by themselves. They must be kicked'
+            logger.warning('Cannot leave %s: %s', channel, msg)
+            return msg
+        else:
+            reactor.callLater(0, api, 'channels.leave', channel=channel)
+
+    def join(self, channel, *args, **kwargs):
+        if self._i_am_bot:
+            msg = 'Bots cannot join channels by themselves. They must be invited'
+            logger.warning('Cannot join %s: %s', channel, msg)
+            return msg
+        else:
+            reactor.callLater(0, api, 'channels.join', name=channel)
+
+    def _get_channel_name(self, channel_id):
+        return self._channel_names.get(channel_id, '')
+
+    def _get_channel_id(self, name):
+        name = name.lstrip('#')
+
+        for chan_id, chan_name in self._channel_names.iteritems():
+            if chan_name == name:
+                return chan_id
+
+        return None
 
     def _get_user_name(self, user_id):
         """
@@ -418,22 +353,7 @@ class Client(WebSocketClientProtocol):
         :raises: SlackError: If Web API request fails, for example if the
                              user could not be found.
         """
-        try: # check cache first
-            return self._user_names[user_id]
-        except KeyError:
-            pass
-        # Hit the Web API
-        API_URL = 'https://slack.com/api/users.info'
-        response = requests.post(API_URL, data={
-                                                'token': self.api_key,
-                                                'user': user_id,
-                                               })
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='users.info', error=data['error'])
-        # Cache this name and return it
-        self._user_names[user_id] = data['user']['name']
-        return self._user_names[user_id]
+        return self._user_names.get(user_id, '')
 
     def _get_user_id(self, name):
         """
@@ -446,40 +366,75 @@ class Client(WebSocketClientProtocol):
         :rtype: ``str``
         :raises: RuntimeError: If the requested user could not be found.
         """
-        # check if we need to refresh the cache
-        if name not in self._user_names.values():
-            self._cache_all_user_names()
+        name = name.lstrip('@')
 
-        for u_id, u_name in self._user_names.iteritems():
-            if u_name == name:
-                return u_id
-        raise RuntimeError('Could not find user ID for "%s"', name)
+        for user_id, user_name in self._user_names.iteritems():
+            if user_name == name:
+                return user_id
 
-    def _get_self_name(self):
+        return None
+
+    def _cache_all_channel_names(self, channels=None):
         """
-        Get our own name.
+        Hit the Web API and store all channel id/name pairs in
+        self._channel_names.
+
+        :raises: SlackError: If Web API request fails
         """
-        API_URL = 'https://slack.com/api/auth.test'
-        response = requests.post(API_URL, data={'token': self.api_key})
-        data = response.json()
-        if data['ok'] is not True:
-            raise SlackError(api='auth.test', error=data['error'])
-        return data['user']
+        if channels is None:
+            logger.info('Fetching full channel list from slack API')
+            channels = api('channels.list')['channels']
+            channels.extend(api('groups.list')['groups'])
+            channels.extend(api('mpim.list')['groups'])
+            channels.extend(api('im.list')['ims'])
+
+        channel_names = {}
+
+        for c in channels:
+            try:
+                channel_names[c['id']] = c['name']
+            except KeyError:
+                channel_names[c['id']] = c['user']
+
+        self._channel_names = channel_names
+
+    def _cache_all_user_names(self, users=None):
+        """
+        Hit the Web API and store all user id/name pairs in
+        self._user_names.
+
+        :raises: SlackError: If Web API request fails
+        """
+        if users is None:
+            logger.info('Fetching full user list from slack API')
+            users = api('users.list')['members']
+
+        self._user_names = {}
+
+        for user in users:
+            self._user_names[user['id']] = user['name']
 
     def _parse_incoming_message(self, message):
         """
         Slack uses &, <, and > as control characters so that messages may
         contain special escaped sequences. Translate these to human-readable
         forms. In particular, we will translate "<@UUSERID>" or
-        "<@UUSERID|foo>" to "@USER".
+        "<@UUSERID|foo>" to "@USER". Also look for similarly formatted channel
+        names like "<#CHANNELID|channel-name>" and replace with "#channel-name".
 
         :param message: message string to parse, eg "<@U0123ABCD> hello".
         :returns: a translated string, eg. "@adeza hello".
         """
-        user_regex = r'<@(U[0-9A-Z]+)(?:\|[^>]+)?>'
-        for user_id in re.findall(user_regex, message):
+        user_regex = r'(<@(U[0-9A-Z]+)(?:\|[^>]+)?>)'
+        for full_match, user_id in re.findall(user_regex, message):
             user = self._get_user_name(user_id)
-            message = re.sub(user_regex, '@' + user, message)
+            message = message.replace(full_match, '@' + user)
+
+        channel_regex = r'(<#([0-9A-Z]+)(?:\|[^>]+)?>)'
+        for full_match, channel_id in re.findall(channel_regex, message):
+            channel = self._get_channel_name(channel_id)
+            message = message.replace(full_match, '#' + channel)
+
         return message
 
     def _sanitize(self, message):
@@ -495,32 +450,32 @@ class Client(WebSocketClientProtocol):
         message = re.sub(r'>', '&gt;', message)
         return message
 
-    def _send_command(self, data):
+    def _send_message(self, channel, message, **extra):
         """
         Send a raw command ("message") over the WebSocket using autobahn's
         sendMessage().
 
         :param data: dict to send via WebSocket
         """
+        if channel not in self._channel_names:
+            channel = self._get_channel_id(channel)
+
+        message_id = uuid.uuid4().int
+
         # Assemble JSON to send
-        msg = data
-        msg['id'] = self._next_message_id
-        self.sendMessage(json.dumps(msg))
-        self._next_message_id += 1
-        if self._next_message_id >= maxint:
-            self._next_message_id = 1
+        data = {
+            'id': message_id,
+            'channel': channel,
+            'text': message,
+            'type': 'message',
+        }
 
-    def slack_presence_change(self, data):
-        """
-        Called when a user signs in or out (or becomes "active" or "away").
-        Currently a no-op.
+        # Add any extra params
+        data.update(extra)
 
-        :param data: dict from JSON received in WebSocket message
-        """
-        # Some things we could do:
-        # user = self._get_user_name(data['user'])
-        # logger.info('presence_change: %s' % data)
-        pass
+        # Track and send
+        self._requests[message_id] = data
+        self.sendMessage(json.dumps(data))
 
     def slack_channel_joined(self, data):
         """
@@ -528,9 +483,15 @@ class Client(WebSocketClientProtocol):
 
         :param data: dict from JSON received in WebSocket message
         """
-        logger.debug('channel_joined: %s' % data)
         channel = data['channel']['name']
-        smokesignal.emit('joined', self, channel)
+
+        logger.info('Joined %s (id=%s)', channel)
+
+        # Update caches
+        self.channels.add(channel)
+        self._channel_names[data['channel']['id']] = channel
+
+        smokesignal.emit('join', self, channel)
 
     def slack_channel_left(self, data):
         """
@@ -538,20 +499,15 @@ class Client(WebSocketClientProtocol):
 
         :param data: dict from JSON received in WebSocket message
         """
-        logger.info('channel_left: %s' % data)
-        # It seems that Slack's channel.info web API won't give us the channel
-        # name at this point (since we've already left?) so we have to catch
-        # the error and pass the raw channel ID :(
-        try:
-            channel = self._get_channel_name(data['channel'])
-        except SlackError, e:
-            logger.warning(e.message)
-            if e.error == 'channel_not_found':
-                # No name was available, so just use the raw channel ID
-                channel = data['channel']
-            else:
-                raise
-        logger.info('left channel %s' % channel)
+        # Convert the slack channel id
+        channel = self._get_channel_name(data['channel'])
+
+        logger.info('Left %s', channel)
+
+        # Update caches
+        self.channels.discard(channel)
+        self._channel_names.pop(data['channel'], None)
+
         smokesignal.emit('left', self, channel)
 
     def slack_channel_created(self, data):
@@ -565,6 +521,11 @@ class Client(WebSocketClientProtocol):
     # channel_rename is the exact same logic as channel_create
     slack_channel_rename = slack_channel_created
 
+    # groups work like channel join/leave
+    slack_group_joined = slack_channel_joined
+    slack_group_left = slack_channel_left
+    slack_group_rename = slack_channel_rename
+
     def slack_channel_deleted(self, data):
         """
         Triggers when a channel is deleted.
@@ -574,25 +535,6 @@ class Client(WebSocketClientProtocol):
         except KeyError:
             pass
 
-
-class SlackChannel(object):
-    """
-    Internal representation of a Slack channel, with an "id" (``id_``) and
-    human-readable name.
-    """
-    def __init__(self, id_, name=None):
-        """
-        :param id_: The channel ID, eg "C1234", "D1234", "G1234".
-        :param name: The human-readable channel name
-        """
-        if id_ is not None and id_[0] not in ('C', 'D', 'G'):
-            msg = 'Invalid Slack channel ID: %s (must start with C, D, or G)'
-            raise RuntimeError(msg % _id)
-        self.id_ = id_
-        self.name = name
-
-    def __str__(self):
-        return str(self.name)
 
 class SlackError(RuntimeError):
     """
