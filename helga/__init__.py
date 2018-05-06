@@ -1,7 +1,7 @@
 from datetime import datetime as dt
 
 __title__ = 'helga'
-__version__ = '1.7.10'
+__version__ = '1.7.11'
 __author__ = 'Shaun Duncan'
 __license__ = 'MIT/GPLv3'
 __copyright__ = 'Copyright {0} Shaun Duncan'.format(dt.now().strftime('%Y'))

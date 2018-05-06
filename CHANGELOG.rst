@@ -3,6 +3,10 @@ CHANGELOG
 
 1.7.10
 ------
+- Minor adjustments to slack beta after more testing
+
+1.7.10
+------
 - Updated packaging metadata to present a more informative landing page on PyPI
 
 1.7.9
