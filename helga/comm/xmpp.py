@@ -11,6 +11,7 @@ from twisted.words.protocols.jabber import client, jid, xmlstream
 import smokesignal
 
 from helga import log, settings
+from helga.comm.base import BaseClient
 from helga.plugins import registry
 from helga.util import encodings
 
@@ -95,7 +96,7 @@ class Factory(XmlStreamFactoryMixin, protocol.ClientFactory):
             reactor.stop()
 
 
-class Client(object):
+class Client(BaseClient):
     """
     The XMPP client that has predetermined behavior for certain events. This client assumes
     some default behavior for multi user chat (MUC) by setting the conference host as
@@ -128,36 +129,11 @@ class Client(object):
     .. attribute:: stream
 
         The raw data stream. An instance of `twisted.words.protocols.jabber.xmlstream.XmlStream`
-
-    .. attribute:: channels
-        :annotation: = set()
-
-        A set containing all of the channels the bot is currently in
-
-    .. attribute:: operators
-        :annotation: = set()
-
-        A set containing all of the configured operators (setting :data:`~helga.settings.OPERATORS`)
-
-    .. attribute:: last_message
-        :annotation: = dict()
-
-        A channel keyed dictionary containing dictionaries of nick -> message of the last messages
-        the bot has seen a user send on a given channel. For instance, if in the channel ``#foo``::
-
-            <sduncan> test
-
-        The contents of this dictionary would be::
-
-            self.last_message['#foo']['sduncan'] = 'test'
-
-    .. attribute:: channel_loggers
-        :annotation: = dict()
-
-        A dictionary of known channel loggers, keyed off the channel name
     """
 
     def __init__(self, factory):
+        super(Client, self).__init__()
+
         self.factory = factory
         self.jid = factory.jid
         self.nickname = settings.NICK
@@ -172,13 +148,7 @@ class Client(object):
         # Setup event listeners
         self._bootstrap()
 
-        # Pre-configured helga admins
-        self.operators = set(getattr(settings, 'OPERATORS', []))
-
         # Things to keep track of
-        self.channels = set()
-        self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
-        self.channel_loggers = {}
         self._heartbeat = None
 
     def _bootstrap(self):

@@ -3,14 +3,13 @@ Twisted protocol and communication implementations for IRC
 """
 import time
 
-from collections import defaultdict
-
 import smokesignal
 
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
 from helga import settings, log
+from helga.comm.base import BaseClient
 from helga.plugins import registry
 from helga.util import encodings
 
@@ -69,38 +68,11 @@ class Factory(protocol.ClientFactory):
             reactor.stop()
 
 
-class Client(irc.IRCClient):
+class Client(irc.IRCClient, BaseClient):
     """
     An implementation of `twisted.words.protocols.irc.IRCClient` with some overrides
     derived from helga settings (see :ref:`config`). Some methods are overridden
     to provide additional functionality.
-
-    .. attribute:: channels
-        :annotation: = set()
-
-        A set containing all of the channels the bot is currently in
-
-    .. attribute:: operators
-        :annotation: = set()
-
-        A set containing all of the configured operators (setting :data:`~helga.settings.OPERATORS`)
-
-    .. attribute:: last_message
-        :annotation: = dict()
-
-        A channel keyed dictionary containing dictionaries of nick -> message of the last messages
-        the bot has seen a user send on a given channel. For instance, if in the channel ``#foo``::
-
-            <sduncan> test
-
-        The contents of this dictionary would be::
-
-            self.last_message['#foo']['sduncan'] = 'test'
-
-    .. attribute:: channel_loggers
-        :annotation: = dict()
-
-        A dictionary of known channel loggers, keyed off the channel name
     """
 
     #: The preferred IRC nick of the bot instance (setting :data:`~helga.settings.NICK`)
@@ -127,6 +99,8 @@ class Client(irc.IRCClient):
     erroneousNickFallback = None
 
     def __init__(self, factory=None):
+        BaseClient.__init__(self)
+
         self.factory = factory
         self.erroneousNickFallback = '{0}_{1}'.format(settings.NICK, int(time.time()))
 
@@ -136,14 +110,6 @@ class Client(irc.IRCClient):
         self.password = settings.SERVER.get('PASSWORD', None)
         self.lineRate = getattr(settings, 'RATE_LIMIT', None)
         self._use_sasl = settings.SERVER.get('SASL', False)
-
-        # Pre-configured helga admins
-        self.operators = set(getattr(settings, 'OPERATORS', []))
-
-        # Things to keep track of
-        self.channels = set()
-        self.last_message = defaultdict(dict)  # Dict of x[channel][nick]
-        self.channel_loggers = {}
 
     def get_channel_logger(self, channel):
         """
