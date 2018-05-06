@@ -125,8 +125,8 @@ class Client(WebSocketClientProtocol, BaseClient):
         self.refresh_channels = task.LoopingCall(self._cache_all_channel_names)
         self.refresh_users = task.LoopingCall(self._cache_all_user_names)
 
-        self.refresh_channels.start(10, now=False)
-        self.refresh_users.start(10, now=False)
+        self.refresh_channels.start(60, now=False)
+        self.refresh_users.start(60, now=False)
 
         # Check if i'm a bot
         self._i_am_bot = False
@@ -167,8 +167,6 @@ class Client(WebSocketClientProtocol, BaseClient):
         # Actions we'll never handle and reduce log noise
         if data['type'] in ('desktop_notification', 'user_typing'):
             return
-
-        logger.info('onMessage %s', data)
 
         method_name = 'slack_{}'.format(data['type'])
 
@@ -485,7 +483,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         """
         channel = data['channel']['name']
 
-        logger.info('Joined %s (id=%s)', channel)
+        logger.info('Joined %s', channel)
 
         # Update caches
         self.channels.add(channel)
