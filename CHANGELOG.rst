@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.7.9
+-----
+- Introduced BETA rollout of native slack integration (Many, many thanks to @ktdreyer!)
+
 1.7.8
 -----
 - Upgraded development Vagrantfile to Xenial
