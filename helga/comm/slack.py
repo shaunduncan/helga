@@ -79,7 +79,13 @@ class Factory(WebSocketClientFactory):
         """
         # FIXME: need to handle auto reconnects
         logger.info('Connection to server lost: %s', reason)
-        raise reason
+
+        # FIXME: Max retries
+        if getattr(settings, 'AUTO_RECONNECT', True):
+            delay = getattr(settings, 'AUTO_RECONNECT_DELAY', 5)
+            reactor.callLater(delay, connector.connect)
+        else:
+            raise reason
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -177,9 +183,11 @@ class Client(WebSocketClientProtocol, BaseClient):
             getattr(self, method_name)(data)
         except AttributeError:
             logger.info('No implementation for %r', method_name)
+        except Exception:
+            logger.exception('Failed to handle method call to %s', method_name)
 
     def onMessageAck(self, request_id, response):
-        logger.info('onMessageAck %s %s', request_id, response)
+        logger.debug('onMessageAck %s %s', request_id, response)
 
         # We're ACK'ing the request, so pop from the request map
         request = self._requests.pop(request_id, None)
@@ -227,7 +235,7 @@ class Client(WebSocketClientProtocol, BaseClient):
 
         if channel:
             # If this was a legit channel, prefix it with a hash for later consistency
-            channel = '#{}'.format(channel)
+            channel = u'#{}'.format(channel)
 
         # I'm not sure if 100% of all messages have a "text" value. Use a blank
         # string fallback to be safe.
@@ -299,7 +307,12 @@ class Client(WebSocketClientProtocol, BaseClient):
         user_id = self._get_user_id(user)
 
         # Hit the Web API
-        data = api('im.open', user=user_id)
+        try:
+            data = api('im.open', user=user_id)
+        except SlackError:
+            logger.exception('Cannot initiate private message with user %s', user_id)
+            return
+
         channel_id = data['channel']['id']
 
         # Update our internal cache if we don't know about it
@@ -380,11 +393,15 @@ class Client(WebSocketClientProtocol, BaseClient):
         :raises: SlackError: If Web API request fails
         """
         if channels is None:
-            logger.info('Fetching full channel list from slack API')
-            channels = api('channels.list')['channels']
-            channels.extend(api('groups.list')['groups'])
-            channels.extend(api('mpim.list')['groups'])
-            channels.extend(api('im.list')['ims'])
+            logger.debug('Fetching full channel list from slack API')
+            try:
+                channels = api('channels.list')['channels']
+                channels.extend(api('groups.list')['groups'])
+                channels.extend(api('mpim.list')['groups'])
+                channels.extend(api('im.list')['ims'])
+            except SlackError:
+                logger.exception('Failed to get full channel list from slack')
+                return
 
         channel_names = {}
 
@@ -404,8 +421,12 @@ class Client(WebSocketClientProtocol, BaseClient):
         :raises: SlackError: If Web API request fails
         """
         if users is None:
-            logger.info('Fetching full user list from slack API')
-            users = api('users.list')['members']
+            logger.debug('Fetching full user list from slack API')
+            try:
+                users = api('users.list')['members']
+            except SlackError:
+                logger.exception('Failed to get full user list from slack')
+                return
 
         self._user_names = {}
 

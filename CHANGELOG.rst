@@ -1,7 +1,11 @@
 CHANGELOG
 =========
 
-1.7.10
+1.7.12
+------
+- Slack reconnect and bug fixes
+
+1.7.11
 ------
 - Minor adjustments to slack beta after more testing
 
