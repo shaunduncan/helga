@@ -440,9 +440,12 @@ class Client(WebSocketClientProtocol, BaseClient):
         forms. In particular, we will translate "<@UUSERID>" or
         "<@UUSERID|foo>" to "@USER". Also look for similarly formatted channel
         names like "<#CHANNELID|channel-name>" and replace with "#channel-name".
+        After these substitutions occur, any HTML-escaped occurrences of &, <, and >
+        are unescaped back to their original forms, to allow plugins to receive
+        the same message that was entered by the sender.
 
-        :param message: message string to parse, eg "<@U0123ABCD> hello".
-        :returns: a translated string, eg. "@adeza hello".
+        :param message: message string to parse, eg "<@U0123ABCD> hello &lt;test&gt;".
+        :returns: a translated string, eg. "@adeza hello <test>".
         """
         user_regex = r'(<@(U[0-9A-Z]+)(?:\|[^>]+)?>)'
         for full_match, user_id in re.findall(user_regex, message):
@@ -453,8 +456,13 @@ class Client(WebSocketClientProtocol, BaseClient):
         for full_match, channel_id in re.findall(channel_regex, message):
             channel = self._get_channel_name(channel_id)
             message = message.replace(full_match, '#' + channel)
-
-        return message
+ 
+        # Unescape &, <, and > characters
+        message = re.sub(r'&amp;', '&', message)
+        message = re.sub(r'&lt;', '<', message)
+        message = re.sub(r'&gt;', '>', message)
+ 
+       return message
 
     def _sanitize(self, message):
         """
