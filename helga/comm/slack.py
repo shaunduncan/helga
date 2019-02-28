@@ -462,7 +462,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         message = re.sub(r'&lt;', '<', message)
         message = re.sub(r'&gt;', '>', message)
  
-       return message
+        return message
 
     def _sanitize(self, message):
         """
