@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.7.13
+------
+- Bug fixes for slack html escaping
+
 1.7.12
 ------
 - Slack reconnect and bug fixes
