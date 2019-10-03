@@ -13,9 +13,9 @@ def to_unicode(bytestr, errors='ignore'):
     :param errors: a string indicating how decoding errors should be handled
                    (i.e. 'strict', 'ignore', 'replace')
     """
-    if isinstance(bytestr, unicode):
+    if isinstance(bytestr, bytes):
         return bytestr
-    return bytestr.decode('utf-8', errors)
+    return bytestr.encode('utf-8', errors)
 
 
 def from_unicode(unistr, errors='ignore'):
@@ -27,9 +27,9 @@ def from_unicode(unistr, errors='ignore'):
     :param errors: a string indicating how encoding errors should be handled
                    (i.e. 'strict', 'ignore', 'replace')
     """
-    if not isinstance(unistr, unicode):
+    if not isinstance(unistr, bytes):
         return unistr
-    return unistr.encode('utf-8', errors)
+    return unistr.decode('utf-8', errors)
 
 
 @decorator
@@ -51,6 +51,6 @@ def from_unicode_args(fn, *args, **kwargs):
     """
     args = list(args)
     for i, val in enumerate(args):
-        if isinstance(val, unicode):
+        if isinstance(val, bytes):
             args[i] = from_unicode(val)
     return fn(*args, **kwargs)

@@ -1,6 +1,11 @@
 import random
 
-from itertools import ifilter
+try:
+    # Python 2
+    from future_builtins import filter
+except ImportError:
+    # Python 3
+    pass
 
 import smokesignal
 
@@ -20,7 +25,7 @@ def auto_enable_plugins(*args):
 
     pred = lambda rec: rec['plugin'] in registry.all_plugins
 
-    for rec in ifilter(pred, db.auto_enabled_plugins.find()):
+    for rec in filter(pred, db.auto_enabled_plugins.find()):
         for channel in rec['channels']:
             logger.info('Auto-enabling plugin %s on channel %s', rec['plugin'], channel)
             registry.enable(channel, rec['plugin'])
@@ -37,7 +42,7 @@ def list_plugins(client, channel):
 
 
 def _filter_valid(channel, *plugins):
-    return filter(lambda p: p in registry.all_plugins, plugins)
+    return [p for p in plugins if p in registry.all_plugins]
 
 
 def enable_plugins(client, channel, *plugins):

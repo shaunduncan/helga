@@ -346,7 +346,7 @@ class Client(WebSocketClientProtocol, BaseClient):
     def _get_channel_id(self, name):
         name = name.lstrip('#')
 
-        for chan_id, chan_name in self._channel_names.iteritems():
+        for chan_id, chan_name in self._channel_names.items():
             if chan_name == name:
                 return chan_id
 
@@ -379,7 +379,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         """
         name = name.lstrip('@')
 
-        for user_id, user_name in self._user_names.iteritems():
+        for user_id, user_name in self._user_names.items():
             if user_name == name:
                 return user_id
 

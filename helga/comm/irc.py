@@ -159,7 +159,6 @@ class Client(irc.IRCClient, BaseClient):
         self.quit('')
     irc_905 = irc_904
 
-    @encodings.from_unicode_args
     def connectionLost(self, reason):
         logger.info('Connection to %s lost: %s', settings.SERVER['HOST'], reason)
         irc.IRCClient.connectionLost(self, reason)
@@ -221,7 +220,6 @@ class Client(irc.IRCClient, BaseClient):
         """
         return self.nickname != channel and channel.startswith('#')
 
-    @encodings.to_unicode_args
     def privmsg(self, user, channel, message):
         """
         Handler for an IRC message. This method handles logging channel messages (if it occurs
@@ -294,7 +292,6 @@ class Client(irc.IRCClient, BaseClient):
         logger.warning('%s kicked bot from %s: %s', kicker, channel, message)
         self.channels.discard(channel)
 
-    @encodings.from_unicode_args
     def msg(self, channel, message):
         """
         Send a message over IRC to the specified channel
@@ -330,7 +327,6 @@ class Client(irc.IRCClient, BaseClient):
         if command.lower() == 'invite':
             self.on_invite(prefix, params[0], params[1])
 
-    @encodings.from_unicode_args
     def me(self, channel, message):
         """
         Equivalent to: /me message
@@ -364,7 +360,6 @@ class Client(irc.IRCClient, BaseClient):
         nick = self.parse_nick(user)
         smokesignal.emit('user_left', self, nick, channel)
 
-    @encodings.from_unicode_args
     def join(self, channel, key=None):
         """
         Join a channel, optionally with a passphrase required to join.
@@ -375,7 +370,6 @@ class Client(irc.IRCClient, BaseClient):
         logger.info("Joining channel %s", channel)
         irc.IRCClient.join(self, channel, key=key)
 
-    @encodings.from_unicode_args
     def leave(self, channel, reason=None):
         """
         Leave a channel, optionally with a reason for leaving
