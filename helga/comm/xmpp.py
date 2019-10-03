@@ -497,7 +497,7 @@ class Client(BaseClient):
             'from': self.jid.full(),
             'type': resp_type,
         })
-        element.addElement('body', content=encodings.to_unicode(message))
+        element.addElement('body', content=message)
 
         self.stream.send(element)
 

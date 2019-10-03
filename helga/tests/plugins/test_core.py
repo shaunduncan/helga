@@ -48,7 +48,7 @@ class TestRegistry(object):
 
     def _make_mock(self, **attrs):
         m = Mock()
-        for k, v in attrs.iteritems():
+        for k, v in attrs.items():
             setattr(m, k, v)
         return m
 
@@ -252,7 +252,7 @@ class TestRegistry(object):
         with patch.object(registry, 'prioritized') as prio:
             prio.return_value = [plugin]
             responses = registry.process('', '', '', '')
-            assert all(map(lambda x: isinstance(x, unicode), responses))
+            assert all(map(lambda x: isinstance(x, str), responses))
 
     def test_process_ignores_exception(self):
         settings.PLUGIN_FIRST_RESPONDER_ONLY = True
@@ -422,7 +422,7 @@ class TestRegistry(object):
 
     @patch('helga.plugins.pkg_resources')
     @patch('helga.plugins.sys')
-    @patch('__builtin__.reload')
+    @patch('helga.plugins.reload')
     def test_reload(self, reloader, sys, pkg_resources):
         entry_points = [
             Mock(module_name='foo', load=lambda: 'loaded'),
@@ -446,7 +446,7 @@ class TestRegistry(object):
 
     @patch('helga.plugins.pkg_resources')
     @patch('helga.plugins.sys')
-    @patch('__builtin__.reload')
+    @patch('helga.plugins.reload')
     def test_reload_returns_false_on_exception(self, reloader, sys, pkg_resources):
         module = Mock(module_name='foo')
         module.name = 'foo'
@@ -718,6 +718,7 @@ def test_custom_plugin_priorities(tmpdir):
     settings.configure(str(file))
 
     from helga import plugins
+    from importlib import reload
     reload(plugins)
 
     assert plugins.PRIORITY_LOW == 1

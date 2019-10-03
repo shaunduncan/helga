@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 import re
-
+import sys
+import pytest
 from mock import Mock, call, patch
 from unittest import TestCase
 
@@ -476,13 +477,6 @@ class ClientTestCase(TestCase):
         with patch.object(self.client, 'msg'):
             self.client.me('#bots', 'waves')
             self.client.msg.assert_called_with('#bots', '/me waves')
-
-    def test_me_converts_from_unicode(self):
-        snowman = u'☃'
-        expected = '/me \xe2\x98\x83'
-        with patch.object(self.client, 'msg'):
-            self.client.me('#bots', snowman)
-            self.client.msg.assert_called_with('#bots', expected)
 
     def test_on_nick_collision(self):
         element = self._dict_mock(**{'from': 'room@conference.example.com'})

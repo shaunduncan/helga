@@ -25,7 +25,7 @@ def help(client, channel, nick, message, cmd, args):
 
         # A decorated function
         elif hasattr(plugin, '_plugins'):
-            fn_helps = filter(bool, map(lambda x: getattr(x, 'help', None), plugin._plugins))
+            fn_helps = list(filter(bool, map(lambda x: getattr(x, 'help', None), plugin._plugins)))
             helps[plugin_name].extend(fn_helps or [default_help])
 
     try:
@@ -46,7 +46,7 @@ def help(client, channel, nick, message, cmd, args):
 
     retval = []
     # Send the message to the user
-    for key, value in helps.iteritems():
+    for key, value in helps.items():
         retval.append(format_help_string(key, *value))
 
     retval.insert(0, u"{0}, here are the plugins I know about".format(nick))

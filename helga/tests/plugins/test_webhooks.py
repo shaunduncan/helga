@@ -68,7 +68,7 @@ class TestWebhookPlugin(object):
 
     def _make_mock(self, **attrs):
         m = Mock()
-        for k, v in attrs.iteritems():
+        for k, v in attrs.items():
             setattr(m, k, v)
         return m
 

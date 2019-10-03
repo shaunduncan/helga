@@ -102,8 +102,8 @@ class TestChannelLogView(object):
             '00:00:00 - foo - this is what i said',
             '12:01:35 - bar - another thing i said',
             '16:17:18 - baz - this - has - delimiters',
-            u'21:22:23 - qux - ☃'.encode('utf-8')
-        ]), mode='wb')
+            u'21:22:23 - qux - ☃'
+        ]), mode='w')
 
         assert list(self.view.messages()) == [
             {
@@ -137,8 +137,8 @@ class TestChannelLogView(object):
             '00:00:00 - foo - this is what i said',
             '...and here',
             '...and here again',
-            u'...☃'.encode('utf-8')
-        ]), mode='wb')
+            u'...☃'
+        ]), mode='w')
 
         assert list(self.view.messages()) == [
             {
@@ -168,13 +168,13 @@ class TestChannelLogView(object):
         contents = ('00:00:00 - foo - this is what i said\n'
                     '12:01:35 - bar - another thing i said\n'
                     '16:17:18 - baz - this - has - delimiters\n'
-                    u'21:22:23 - qux - ☃'.encode('utf-8'))
+                    u'21:22:23 - qux - ☃')
 
         logger.settings.CHANNEL_LOGGING_DIR = str(tmpdir)
 
         # Create tmp file
         file = tmpdir.mkdir('#foo').join('2014-12-01.txt')
-        file.write(contents, mode='wb')
+        file.write(contents, mode='w')
 
         assert self.view.download(request) == contents
         request.setHeader.assert_any_call('Content-Type', 'text/plain')
