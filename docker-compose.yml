@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+
+  irc:
+    image: yrpri/ngircd
+    ports:
+      - 6667:6667
+
+  mongo:
+    image: mongo:3
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+
+  helga:
+    build: .
+    image: bigjust/helga
+    command: helga --settings=settings-docker.py
+    environment:
+      - HELGA_IRC_SERVER=irc
+      - HELGA_MONGO_HOST=mongo
+    volumes:
+      - .:/code
+    depends_on:
+      - mongo
+      - irc
+
+volumes:
+  mongo_data:
