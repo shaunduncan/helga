@@ -31,7 +31,7 @@ class Index(object):
         hidden = set(map(lstrip, settings.CHANNEL_LOGGING_HIDE_CHANNELS))
 
         if not os.path.isdir(log_dir):
-            raise StopIteration
+            return
 
         for chan in map(lstrip, sorted(os.listdir(log_dir))):
             if chan in hidden:
