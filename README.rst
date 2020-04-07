@@ -13,7 +13,7 @@ helga
 
 About
 -----
-Helga is a full-featured chat bot for Python 2.7 using `Twisted`_. Helga originally started
+Helga is a full-featured chat bot for Python 3 using `Twisted`_. Helga originally started
 as a python fork of a perl-based IRC bot `olga`_, but has grown considerably since then. Early
 versions limited to support to IRC, but now include other services like XMPP and HipChat.
 Full documentation can be found at http://helga.readthedocs.org.
@@ -36,6 +36,14 @@ or just bug reports. To report any issues, please create a ticket on `github`_. 
 changes, please note that any pull request will be denied a merge if the test suite fails.
 
 If you are looking to get help with helga, join the #helgabot IRC channel on freenode.
+
+
+Docker
+------
+
+A docker compose file is included, which has a irc server and mongodb instance. Once you bring
+the cluster using `docker-compose up`, you can connect to the irc on localhost port 6667, and
+join the #test channel.
 
 
 License
