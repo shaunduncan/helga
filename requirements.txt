@@ -8,7 +8,7 @@
 
 autobahn
 cffi
-decorator==3.4.0
+decorator==4.4.2
 pymongo
 pyOpenSSL
 pystache==0.5.4
