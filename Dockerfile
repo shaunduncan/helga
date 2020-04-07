@@ -4,3 +4,9 @@ ADD . /code
 WORKDIR /code
 
 RUN pip install .
+
+RUN pip install tox
+
+RUN tox
+
+RUN pip list -o
