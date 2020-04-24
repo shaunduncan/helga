@@ -33,7 +33,6 @@ import smokesignal
 
 from helga import log, settings
 from helga.plugins import Command, registry
-from helga.util.encodings import from_unicode
 
 
 logger = log.getLogger(__name__)

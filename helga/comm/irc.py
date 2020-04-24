@@ -11,7 +11,6 @@ from twisted.words.protocols import irc
 from helga import settings, log
 from helga.comm.base import BaseClient
 from helga.plugins import registry
-from helga.util import encodings
 
 
 logger = log.getLogger(__name__)
