@@ -18,7 +18,6 @@ from operator import methodcaller
 import smokesignal
 
 from helga import log, settings
-from helga.util.encodings import from_unicode
 
 
 logger = log.getLogger(__name__)
@@ -563,7 +562,7 @@ class Command(Plugin):
 
         """
         if self.shlex or settings.COMMAND_ARGS_SHLEX:
-            argv = shlex.split(from_unicode(argstr.strip()))
+            argv = shlex.split(argstr.strip())
         else:
             argv = argstr.strip().split(' ')
 
