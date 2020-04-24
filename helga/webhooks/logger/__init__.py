@@ -2,12 +2,6 @@ import os
 import re
 
 from collections import deque
-try:
-    # Python 2
-    from future_builtins import map
-except ImportError:
-    # Python 3
-    pass
 from operator import methodcaller
 
 import pystache

@@ -13,12 +13,6 @@ import sys
 import warnings
 
 from collections import defaultdict
-try:
-    # Python 2
-    from future_builtins import filter, map
-except ImportError:
-    # Python 3
-    pass
 from operator import methodcaller
 
 import smokesignal

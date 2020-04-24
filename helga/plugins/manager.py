@@ -1,12 +1,4 @@
 import random
-
-try:
-    # Python 2
-    from future_builtins import filter
-except ImportError:
-    # Python 3
-    pass
-
 import smokesignal
 
 from helga import log
