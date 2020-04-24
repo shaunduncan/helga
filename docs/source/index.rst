@@ -22,7 +22,7 @@ helga
 
 About
 -----
-Helga is a full-featured chat bot for Python 2.6/2.7 using `Twisted`_. Helga originally started
+Helga is a full-featured chat bot for Python 3 using `Twisted`_. Helga originally started
 as a python fork of a perl-based IRC bot `olga`_, but has grown considerably since then. Early
 versions limited to support to IRC, but now include other services like XMPP and HipChat.
 
