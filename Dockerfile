@@ -1,29 +1,11 @@
-FROM ubuntu:16.04
+FROM python:2
 
-EXPOSE 6667 27017
+ADD . /helga
+WORKDIR /helga
 
-RUN apt-get update -qq
-RUN apt-get install -qqy \
-	git \
-	mongodb \
-	ngircd \
-	openssl \
-	libssl-dev \
-	python-dev \
-	python-pip \
-	python-setuptools \
-	libffi6 \
-	libffi-dev
-
-ADD . /opt/helga
-WORKDIR /opt/helga
-
-RUN sed -i -s 's/^bind_ip = 127.0.0.1/#bind_ip = 127.0.0.1/' /etc/mongodb.conf && service mongodb restart
-
-RUN pip install --upgrade pip
-RUN pip install service_identity
-
-RUN cd /opt/helga && python setup.py install
-
+RUN pip install . tox
+RUN tox
+RUN pip list -o
 
 ENTRYPOINT ["/usr/local/bin/helga"]
+CMD ["--settings=settings-docker.py"]
