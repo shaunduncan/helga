@@ -124,8 +124,11 @@ class Client(WebSocketClientProtocol, BaseClient):
 
         users = rtm_start_data.get('users') or []
 
-        self._cache_all_channel_names(channels)
-        self._cache_all_user_names(users)
+        try:
+            self._cache_all_channel_names(channels)
+            self._cache_all_user_names(users)
+        except Exception as e:
+            logger.error('Failed to pre-fetch channels and users: %s', e)
 
         # FIXME: setup reactor recurring tasks to refresh the list of channels/users
         self.refresh_channels = task.LoopingCall(self._cache_all_channel_names)
@@ -244,7 +247,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         message = self._parse_incoming_message(message)
 
         # Log the incoming message
-        logger.debug('[<--] %s/%s - %s', channel, user, message)
+        # logger.debug('[<--] %s/%s - %s', channel, user, message)
 
         # Some things should go first
         try:
@@ -272,7 +275,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         :param message: The message to send (string)
         :type  message: ``str``
         """
-        logger.debug('[-->] %s - /me %s', channel, message)
+        # logger.debug('[-->] %s - /me %s', channel, message)
         return self._send_message(channel, message, subtype='me_message')
 
     def msg(self, channel, message):
@@ -308,7 +311,7 @@ class Client(WebSocketClientProtocol, BaseClient):
 
         # Hit the Web API
         try:
-            data = api('im.open', user=user_id)
+            data = api('conversations.open', users=user_id)
         except SlackError:
             logger.exception('Cannot initiate private message with user %s', user_id)
             return
@@ -330,7 +333,7 @@ class Client(WebSocketClientProtocol, BaseClient):
             logger.warning('Cannot leave %s: %s', channel, msg)
             return msg
         else:
-            reactor.callLater(0, api, 'channels.leave', channel=channel)
+            reactor.callLater(0, api, 'conversations.leave', channel=channel)
 
     def join(self, channel, *args, **kwargs):
         if self._i_am_bot:
@@ -338,7 +341,7 @@ class Client(WebSocketClientProtocol, BaseClient):
             logger.warning('Cannot join %s: %s', channel, msg)
             return msg
         else:
-            reactor.callLater(0, api, 'channels.join', name=channel)
+            reactor.callLater(0, api, 'conversations.join', name=channel)
 
     def _get_channel_name(self, channel_id):
         return self._channel_names.get(channel_id, '')
@@ -395,10 +398,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         if channels is None:
             logger.debug('Fetching full channel list from slack API')
             try:
-                channels = api('channels.list')['channels']
-                channels.extend(api('groups.list')['groups'])
-                channels.extend(api('mpim.list')['groups'])
-                channels.extend(api('im.list')['ims'])
+                channels = api('conversations.list')['channels']
             except SlackError:
                 logger.exception('Failed to get full channel list from slack')
                 return
@@ -440,12 +440,9 @@ class Client(WebSocketClientProtocol, BaseClient):
         forms. In particular, we will translate "<@UUSERID>" or
         "<@UUSERID|foo>" to "@USER". Also look for similarly formatted channel
         names like "<#CHANNELID|channel-name>" and replace with "#channel-name".
-        After these substitutions occur, any HTML-escaped occurrences of &, <, and >
-        are unescaped back to their original forms, to allow plugins to receive
-        the same message that was entered by the sender.
 
-        :param message: message string to parse, eg "<@U0123ABCD> hello &lt;test&gt;".
-        :returns: a translated string, eg. "@adeza hello <test>".
+        :param message: message string to parse, eg "<@U0123ABCD> hello".
+        :returns: a translated string, eg. "@adeza hello".
         """
         user_regex = r'(<@(U[0-9A-Z]+)(?:\|[^>]+)?>)'
         for full_match, user_id in re.findall(user_regex, message):
@@ -456,12 +453,7 @@ class Client(WebSocketClientProtocol, BaseClient):
         for full_match, channel_id in re.findall(channel_regex, message):
             channel = self._get_channel_name(channel_id)
             message = message.replace(full_match, '#' + channel)
- 
-        # Unescape &, <, and > characters
-        message = re.sub(r'&amp;', '&', message)
-        message = re.sub(r'&lt;', '<', message)
-        message = re.sub(r'&gt;', '>', message)
- 
+
         return message
 
     def _sanitize(self, message):
