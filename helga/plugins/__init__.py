@@ -3,6 +3,7 @@ Helga's core plugin library containing base implementations for creating plugins
 as well as utilities for managing plugins at runtime
 """
 from __future__ import absolute_import
+from importlib import reload
 import functools
 import pkg_resources
 import random
@@ -12,13 +13,11 @@ import sys
 import warnings
 
 from collections import defaultdict
-from itertools import ifilter, imap
 from operator import methodcaller
 
 import smokesignal
 
 from helga import log, settings
-from helga.util.encodings import from_unicode, to_unicode
 
 
 logger = log.getLogger(__name__)
@@ -339,7 +338,7 @@ class Registry(object):
             # Chained decorator style plugins return a list of strings
             if isinstance(resp, (tuple, list)):
                 # Be sure to filter Nones, then strip
-                responses.extend(imap(lambda s: (s or '').strip(), resp))
+                responses.extend(map(lambda s: (s or '').strip(), resp))
             else:
                 responses.append(resp.strip())
 
@@ -348,7 +347,7 @@ class Registry(object):
 
         # FIXME: Explicit conversion to unicode might not make sense. Perpahs
         # a warning should be sent to the user? Or do we even care?
-        return map(to_unicode, ifilter(bool, responses))
+        return list(filter(bool, responses))
 
 
 registry = Registry()
@@ -527,7 +526,7 @@ class Command(Plugin):
         prefix_botnick = getattr(settings, 'COMMAND_PREFIX_BOTNICK', None)
         if prefix_botnick is not None:
             fmt = '{0}\W*\s'
-            if isinstance(prefix_botnick, basestring):
+            if isinstance(prefix_botnick, str):
                 nick_prefix = fmt.format(prefix_botnick)
             elif prefix_botnick:
                 nick_prefix = fmt.format(botnick)
@@ -535,7 +534,7 @@ class Command(Plugin):
         prefixes = filter(bool, [nick_prefix, getattr(settings, 'COMMAND_PREFIX_CHAR', '!')])
         prefix = '({0})'.format('|'.join(prefixes))
 
-        pat = ur'^{0}({1})($|\s(.*)$)'.format(prefix, '|'.join(choices))
+        pat = r'^{0}({1})($|\s(.*)$)'.format(prefix, '|'.join(choices))
 
         try:
             _, cmd, _, argstr = re.findall(pat, message, re.IGNORECASE)[0]
@@ -543,7 +542,7 @@ class Command(Plugin):
             # FIXME: Log here?
             return u'', []
 
-        return cmd, filter(bool, self._parse_argstr(argstr))
+        return cmd, list(filter(bool, self._parse_argstr(argstr)))
 
     def _parse_argstr(self, argstr):
         """
@@ -563,11 +562,11 @@ class Command(Plugin):
 
         """
         if self.shlex or settings.COMMAND_ARGS_SHLEX:
-            argv = shlex.split(from_unicode(argstr.strip()))
+            argv = shlex.split(argstr.strip())
         else:
             argv = argstr.strip().split(' ')
 
-        return map(to_unicode, argv)
+        return argv
 
     def run(self, client, channel, nick, message, command, args):
         """

@@ -2,14 +2,12 @@ import os
 import re
 
 from collections import deque
-from itertools import imap
 from operator import methodcaller
 
 import pystache
 
 from helga import settings
 from helga.plugins.webhooks import HttpError, route
-from helga.util.encodings import to_unicode
 
 
 class Index(object):
@@ -24,12 +22,12 @@ class Index(object):
     def channels(self):
         log_dir = settings.CHANNEL_LOGGING_DIR
         lstrip = methodcaller('lstrip', '#')
-        hidden = set(imap(lstrip, settings.CHANNEL_LOGGING_HIDE_CHANNELS))
+        hidden = set(map(lstrip, settings.CHANNEL_LOGGING_HIDE_CHANNELS))
 
         if not os.path.isdir(log_dir):
-            raise StopIteration
+            return
 
-        for chan in imap(lstrip, sorted(os.listdir(log_dir))):
+        for chan in map(lstrip, sorted(os.listdir(log_dir))):
             if chan in hidden:
                 continue
             yield chan
@@ -96,7 +94,7 @@ class ChannelLog(object):
         # if the message sent over IRC has newlines. So we have to read in reverse
         # and construct the response list
         with open(self.logfile_path, 'r') as fp:
-            for line in imap(to_unicode, reversed(fp.readlines())):
+            for line in reversed(fp.readlines()):
                 if not line_pat.match(line):
                     message = u''.join((line, message))
                     continue

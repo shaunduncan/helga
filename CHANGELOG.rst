@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.0.0
+-----
+- Switch to Python 3
+- Use Docker Compose for local development
+
 1.7.13
 ------
 - Bug fixes for slack html escaping

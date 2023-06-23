@@ -1,6 +1,5 @@
 # -*- coding: utf8 -*-
 import re
-
 from mock import Mock, call, patch
 from unittest import TestCase
 
@@ -60,21 +59,6 @@ class ClientTestCase(TestCase):
     def test_parse_nick_unicode(self):
         nick = self.client.parse_nick(u'☃!~foobar@localhost')
         assert nick == u'☃'
-
-    @patch('helga.comm.irc.irc.IRCClient')
-    def test_me_converts_from_unicode(self, irc):
-        snowman = u'☃'
-        bytes = '\xe2\x98\x83'
-        self.client.me('#foo', snowman)
-        irc.describe.assert_called_with(self.client, '#foo', bytes)
-
-    @patch('helga.comm.irc.irc.IRCClient')
-    def test_msg_sends_byte_string(self, irc):
-        snowman = u'☃'
-        bytes = '\xe2\x98\x83'
-
-        self.client.msg('#foo', snowman)
-        irc.msg.assert_called_with(self.client, '#foo', bytes)
 
     def test_alterCollidedNick(self):
         self.client.alterCollidedNick('foo')
@@ -161,14 +145,6 @@ class ClientTestCase(TestCase):
         self.client.connectionLost('an error...')
         irc.connectionLost.assert_called_with(self.client, 'an error...')
 
-    @patch('helga.comm.irc.settings')
-    @patch('helga.comm.irc.irc.IRCClient')
-    def test_connectionLost_handles_unicode(self, irc, settings):
-        snowman = u'☃'
-        bytes = '\xe2\x98\x83'
-        self.client.connectionLost(snowman)
-        irc.connectionLost.assert_called_with(self.client, bytes)
-
     @patch('helga.comm.irc.smokesignal')
     def test_joined(self, signal):
         # Test str and unicode
@@ -227,20 +203,6 @@ class ClientTestCase(TestCase):
         user = 'helga!helgabot@127.0.0.1'
         self.client.userLeft(user, '#bots')
         signal.emit.assert_called_with('user_left', self.client, 'helga', '#bots')
-
-    @patch('helga.comm.irc.irc.IRCClient')
-    def test_join_converts_from_unicode(self, irc):
-        snowman = u'☃'
-        bytes = '\xe2\x98\x83'
-        self.client.join(snowman, snowman)
-        irc.join.assert_called_with(self.client, bytes, key=bytes)
-
-    @patch('helga.comm.irc.irc.IRCClient')
-    def test_leave_converts_from_unicode(self, irc):
-        snowman = u'☃'
-        bytes = '\xe2\x98\x83'
-        self.client.leave(snowman, snowman)
-        irc.leave.assert_called_with(self.client, bytes, reason=bytes)
 
     @patch('helga.comm.irc.log')
     def test_get_channel_logger_no_existing_logger(self, log):

@@ -33,7 +33,6 @@ import smokesignal
 
 from helga import log, settings
 from helga.plugins import Command, registry
-from helga.util.encodings import from_unicode
 
 
 logger = log.getLogger(__name__)
@@ -151,7 +150,7 @@ class WebhookPlugin(Command):
         :param nick: the nick of the chat user to message
         """
         client.msg(nick, u'{0}, here are the routes I know about'.format(nick))
-        for pattern, route in self.root.routes.iteritems():
+        for pattern, route in self.root.routes.items():
             http_methods = route[0]  # Route is a tuple (http_methods, function)
             client.msg(nick, u'[{0}] {1}'.format(','.join(http_methods), pattern))
 
@@ -232,7 +231,7 @@ class WebhookRoot(resource.Resource):
         :returns: a string with the HTTP response content
         """
         request.setHeader('Server', 'helga')
-        for pat, route in self.routes.iteritems():
+        for pat, route in self.routes.items():
             match = re.match(pat, request.path)
             if match:
                 break
@@ -249,7 +248,7 @@ class WebhookRoot(resource.Resource):
         # Handle raised HttpErrors
         try:
             # Explicitly return a byte string. Twisted expects this
-            return from_unicode(fn(request, self.chat_client, **match.groupdict()))
+            return fn(request, self.chat_client, **match.groupdict())
         except HttpError as e:
             request.setResponseCode(int(e.status))
             return e.message or e.response

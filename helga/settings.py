@@ -187,7 +187,8 @@ def configure(overrides):
 
     # Filesystem path to settings file
     if os.path.isfile(overrides):
-        execfile(overrides, this.__dict__)
+        with open(overrides) as override_file:
+            exec(override_file.read(), this.__dict__)
         return
 
     # Module import path settings file
