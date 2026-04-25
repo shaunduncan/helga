@@ -134,7 +134,7 @@ def test_get_channel_logger_creates_log_dirs(settings, logging, os):
 
 class TestChannelLogFileHandler(object):
 
-    def setup(self):
+    def setup_method(self):
         self.handler = log.ChannelLogFileHandler('/tmp')
 
     def test_setup_correctly(self):

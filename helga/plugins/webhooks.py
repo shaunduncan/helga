@@ -22,8 +22,12 @@ registered, using setuptools entry_points. However, they must belong to the entr
 For more information, see :ref:`webhooks`
 """
 import functools
-from importlib.metadata import entry_points
 import re
+
+try:
+    import pkg_resources
+except ImportError:  # pragma: no cover
+    pkg_resources = None
 
 from twisted.internet import reactor
 from twisted.web import server, resource
@@ -36,6 +40,12 @@ from helga.plugins import Command, registry
 
 
 logger = log.getLogger(__name__)
+
+
+def iter_entry_points(group):
+    if pkg_resources is not None:
+        return pkg_resources.iter_entry_points(group=group)
+    return ()
 
 
 # Subclassed only for better naming
@@ -73,7 +83,7 @@ class WebhookPlugin(Command):
         self.site = server.Site(self.root)
         self.port = getattr(settings, 'WEBHOOKS_PORT', 8080)
 
-        self.webhook_names = set(ep.name for ep in entry_points(group='helga_webhooks'))
+        self.webhook_names = set(ep.name for ep in iter_entry_points('helga_webhooks'))
 
         self.whitelist_webhooks = self._create_webhook_list('ENABLED_WEBHOOKS', default=True)
         self.blacklist_webhooks = self._create_webhook_list('DISABLED_WEBHOOKS', default=True)
@@ -105,7 +115,7 @@ class WebhookPlugin(Command):
             logger.debug('Webhook whitelist was empty, none, or false. Skipping')
             return
 
-        for entry_point in entry_points(group='helga_webhooks'):
+        for entry_point in iter_entry_points('helga_webhooks'):
             if entry_point.name in self.blacklist_webhooks:
                 logger.info('Skipping blacklisted webhook %s', entry_point.name)
                 continue

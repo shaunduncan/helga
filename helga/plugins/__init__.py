@@ -4,7 +4,11 @@ as well as utilities for managing plugins at runtime
 """
 from __future__ import absolute_import
 from importlib import reload
-from importlib.metadata import entry_points
+
+try:
+    import pkg_resources
+except ImportError:  # pragma: no cover
+    pkg_resources = None
 import functools
 import random
 import re
@@ -21,6 +25,12 @@ from helga import log, settings
 
 
 logger = log.getLogger(__name__)
+
+
+def iter_entry_points(group):
+    if pkg_resources is not None:
+        return pkg_resources.iter_entry_points(group=group)
+    return ()
 
 
 #: A collection of pre-canned acknowledgement type responses
@@ -108,7 +118,7 @@ class Registry(object):
         if not hasattr(self, 'plugins'):
             self.plugins = {}
 
-        self.plugin_names = set(ep.name for ep in entry_points(group='helga_plugins'))
+        self.plugin_names = set(ep.name for ep in iter_entry_points('helga_plugins'))
 
         # Plugins whitelist/blacklist
         self.whitelist_plugins = self._create_plugin_list('ENABLED_PLUGINS', default=True)
@@ -216,7 +226,7 @@ class Registry(object):
             smokesignal.emit('plugins_loaded')
             return
 
-        for entry_point in entry_points(group='helga_plugins'):
+        for entry_point in iter_entry_points('helga_plugins'):
             if entry_point.name in self.blacklist_plugins:
                 logger.info('Skipping blacklisted plugin %s', entry_point.name)
                 continue
@@ -245,14 +255,16 @@ class Registry(object):
             # FIXME: This should raise
             return u"Unknown plugin '{0}'. Is it installed?".format(name)
 
-        for entry_point in entry_points(group='helga_plugins'):
+        for entry_point in iter_entry_points('helga_plugins'):
             if entry_point.name != name:
                 continue
 
             # FIXME: exceptions should bubble up
             try:
-                # In importlib.metadata, we need to get the module from the value attribute
-                module_name = entry_point.value.split(':')[0]
+                module_name = getattr(entry_point, 'module_name', None)
+                if module_name is None:
+                    value = getattr(entry_point, 'value')
+                    module_name = value.split(':')[0]
                 reload(sys.modules[module_name])
                 self.register(entry_point.name, entry_point.load())
                 return True

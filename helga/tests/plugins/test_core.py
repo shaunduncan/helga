@@ -23,7 +23,7 @@ from helga.plugins import (Command,
 
 class TestRegistry(object):
 
-    def setup(self):
+    def setup_method(self):
         registry.plugins = {}
         registry.enabled_plugins = defaultdict(set)
 
@@ -485,7 +485,7 @@ class TestRegistry(object):
 
 class TestPlugin(object):
 
-    def setup(self):
+    def setup_method(self):
         self.plugin = Plugin()
         self.client = Mock(nickname='helga')
 
@@ -525,7 +525,7 @@ class TestPlugin(object):
 
 class TestCommand(object):
 
-    def setup(self):
+    def setup_method(self):
         self.cmd = Command('foo', aliases=('bar', 'baz'), help='foo cmd')
         self.client = Mock(nickname='helga')
 
@@ -662,7 +662,7 @@ class TestCommand(object):
 
 class TestMatch(object):
 
-    def setup(self):
+    def setup_method(self):
         self.match = Match('foo')
         self.client = Mock()
 

@@ -8,7 +8,7 @@ from helga.webhooks import logger
 
 class TestIndexView(object):
 
-    def setup(self):
+    def setup_method(self):
         self.view = logger.Index()
 
     def test_title(self):
@@ -47,7 +47,7 @@ class TestIndexView(object):
 
 class TestChannelIndexView(object):
 
-    def setup(self):
+    def setup_method(self):
         self.view = logger.ChannelIndex('foo')
 
     def test_title(self):
@@ -80,7 +80,7 @@ class TestChannelIndexView(object):
 
 class TestChannelLogView(object):
 
-    def setup(self):
+    def setup_method(self):
         self.view = logger.ChannelLog('foo', '2014-12-01')
 
     def test_title(self):
@@ -183,7 +183,7 @@ class TestChannelLogView(object):
 
 class TestWebhook(object):
 
-    def setup(self):
+    def setup_method(self):
         self.request = Mock()
         logger.settings.CHANNEL_LOGGING = True
 
