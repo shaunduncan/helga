@@ -20,7 +20,9 @@ ignore =
     E731,
     # Line too long (using max-line-length instead)
     E501,
-    # Line break style (minor)
+    # Whitespace before ':' in slices (black's style)
+    E203,
+    # Line break style (minor, black uses W503 style)
     W503, W504,
     # Invalid escape sequences (handled by raw strings where needed)
     W605,

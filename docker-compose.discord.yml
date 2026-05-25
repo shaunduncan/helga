@@ -1,0 +1,58 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: helga-mongo
+    platform: linux/amd64
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    environment:
+      - MONGO_INITDB_DATABASE=helga
+    networks:
+      - helga-network
+    healthcheck:
+      test: [CMD, mongosh, --eval, db.adminCommand('ping')]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  helga:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helga-bot
+    environment:
+      - HELGA_SERVER_TYPE=discord
+      - HELGA_DISCORD_TOKEN=${HELGA_DISCORD_TOKEN}
+      - HELGA_MONGO_HOST=mongo
+      - HELGA_MONGO_PORT=27017
+      - HELGA_MONGO_DB=helga
+      - HELGA_LOG_LEVEL=DEBUG
+    volumes:
+      - helga_logs:/var/log/helga
+      - helga_data:/var/lib/helga
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - helga-network
+    restart: unless-stopped
+
+networks:
+  helga-network:
+    driver: bridge
+    name: helga-network
+
+volumes:
+  mongo_data:
+    name: helga-mongo-data
+  mongo_config:
+    name: helga-mongo-config
+  helga_logs:
+    name: helga-logs
+  helga_data:
+    name: helga-data

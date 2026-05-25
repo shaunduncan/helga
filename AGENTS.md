@@ -1,6 +1,6 @@
 # Helga
 
-Chat bot for Python 3.7+ built on Twisted. Supports IRC, XMPP, Slack, Discord.
+Chat bot for Python 3.8+ built on Twisted. Supports IRC, XMPP, Slack, Discord.
 
 ## Entrypoints
 
@@ -37,7 +37,7 @@ ruff check helga && black --check helga && mypy helga && pytest
 
 - **`HELGA_SETTINGS` must be empty string** for tests (`HELGA_SETTINGS=''`), otherwise settings module override can break test isolation.
 - **MongoDB** is optional for core operation but required by some features. Tests mock pymongo — no real DB needed.
-- **Tox/CI** runs across Python 3.7–3.13 with a MongoDB service container.
+- **Tox/CI** runs across Python 3.8–3.13 with a MongoDB service container.
 - **Pre-commit** runs Black + Ruff on every commit (passes `--fix --exit-non-zero-on-fix` to ruff).
 - **Coverage** is always on (pytest addopts includes `--cov=helga --cov-report=term-missing`).
 - **`pyproject.toml`** is the primary config; `setup.py` is backward-compat only.

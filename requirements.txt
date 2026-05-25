@@ -7,6 +7,7 @@
 autobahn
 cffi
 decorator
+discord.py>=2.0.0
 pyasn1
 pyasn1-modules
 pymongo

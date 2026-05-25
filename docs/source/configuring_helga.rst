@@ -176,7 +176,58 @@ configuration. Similarly, Slack uses the "@ mentions" syntax for addressing
 nicks, and the connector has support for this, so you should not set
 :data:`~helga.settings.COMMAND_PREFIX_BOTNICK` in your configuration.
 
+
+.. _config.discord:
+
+Discord Support
+^^^^^^^^^^^^^^^
+`Discord`_ is a popular chat platform, and Helga includes a connector for
+Discord's bot API. To use Helga with Discord, you'll need to:
+
+1. Create a Discord application at the `Discord Developer Portal`_
+2. Create a bot user for your application
+3. Copy the bot token
+4. Invite the bot to your Discord server using the OAuth2 URL generator
+
+A configuration for connecting to Discord might look like::
+
+    SERVER = {
+        'TYPE': 'discord',
+        'TOKEN': 'YOUR_BOT_TOKEN_HERE',
+    }
+
+The bot token is a long string. In examples, use a clear placeholder such as
+``YOUR_BOT_TOKEN_HERE`` and keep your actual token secure. You can find your actual
+token in your application's Bot settings page.
+
+Discord bots automatically join servers when invited and have access to all channels
+they have permissions for. The :data:`~helga.settings.CHANNELS` setting is still
+respected, but Discord bots cannot programmatically join or leave individual channels -
+they must be managed through Discord's permission system.
+
+Discord supports "@ mentions" natively in chat, but Helga's Discord connector does not
+currently parse Discord mention IDs as command prefixes. Use
+:data:`~helga.settings.COMMAND_PREFIX_CHAR` (for example ``!help``) or enable
+:data:`~helga.settings.COMMAND_PREFIX_BOTNICK` to address commands by nickname
+(``helga help``).
+
+**Important Notes:**
+
+- Discord bots require the "Message Content Intent" to be enabled in the Discord
+  Developer Portal under your bot's settings. This allows the bot to read message
+  content.
+- The bot needs appropriate permissions in your Discord server. At minimum, it needs:
+
+  - Read Messages/View Channels
+  - Send Messages
+  - Read Message History
+
+- Discord has a 2000 character limit per message. Helga will automatically split
+  longer messages into multiple parts.
+
 .. _`HipChat`: https://www.hipchat.com/
 .. _`HipChat XMPP Settings`: https://hipchat.com/account/xmpp
 .. _`hipchat_nicks`: https://github.com/shaunduncan/helga-hipchat-nicks
 .. _`Slack`: https://www.slack.com/
+.. _`Discord`: https://discord.com/
+.. _`Discord Developer Portal`: https://discord.com/developers/applications

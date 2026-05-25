@@ -23,15 +23,23 @@ def run():
 
     factory = backend.Factory()
 
-    if settings.SERVER.get("TYPE", False) == "slack":
+    server_type = settings.SERVER.get("TYPE", "irc")
+
+    if server_type == "slack":
         connectWS(factory=factory)
+        reactor.run()
+    elif server_type == "discord":
+        # Discord uses its own event loop, not Twisted's reactor
+        factory.connect()
+        reactor.run()
     elif settings.SERVER.get("SSL", False):
         reactor.connectSSL(
             settings.SERVER["HOST"], settings.SERVER["PORT"], factory, ssl.ClientContextFactory()
         )
+        reactor.run()
     else:
         reactor.connectTCP(settings.SERVER["HOST"], settings.SERVER["PORT"], factory)
-    reactor.run()
+        reactor.run()
 
 
 def main():

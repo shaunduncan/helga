@@ -32,7 +32,7 @@ versions limited to support to IRC, but now include other services like XMPP and
 Supported Backends
 ------------------
 
-As of version 1.7.0, helga supports IRC, XMPP, and HipChat out of the box. Note, however, that
+As of version 2.0.0, helga supports IRC, XMPP, HipChat, Slack, and Discord out of the box. Note, however, that
 helga originally started as an IRC bot, so much of the terminology will reflect that. The current
 status of XMPP and HipChat support is very limited and somewhat beta. In the future, helga may
 have a much more robust and pluggable backend system to allow connections to any number of chat
@@ -47,7 +47,7 @@ Features
 * HTTP webhooks support and webhook plugins
 * Channel logging and browsable web UI
 * Event driven behavior for plugins
-* Support for IRC, XMPP, and HipChat
+* Support for IRC, XMPP, HipChat, Slack, and Discord
 
 
 .. _contributing:
@@ -79,10 +79,15 @@ Contents
 
    getting_started
    configuring_helga
+   discord_setup
    plugins
    webhooks
    builtins
    api
+   ibmcloud_quickstart
+   ibmcloud_deployment
+   modernization
+   phase1_complete
 
 
 Indices and Tables

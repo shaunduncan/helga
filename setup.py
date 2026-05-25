@@ -35,7 +35,7 @@ def get_long_description():
 setup(
     name="helga",
     version=get_version(),
-    description="A full-featured chat bot for Python 3.7+ with plugin support",
+    description="A full-featured chat bot for Python 3.8+ with plugin support",
     long_description=get_long_description(),
     long_description_content_type="text/x-rst",
     author="Shaun Duncan",
@@ -47,7 +47,7 @@ setup(
         "helga": ["webhooks/logger/*.mustache"],
     },
     install_requires=list(parse_requirements("requirements.txt")),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Topic :: Communications :: Chat :: Internet Relay Chat",
@@ -57,7 +57,6 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
