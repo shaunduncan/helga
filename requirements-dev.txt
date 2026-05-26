@@ -16,7 +16,7 @@ isort>=5.13.0
 mock>=5.1.0
 
 # Type checking
-mypy>=1.11.0
+mypy>=1.19.1
 
 # Pre-commit hooks
 pre-commit>=3.8.0
