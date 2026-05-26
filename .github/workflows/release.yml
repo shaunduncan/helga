@@ -126,7 +126,7 @@ jobs:
           git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> release_notes.md
 
       - name: Update release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           body_path: release_notes.md
           files: |
