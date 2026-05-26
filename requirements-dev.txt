@@ -31,7 +31,7 @@ safety>=3.2.0
 
 # Documentation
 sphinx>=7.0.0
-sphinx-rtd-theme>=2.0.0
+sphinx-rtd-theme>=3.1.0
 
 # Testing tools
 tox>=4.0.0
