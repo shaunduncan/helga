@@ -19,7 +19,7 @@ mock>=5.1.0
 mypy>=1.11.0
 
 # Pre-commit hooks
-pre-commit>=3.8.0
+pre-commit>=4.3.0
 pretend>=1.0.9
 # Testing
 pytest>=8.0.0
