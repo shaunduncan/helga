@@ -23,7 +23,7 @@ pre-commit>=3.8.0
 pretend>=1.0.9
 # Testing
 pytest>=8.0.0
-pytest-asyncio>=0.24.0
+pytest-asyncio>=1.2.0
 pytest-cov>=5.0.0
 pytest-mock>=3.14.0
 ruff>=0.6.0
