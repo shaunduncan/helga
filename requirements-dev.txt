@@ -3,7 +3,7 @@
 
 
 # Security
-bandit[toml]>=1.7.0
+bandit[toml]>=1.8.6
 
 # Code quality
 black>=24.0.0
